@@ -3,7 +3,9 @@ package main
 import (
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -35,6 +37,32 @@ type GameServer struct {
 	world    *game.GameWorld
 }
 
+func checkOrigin(r *http.Request) bool {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return true
+	}
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+
+	reqHostname := r.Host
+	if host, _, err := net.SplitHostPort(reqHostname); err == nil {
+		reqHostname = host
+	}
+	if u.Hostname() == reqHostname {
+		return true
+	}
+
+	allowed := os.Getenv("ALLOWED_ORIGIN")
+	if allowed != "" && origin == allowed {
+		return true
+	}
+
+	return false
+}
+
 func NewGameServer() *GameServer {
 	return &GameServer{
 		clients: make(map[uint16]*Client),
@@ -42,9 +70,7 @@ func NewGameServer() *GameServer {
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  2048,
 			WriteBufferSize: 2048,
-			CheckOrigin: func(r *http.Request) bool {
-				return true
-			},
+			CheckOrigin:     checkOrigin,
 		},
 		world: game.NewGameWorld(),
 	}
