@@ -96,3 +96,6 @@ ipython_config.py
 .docker/
 *.pid
 celerybeat-schedule
+# --- LOGS ---
+*.log
+logs/

@@ -1,15 +1,17 @@
 package main
 
 import (
-	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"go-server/game"
 	"go-server/protocol"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type Client struct {
@@ -156,10 +158,17 @@ func (s *GameServer) broadcastState(tick uint32) {
 }
 
 func main() {
+	log.SetOutput(io.MultiWriter(os.Stdout, &lumberjack.Logger{
+		Filename:   "logs/server.log",
+		MaxSize:    10,
+		MaxBackups: 3,
+		MaxAge:     28,
+		Compress:   true,
+	}))
 	server := NewGameServer()
 	go server.startLoop()
 	http.HandleFunc("/ws", server.handleConnection)
-	fmt.Println("Server running on 0.0.0.0:8080")
+	log.Println("Server running on 0.0.0.0:8080")
 	if err := http.ListenAndServe("0.0.0.0:8080", nil); err != nil {
 		log.Fatal(err)
 	}
