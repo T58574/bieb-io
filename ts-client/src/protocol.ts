@@ -109,7 +109,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
     const entities: EntityState[] = [];
     let offset = 36;
     for (let i = 0; i < entitiesCount; i++) {
-      if (offset + 22 > view.byteLength) break;
+      if (offset + 26 > view.byteLength) break;
       entities.push({
         id: view.getUint16(offset, true),
         type: view.getUint8(offset + 2),
@@ -120,8 +120,9 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
         health: view.getUint16(offset + 16, true),
         maxHealth: view.getUint16(offset + 18, true),
         radius: view.getUint16(offset + 20, true),
+        stateFlags: view.getUint32(offset + 22, true),
       });
-      offset += 22;
+      offset += 26;
     }
     return {
       type: "worldState",
@@ -150,11 +151,6 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       type: "gameOver",
       score: view.getUint32(1, true),
       wave: view.getUint32(5, true),
-    };
-  }
-  return null;
-}
-ue),
     };
   }
   return null;

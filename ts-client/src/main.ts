@@ -13,6 +13,7 @@ interface RenderEntity {
   health: number;
   maxHealth: number;
   radius: number;
+  stateFlags: number;
 }
 
 type GameState = "menu" | "playing" | "gameover";
@@ -62,10 +63,28 @@ let playerUsername = "Player" + Math.floor(Math.random() * 9000 + 1000);
 let usernameInput = playerUsername;
 let menuAnimAngle = 0;
 
-const keys = { w: false, a: false, s: false, d: false };
+const keys = { w: false, a: false, s: false, d: false, space: false, mouseLeft: false };
 let mouseAngle = 0;
 let mouseX = 0;
 let mouseY = 0;
+
+// Shape Cache
+const shapeCache = new Map<string, HTMLCanvasElement>();
+
+function getShapeCanvas(key: string, radius: number, drawFn: (ctx: CanvasRenderingContext2D, r: number) => void): HTMLCanvasElement {
+  if (shapeCache.has(key)) return shapeCache.get(key)!;
+  const c = document.createElement("canvas");
+  const padding = 6; // Space for stroke
+  c.width = (radius + padding) * 2;
+  c.height = (radius + padding) * 2;
+  const x = c.getContext("2d");
+  if (x) {
+    x.translate(radius + padding, radius + padding);
+    drawFn(x, radius);
+  }
+  shapeCache.set(key, c);
+  return c;
+}
 
 function connectToServer() {
   if (socket && socket.readyState !== WebSocket.CLOSED) {
@@ -135,6 +154,7 @@ function connectToServer() {
           existing.health = ent.health;
           existing.maxHealth = ent.maxHealth;
           existing.radius = ent.radius;
+          existing.stateFlags = ent.stateFlags;
         } else {
           renderEntities.set(ent.id, {
             id: ent.id,
@@ -149,6 +169,7 @@ function connectToServer() {
             health: ent.health,
             maxHealth: ent.maxHealth,
             radius: ent.radius,
+            stateFlags: ent.stateFlags,
           });
         }
       }
@@ -632,46 +653,81 @@ function renderGame() {
       ctx.lineWidth = 3;
 
       if (ent.subtype === 1) { // Warrior (Hexagon)
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-          const a = (i * Math.PI) / 3;
-          ctx.lineTo(Math.cos(a) * ent.radius, Math.sin(a) * ent.radius);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        const cacheKey = `p_warrior_${ent.radius}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = "#0284c7";
+          c.strokeStyle = "#0f172a";
+          c.lineWidth = 3;
+          c.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const a = (i * Math.PI) / 3;
+            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          c.closePath();
+          c.fill();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else if (ent.subtype === 2) { // Archer (Triangle)
-        ctx.beginPath();
-        for (let i = 0; i < 3; i++) {
-          const a = (i * 2 * Math.PI) / 3;
-          ctx.lineTo(Math.cos(a) * ent.radius, Math.sin(a) * ent.radius);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        const cacheKey = `p_archer_${ent.radius}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = "#0284c7";
+          c.strokeStyle = "#0f172a";
+          c.lineWidth = 3;
+          c.beginPath();
+          for (let i = 0; i < 3; i++) {
+            const a = (i * 2 * Math.PI) / 3;
+            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          c.closePath();
+          c.fill();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else if (ent.subtype === 3) { // Rogue (Diamond)
-        ctx.beginPath();
-        for (let i = 0; i < 4; i++) {
-          const a = (i * Math.PI) / 2;
-          ctx.lineTo(Math.cos(a) * ent.radius, Math.sin(a) * ent.radius);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        const cacheKey = `p_rogue_${ent.radius}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = "#0284c7";
+          c.strokeStyle = "#0f172a";
+          c.lineWidth = 3;
+          c.beginPath();
+          for (let i = 0; i < 4; i++) {
+            const a = (i * Math.PI) / 2;
+            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          c.closePath();
+          c.fill();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else if (ent.subtype === 4) { // Mage (Octagon)
-        ctx.beginPath();
-        for (let i = 0; i < 8; i++) {
-          const a = (i * Math.PI) / 4;
-          ctx.lineTo(Math.cos(a) * ent.radius, Math.sin(a) * ent.radius);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        const cacheKey = `p_mage_${ent.radius}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = "#0284c7";
+          c.strokeStyle = "#0f172a";
+          c.lineWidth = 3;
+          c.beginPath();
+          for (let i = 0; i < 8; i++) {
+            const a = (i * Math.PI) / 4;
+            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          c.closePath();
+          c.fill();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else { // Default Tank (Circle)
-        ctx.beginPath();
-        ctx.arc(0, 0, ent.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        const cacheKey = `p_default_${ent.radius}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = "#0284c7";
+          c.strokeStyle = "#0f172a";
+          c.lineWidth = 3;
+          c.beginPath();
+          c.arc(0, 0, r, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       }
 
       ctx.globalAlpha = 1.0;
@@ -684,42 +740,66 @@ function renderGame() {
         ctx.fillRect(-ent.radius, -ent.radius - 12, ent.radius * 2 * (ent.health / ent.maxHealth), 5);
       }
     } else if (ent.type === 1) {
-      ctx.fillStyle = "#f43f5e";
-      ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = 3;
-
       if (ent.subtype === 1) {
-        ctx.beginPath();
-        for (let i = 0; i < 5; i++) {
-          const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-          ctx.lineTo(Math.cos(a) * ent.radius, Math.sin(a) * ent.radius);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        const cacheKey = `m_1_${ent.radius}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = "#f43f5e";
+          c.strokeStyle = "#0f172a";
+          c.lineWidth = 3;
+          c.beginPath();
+          for (let i = 0; i < 5; i++) {
+            const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          c.closePath();
+          c.fill();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else if (ent.subtype === 2) {
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-          const a = (i * 2 * Math.PI) / 6;
-          ctx.lineTo(Math.cos(a) * ent.radius, Math.sin(a) * ent.radius);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        const cacheKey = `m_2_${ent.radius}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = "#f43f5e";
+          c.strokeStyle = "#0f172a";
+          c.lineWidth = 3;
+          c.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const a = (i * 2 * Math.PI) / 6;
+            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          c.closePath();
+          c.fill();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else if (ent.subtype === 3) {
-        ctx.beginPath();
-        for (let i = 0; i < 3; i++) {
-          const a = (i * 2 * Math.PI) / 3 - Math.PI / 2;
-          ctx.lineTo(Math.cos(a) * ent.radius, Math.sin(a) * ent.radius);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+        const cacheKey = `m_3_${ent.radius}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = "#f43f5e";
+          c.strokeStyle = "#0f172a";
+          c.lineWidth = 3;
+          c.beginPath();
+          for (let i = 0; i < 3; i++) {
+            const a = (i * 2 * Math.PI) / 3 - Math.PI / 2;
+            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          c.closePath();
+          c.fill();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else {
-        ctx.beginPath();
-        ctx.arc(0, 0, ent.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        const cacheKey = `m_0_${ent.radius}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = "#f43f5e";
+          c.strokeStyle = "#0f172a";
+          c.lineWidth = 3;
+          c.beginPath();
+          c.arc(0, 0, r, 0, Math.PI * 2);
+          c.fill();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       }
 
       if (ent.health < ent.maxHealth) {
@@ -784,8 +864,5 @@ function render() {
     renderGameOver();
   }
   requestAnimationFrame(render);
-}
-requestAnimationFrame(render);
-);
 }
 requestAnimationFrame(render);
