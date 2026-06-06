@@ -90,6 +90,7 @@ type Minion struct {
 	Angle         float64
 	ShootCooldown float64
 	RegenAccum    float64
+	OrbitIndex    int
 }
 
 type HashItem struct {
@@ -740,15 +741,7 @@ func (w *GameWorld) updateMinions(dt float64) {
 			totalMinions = 1
 		}
 
-		idx := 0
-		for i, mID := range owner.MinionIDs {
-			if mID == id {
-				idx = i
-				break
-			}
-		}
-
-		baseAngle := (float64(idx) / float64(totalMinions)) * 2.0 * math.Pi
+		baseAngle := (float64(m.OrbitIndex) / float64(totalMinions)) * 2.0 * math.Pi
 		orbitAngle := m.Angle + baseAngle
 		orbitRadius := owner.Radius + 38.0
 		targetPos := owner.Pos.Add(physics.Vector2D{
@@ -819,6 +812,11 @@ func (w *GameWorld) removeMinionFromPlayer(p *Player, mID uint16) {
 	for i, id := range p.MinionIDs {
 		if id == mID {
 			p.MinionIDs = append(p.MinionIDs[:i], p.MinionIDs[i+1:]...)
+			for j := i; j < len(p.MinionIDs); j++ {
+				if m, ok := w.Minions[p.MinionIDs[j]]; ok {
+					m.OrbitIndex = j
+				}
+			}
 			break
 		}
 	}
@@ -839,13 +837,14 @@ func (w *GameWorld) spawnMinion(ownerID uint16, pos physics.Vector2D) {
 	mID := w.GenerateID()
 	minionMaxHP := 35.0 + float64(owner.StatMinionHP)*10.0
 	minion := &Minion{
-		ID:        mID,
-		OwnerID:   ownerID,
-		Pos:       pos,
-		Radius:    12,
-		Health:    minionMaxHP,
-		MaxHealth: minionMaxHP,
-		Damage:    10.0 + float64(owner.StatMinionDmg)*3.0,
+		ID:         mID,
+		OwnerID:    ownerID,
+		Pos:        pos,
+		Radius:     12,
+		Health:     minionMaxHP,
+		MaxHealth:  minionMaxHP,
+		Damage:     10.0 + float64(owner.StatMinionDmg)*3.0,
+		OrbitIndex: len(owner.MinionIDs),
 	}
 	w.Minions[mID] = minion
 	owner.MinionIDs = append(owner.MinionIDs, mID)
