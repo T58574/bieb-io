@@ -86,6 +86,100 @@ function getShapeCanvas(key: string, radius: number, drawFn: (ctx: CanvasRenderi
   return c;
 }
 
+function handleServerMessage(event: MessageEvent) {
+  const msg = deserializeMessage(event.data);
+  if (!msg) return;
+  if (msg.type === "welcome") {
+    playerId = msg.playerId;
+    arenaWidth = msg.arenaWidth;
+    arenaHeight = msg.arenaHeight;
+  } else if (msg.type === "worldState") {
+    currentXP = msg.xp;
+    maxXP = msg.maxXp;
+    currentLevel = msg.level;
+    currentScore = msg.score;
+    playerHealth = msg.health;
+    playerMaxHealth = msg.maxHealth;
+    upgradePoints = msg.upgradePoints;
+    waveNumber = msg.waveNumber;
+    statRegen = msg.statRegen;
+    statMaxHP = msg.statMaxHP;
+    statSpeed = msg.statSpeed;
+    statMinionDmg = msg.statMinionDmg;
+    statMinionSpeed = msg.statMinionSpeed;
+    statMinionHP = msg.statMinionHP;
+    statMinionPierce = msg.statMinionPierce;
+    statMinionRegen = msg.statMinionRegen;
+
+    const receivedIds = new Set<number>();
+    for (const ent of msg.entities) {
+      receivedIds.add(ent.id);
+      const existing = renderEntities.get(ent.id);
+      if (existing) {
+        existing.targetX = ent.x;
+        existing.targetY = ent.y;
+        existing.targetAngle = ent.angle;
+        existing.health = ent.health;
+        existing.maxHealth = ent.maxHealth;
+        existing.radius = ent.radius;
+        existing.stateFlags = ent.stateFlags;
+      } else {
+        renderEntities.set(ent.id, {
+          id: ent.id,
+          type: ent.type,
+          subtype: ent.subtype,
+          x: ent.x,
+          y: ent.y,
+          angle: ent.angle,
+          targetX: ent.x,
+          targetY: ent.y,
+          targetAngle: ent.angle,
+          health: ent.health,
+          maxHealth: ent.maxHealth,
+          radius: ent.radius,
+          stateFlags: ent.stateFlags,
+        });
+      }
+    }
+    for (const id of renderEntities.keys()) {
+      if (!receivedIds.has(id)) {
+        renderEntities.delete(id);
+      }
+    }
+  } else if (msg.type === "gameOver") {
+    gameOverScore = msg.score;
+    gameOverWave = msg.wave;
+    gameState = "gameover";
+    if (socket) {
+      socket.close();
+      socket = null;
+    }
+    if (inputInterval !== null) {
+      clearInterval(inputInterval);
+      inputInterval = null;
+    }
+  }
+}
+
+function startInputLoop() {
+  if (inputInterval !== null) {
+    clearInterval(inputInterval);
+  }
+  inputInterval = window.setInterval(() => {
+    if (socket && socket.readyState === WebSocket.OPEN && gameState === "playing") {
+      let mask = 0;
+      if (keys.w) mask |= 0x01;
+      if (keys.a) mask |= 0x02;
+      if (keys.s) mask |= 0x04;
+      if (keys.d) mask |= 0x08;
+      socket.send(serializeInput(mask, mouseAngle, selectedUpgradeChoice));
+      if (selectedUpgradeChoice !== 0) {
+        selectedUpgradeChoice = 0;
+      }
+    }
+  }, 1000 / 60);
+}
+
 function connectToServer() {
   if (socket && socket.readyState !== WebSocket.CLOSED) {
     socket.close();
@@ -118,80 +212,7 @@ function connectToServer() {
     gameState = "playing";
   };
 
-  socket.onmessage = (event) => {
-    const msg = deserializeMessage(event.data);
-    if (!msg) return;
-    if (msg.type === "welcome") {
-      playerId = msg.playerId;
-      arenaWidth = msg.arenaWidth;
-      arenaHeight = msg.arenaHeight;
-    } else if (msg.type === "worldState") {
-      currentXP = msg.xp;
-      maxXP = msg.maxXp;
-      currentLevel = msg.level;
-      currentScore = msg.score;
-      playerHealth = msg.health;
-      playerMaxHealth = msg.maxHealth;
-      upgradePoints = msg.upgradePoints;
-      waveNumber = msg.waveNumber;
-      statRegen = msg.statRegen;
-      statMaxHP = msg.statMaxHP;
-      statSpeed = msg.statSpeed;
-      statMinionDmg = msg.statMinionDmg;
-      statMinionSpeed = msg.statMinionSpeed;
-      statMinionHP = msg.statMinionHP;
-      statMinionPierce = msg.statMinionPierce;
-      statMinionRegen = msg.statMinionRegen;
-
-      const receivedIds = new Set<number>();
-      for (const ent of msg.entities) {
-        receivedIds.add(ent.id);
-        const existing = renderEntities.get(ent.id);
-        if (existing) {
-          existing.targetX = ent.x;
-          existing.targetY = ent.y;
-          existing.targetAngle = ent.angle;
-          existing.health = ent.health;
-          existing.maxHealth = ent.maxHealth;
-          existing.radius = ent.radius;
-          existing.stateFlags = ent.stateFlags;
-        } else {
-          renderEntities.set(ent.id, {
-            id: ent.id,
-            type: ent.type,
-            subtype: ent.subtype,
-            x: ent.x,
-            y: ent.y,
-            angle: ent.angle,
-            targetX: ent.x,
-            targetY: ent.y,
-            targetAngle: ent.angle,
-            health: ent.health,
-            maxHealth: ent.maxHealth,
-            radius: ent.radius,
-            stateFlags: ent.stateFlags,
-          });
-        }
-      }
-      for (const id of renderEntities.keys()) {
-        if (!receivedIds.has(id)) {
-          renderEntities.delete(id);
-        }
-      }
-    } else if (msg.type === "gameOver") {
-      gameOverScore = msg.score;
-      gameOverWave = msg.wave;
-      gameState = "gameover";
-      if (socket) {
-        socket.close();
-        socket = null;
-      }
-      if (inputInterval !== null) {
-        clearInterval(inputInterval);
-        inputInterval = null;
-      }
-    }
-  };
+  socket.onmessage = handleServerMessage;
 
   socket.onclose = () => {
     if (gameState === "playing") {
@@ -413,20 +434,14 @@ function drawUpgradePanel() {
 
   const barX = panelX + labelW;
 
-  const stats: [string, number, string, string][] = [
-    ["Regen", statRegen, "#10b981", "1"],
-    ["Max HP", statMaxHP, "#22c55e", "2"],
-    ["Speed", statSpeed, "#3b82f6", "3"],
-    ["M.Damage", statMinionDmg, "#ef4444", "4"],
-    ["M.Speed", statMinionSpeed, "#f97316", "5"],
-    ["M.Health", statMinionHP, "#06b6d4", "6"],
-    ["M.Pierce", statMinionPierce, "#8b5cf6", "7"],
-    ["M.Regen", statMinionRegen, "#a3e635", "8"],
-  ];
-
-  for (let i = 0; i < stats.length; i++) {
-    drawStatBar(stats[i][0], stats[i][1], barX, panelY + i * rowH, stats[i][2], stats[i][3]);
-  }
+  drawStatBar("Regen", statRegen, barX, panelY, "#10b981", "1");
+  drawStatBar("Max HP", statMaxHP, barX, panelY + rowH, "#22c55e", "2");
+  drawStatBar("Speed", statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3");
+  drawStatBar("M.Damage", statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4");
+  drawStatBar("M.Speed", statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5");
+  drawStatBar("M.Health", statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6");
+  drawStatBar("M.Pierce", statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7");
+  drawStatBar("M.Regen", statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8");
 }
 
 function drawHUD() {
@@ -610,18 +625,15 @@ function renderGame() {
   ctx.fillStyle = "#0f172a";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  for (const ent of renderEntities.values()) {
-    ent.x = lerp(ent.x, ent.targetX, 0.2);
-    ent.y = lerp(ent.y, ent.targetY, 0.2);
-    ent.angle = lerpAngle(ent.angle, ent.targetAngle, 0.2);
-  }
-
   let px = arenaWidth / 2;
   let py = arenaHeight / 2;
 
   if (playerId !== null) {
     const me = renderEntities.get(playerId);
     if (me) {
+      me.x = lerp(me.x, me.targetX, 0.2);
+      me.y = lerp(me.y, me.targetY, 0.2);
+      me.angle = lerpAngle(me.angle, me.targetAngle, 0.2);
       px = me.x;
       py = me.y;
     }
@@ -634,6 +646,12 @@ function renderGame() {
   ctx.strokeRect(canvas.width / 2 - px, canvas.height / 2 - py, arenaWidth, arenaHeight);
 
   for (const ent of renderEntities.values()) {
+    if (ent.id !== playerId) {
+      ent.x = lerp(ent.x, ent.targetX, 0.2);
+      ent.y = lerp(ent.y, ent.targetY, 0.2);
+      ent.angle = lerpAngle(ent.angle, ent.targetAngle, 0.2);
+    }
+
     const rx = ent.x - px + canvas.width / 2;
     const ry = ent.y - py + canvas.height / 2;
 

@@ -98,6 +98,7 @@ type Minion struct {
 	Angle         float64
 	ShootCooldown float64
 	RegenAccum    float64
+	OrbitIndex    int
 }
 
 type HashItem struct {
@@ -145,20 +146,19 @@ type GameWorld struct {
 
 func NewGameWorld() *GameWorld {
 	w := &GameWorld{
-		Players:    make(map[uint16]*Player),
-		Mobs:       make(map[uint16]*Mob),
-		Bullets:    make(map[uint16]*Bullet),
-		Orbs:       make(map[uint16]*ExpOrb),
-		Minions:    make(map[uint16]*Minion),
-		Fields:     make(map[uint16]*ChronoField),
-		nextID:     100,
-		Width:      2000.0,
-		Height:     2000.0,
-		rand:       rand.New(rand.NewSource(time.Now().UnixNano())),
-		WaveNumber: 0,
-		WaveActive: false,
+		Players:        make(map[uint16]*Player),
+		Mobs:           make(map[uint16]*Mob),
+		Bullets:        make(map[uint16]*Bullet),
+		Orbs:           make(map[uint16]*ExpOrb),
+		Minions:        make(map[uint16]*Minion),
+		nextID:         100,
+		Width:          2000.0,
+		Height:         2000.0,
+		rand:           rand.New(rand.NewSource(time.Now().UnixNano())),
+		WaveNumber:     0,
+		WaveActive:     false,
 		WavePauseTimer: 2.0,
-		inputChan:  make(chan InputEvent, 4096),
+		inputChan:      make(chan InputEvent, 4096),
 	}
 
 	w.bulletPool = sync.Pool{
@@ -202,20 +202,20 @@ func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	p := &Player{
-		ID:        id,
-		Username:  username,
-		Pos:       physics.Vector2D{X: w.Width / 2, Y: w.Height / 2},
-		Radius:    24,
-		Health:    100,
-		MaxHealth: 100,
-		XP:        0,
-		MaxXP:     60,
-		Level:     1,
-		Score:     0,
-		Alive:     true,
-		ClassID:   uint8(w.rand.Intn(4) + 1), // Assign random class 1-4
-		Mass:      1.0,
-		StateFlags: 0,
+		ID:          id,
+		Username:    username,
+		Pos:         physics.Vector2D{X: w.Width / 2, Y: w.Height / 2},
+		Radius:      24,
+		Health:      100,
+		MaxHealth:   100,
+		XP:          0,
+		MaxXP:       60,
+		Level:       1,
+		Score:       0,
+		Alive:       true,
+		ClassID:     uint8(w.rand.Intn(4) + 1), // Assign random class 1-4
+		Mass:        1.0,
+		StateFlags:  0,
 		ChargeLevel: 0.0,
 	}
 	if p.ClassID == 1 {
@@ -609,14 +609,70 @@ func (w *GameWorld) updateMobs(dt float64) {
 	for id, m := range w.Mobs {
 		var target *Player
 		var minDist float64 = -1
-		for _, p := range w.Players {
-			if !p.Alive {
+
+		// 1. Query 3x3 spatial grid
+		c := int(m.Pos.X / 100.0)
+		r := int(m.Pos.Y / 100.0)
+
+		for dr := -1; dr <= 1; dr++ {
+			nr := r + dr
+			if nr < 0 || nr >= 20 {
 				continue
 			}
-			distSq := p.Pos.Sub(m.Pos).LengthSq()
-			if minDist < 0 || distSq < minDist {
-				minDist = distSq
-				target = p
+			for dc := -1; dc <= 1; dc++ {
+				nc := c + dc
+				if nc < 0 || nc >= 20 {
+					continue
+				}
+				for _, item := range w.grid[nr][nc] {
+					if item.Type == 0 { // Player type
+						p := w.Players[item.ID]
+						if p != nil && p.Alive {
+							distSq := m.Pos.Sub(item.Pos).LengthSq()
+							if minDist < 0 || distSq < minDist {
+								minDist = distSq
+								target = p
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// 2. Fallback check: if no target found or target might not be the absolute closest
+		// because the closest could theoretically be outside the 3x3 grid
+		needsFallback := true
+		if target != nil {
+			// Calculate distance to the edge of the 3x3 search area
+			distToEdgeX := m.Pos.X - float64((c-1)*100)
+			if rightEdge := float64((c+2)*100) - m.Pos.X; rightEdge < distToEdgeX {
+				distToEdgeX = rightEdge
+			}
+			distToEdgeY := m.Pos.Y - float64((r-1)*100)
+			if bottomEdge := float64((r+2)*100) - m.Pos.Y; bottomEdge < distToEdgeY {
+				distToEdgeY = bottomEdge
+			}
+
+			minDistToEdgeSq := distToEdgeX * distToEdgeX
+			if distToEdgeY*distToEdgeY < minDistToEdgeSq {
+				minDistToEdgeSq = distToEdgeY * distToEdgeY
+			}
+
+			if minDist <= minDistToEdgeSq {
+				needsFallback = false
+			}
+		}
+
+		if needsFallback {
+			for _, p := range w.Players {
+				if !p.Alive {
+					continue
+				}
+				distSq := p.Pos.Sub(m.Pos).LengthSq()
+				if minDist < 0 || distSq < minDist {
+					minDist = distSq
+					target = p
+				}
 			}
 		}
 
@@ -712,15 +768,7 @@ func (w *GameWorld) updateMinions(dt float64) {
 			totalMinions = 1
 		}
 
-		idx := 0
-		for i, mID := range owner.MinionIDs {
-			if mID == id {
-				idx = i
-				break
-			}
-		}
-
-		baseAngle := (float64(idx) / float64(totalMinions)) * 2.0 * math.Pi
+		baseAngle := (float64(m.OrbitIndex) / float64(totalMinions)) * 2.0 * math.Pi
 		orbitAngle := m.Angle + baseAngle
 		orbitRadius := owner.Radius + 38.0
 		targetPos := owner.Pos.Add(physics.Vector2D{
@@ -791,6 +839,11 @@ func (w *GameWorld) removeMinionFromPlayer(p *Player, mID uint16) {
 	for i, id := range p.MinionIDs {
 		if id == mID {
 			p.MinionIDs = append(p.MinionIDs[:i], p.MinionIDs[i+1:]...)
+			for j := i; j < len(p.MinionIDs); j++ {
+				if m, ok := w.Minions[p.MinionIDs[j]]; ok {
+					m.OrbitIndex = j
+				}
+			}
 			break
 		}
 	}
@@ -811,13 +864,14 @@ func (w *GameWorld) spawnMinion(ownerID uint16, pos physics.Vector2D) {
 	mID := w.GenerateID()
 	minionMaxHP := 35.0 + float64(owner.StatMinionHP)*10.0
 	minion := &Minion{
-		ID:        mID,
-		OwnerID:   ownerID,
-		Pos:       pos,
-		Radius:    12,
-		Health:    minionMaxHP,
-		MaxHealth: minionMaxHP,
-		Damage:    10.0 + float64(owner.StatMinionDmg)*3.0,
+		ID:         mID,
+		OwnerID:    ownerID,
+		Pos:        pos,
+		Radius:     12,
+		Health:     minionMaxHP,
+		MaxHealth:  minionMaxHP,
+		Damage:     10.0 + float64(owner.StatMinionDmg)*3.0,
+		OrbitIndex: len(owner.MinionIDs),
 	}
 	w.Minions[mID] = minion
 	owner.MinionIDs = append(owner.MinionIDs, mID)
@@ -854,14 +908,37 @@ func (w *GameWorld) updateOrbs(dt float64) {
 				o.Pos = o.Pos.Add(o.Vel)
 			}
 		} else {
-			for _, p := range w.Players {
-				if !p.Alive {
-					continue
-				}
-				distSq := p.Pos.Sub(o.Pos).LengthSq()
-				if distSq < 160*160 {
-					o.AttractTarget = p.ID
-					break
+			minCol := int((o.Pos.X - 160) / 100.0)
+			maxCol := int((o.Pos.X + 160) / 100.0)
+			minRow := int((o.Pos.Y - 160) / 100.0)
+			maxRow := int((o.Pos.Y + 160) / 100.0)
+
+			if minCol < 0 {
+				minCol = 0
+			}
+			if maxCol > 19 {
+				maxCol = 19
+			}
+			if minRow < 0 {
+				minRow = 0
+			}
+			if maxRow > 19 {
+				maxRow = 19
+			}
+
+			found := false
+			for r := minRow; r <= maxRow && !found; r++ {
+				for c := minCol; c <= maxCol && !found; c++ {
+					for _, item := range w.grid[r][c] {
+						if item.Type == 0 {
+							distSq := item.Pos.Sub(o.Pos).LengthSq()
+							if distSq < 160*160 {
+								o.AttractTarget = item.ID
+								found = true
+								break
+							}
+						}
+					}
 				}
 			}
 		}
@@ -1018,15 +1095,15 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 			continue
 		}
 		states = append(states, protocol.EntityState{
-			ID:        p.ID,
-			Type:      0,
-			Subtype:   p.ClassID,
-			X:         float32(p.Pos.X),
-			Y:         float32(p.Pos.Y),
-			Angle:     float32(p.MouseAngle),
-			Health:    uint16(math.Max(0, p.Health)),
-			MaxHealth: uint16(p.MaxHealth),
-			Radius:    uint16(p.Radius),
+			ID:         p.ID,
+			Type:       0,
+			Subtype:    p.ClassID,
+			X:          float32(p.Pos.X),
+			Y:          float32(p.Pos.Y),
+			Angle:      float32(p.MouseAngle),
+			Health:     uint16(math.Max(0, p.Health)),
+			MaxHealth:  uint16(p.MaxHealth),
+			Radius:     uint16(p.Radius),
 			StateFlags: p.StateFlags,
 		})
 	}
