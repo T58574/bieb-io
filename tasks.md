@@ -20,8 +20,8 @@ Necro-Geometry Implementation Backlog
 [x] Tank upgrade tree and multiclassing (Necro-Geometry specifics)
 [x] Exponential wave manager
 [x] Mob AI (chasers, shooters, kamikaze, swarms)
-[/] Phase 5: UI, Balancing, Spatial Partitioning
-[/] Canvas HUD and Upgrade UI overlay
-[/] Spatial Hashing for grid collision optimization (5000+ entities)
-[/] Object pooling via sync.Pool
-[/] Project finalization and verification
+[x] Phase 5: UI, Balancing, Spatial Partitioning
+[x] Canvas HUD and Upgrade UI overlay
+[x] Spatial Hashing for grid collision optimization (5000+ entities)
+[x] Object pooling via sync.Pool
+[x] Project finalization and verification
