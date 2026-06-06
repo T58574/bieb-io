@@ -858,6 +858,14 @@ function renderGame() {
         ctx.fillStyle = "#22c55e";
         ctx.fillRect(-ent.radius, -ent.radius - 8, ent.radius * 2 * (ent.health / ent.maxHealth), 3);
       }
+    } else if (ent.type === 5) {
+      ctx.fillStyle = "rgba(168, 85, 247, 0.2)";
+      ctx.beginPath();
+      ctx.arc(0, 0, ent.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(168, 85, 247, 0.5)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
     ctx.restore();
   }

@@ -69,6 +69,14 @@ type Bullet struct {
 	Pierce    int
 }
 
+type ChronoField struct {
+	ID       uint16
+	OwnerID  uint16
+	Pos      physics.Vector2D
+	Radius   float64
+	Duration float64
+}
+
 type ExpOrb struct {
 	ID            uint16
 	Pos           physics.Vector2D
@@ -115,6 +123,7 @@ type GameWorld struct {
 	Bullets        map[uint16]*Bullet
 	Orbs           map[uint16]*ExpOrb
 	Minions        map[uint16]*Minion
+	Fields         map[uint16]*ChronoField
 	nextID         uint16
 	Width          float64
 	Height         float64
@@ -129,6 +138,7 @@ type GameWorld struct {
 	bulletPool     sync.Pool
 	mobPool        sync.Pool
 	orbPool        sync.Pool
+	fieldPool      sync.Pool
 	grid           [20][20][]HashItem
 	inputChan      chan InputEvent
 }
@@ -140,6 +150,7 @@ func NewGameWorld() *GameWorld {
 		Bullets:    make(map[uint16]*Bullet),
 		Orbs:       make(map[uint16]*ExpOrb),
 		Minions:    make(map[uint16]*Minion),
+		Fields:     make(map[uint16]*ChronoField),
 		nextID:     100,
 		Width:      2000.0,
 		Height:     2000.0,
@@ -163,6 +174,11 @@ func NewGameWorld() *GameWorld {
 	w.orbPool = sync.Pool{
 		New: func() interface{} {
 			return &ExpOrb{}
+		},
+	}
+	w.fieldPool = sync.Pool{
+		New: func() interface{} {
+			return &ChronoField{}
 		},
 	}
 
@@ -319,6 +335,7 @@ func (w *GameWorld) Tick(dt float64) {
 
 	w.updateWaveSystem(dt)
 	w.updatePlayers(dt)
+	w.updateFields(dt)
 	w.updateMobs(dt)
 	w.updateBullets(dt)
 	w.updateMinions(dt)
@@ -553,6 +570,17 @@ func (w *GameWorld) updatePlayers(dt float64) {
 			// Rogue Stealth
 			p.StateFlags |= 1 // Set Invisible Flag
 			p.ChargeLevel = 5.0
+		} else if p.ClassID == 4 && p.Keys&0x10 != 0 && p.ChargeLevel <= 0 {
+			fID := w.GenerateID()
+			f := w.fieldPool.Get().(*ChronoField)
+			*f = ChronoField{}
+			f.ID = fID
+			f.OwnerID = p.ID
+			f.Pos = p.Pos
+			f.Radius = 120.0
+			f.Duration = 5.0
+			w.Fields[fID] = f
+			p.ChargeLevel = 8.0
 		}
 
 		// Handle stealth duration
@@ -795,6 +823,25 @@ func (w *GameWorld) spawnMinion(ownerID uint16, pos physics.Vector2D) {
 	owner.MinionIDs = append(owner.MinionIDs, mID)
 }
 
+func (w *GameWorld) updateFields(dt float64) {
+	for id, f := range w.Fields {
+		f.Duration -= dt
+		if f.Duration <= 0 {
+			w.fieldPool.Put(f)
+			delete(w.Fields, id)
+			continue
+		}
+
+		for _, m := range w.Mobs {
+			distSq := m.Pos.Sub(f.Pos).LengthSq()
+			radSum := f.Radius + m.Radius
+			if distSq < radSum*radSum {
+				m.Vel = m.Vel.Mul(0.2)
+			}
+		}
+	}
+}
+
 func (w *GameWorld) updateOrbs(dt float64) {
 	for id, o := range w.Orbs {
 		if o.AttractTarget != 0 {
@@ -1033,6 +1080,19 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 			Health:    uint16(math.Max(0, minion.Health)),
 			MaxHealth: uint16(minion.MaxHealth),
 			Radius:    uint16(minion.Radius),
+		})
+	}
+	for _, f := range w.Fields {
+		states = append(states, protocol.EntityState{
+			ID:        f.ID,
+			Type:      5,
+			Subtype:   0,
+			X:         float32(f.Pos.X),
+			Y:         float32(f.Pos.Y),
+			Angle:     0,
+			Health:    1,
+			MaxHealth: 1,
+			Radius:    uint16(f.Radius),
 		})
 	}
 	return states
