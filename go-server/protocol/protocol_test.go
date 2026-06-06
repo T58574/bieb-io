@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"encoding/binary"
 	"math"
 	"testing"
 )
@@ -122,5 +123,30 @@ func TestWorldState(t *testing.T) {
 	}
 	if len(buf) != 36+26 {
 		t.Errorf("expected len %d, got %d", 36+26, len(buf))
+	}
+}
+
+func TestEncodeGameOver(t *testing.T) {
+	score := uint32(12345)
+	wave := uint32(10)
+
+	buf := EncodeGameOver(score, wave)
+
+	if len(buf) != 9 {
+		t.Errorf("expected length 9, got %d", len(buf))
+	}
+
+	if buf[0] != 4 {
+		t.Errorf("expected opcode 4, got %d", buf[0])
+	}
+
+	decodedScore := binary.LittleEndian.Uint32(buf[1:5])
+	if decodedScore != score {
+		t.Errorf("expected score %d, got %d", score, decodedScore)
+	}
+
+	decodedWave := binary.LittleEndian.Uint32(buf[5:9])
+	if decodedWave != wave {
+		t.Errorf("expected wave %d, got %d", wave, decodedWave)
 	}
 }
