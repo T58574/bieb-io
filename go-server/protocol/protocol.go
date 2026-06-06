@@ -4,7 +4,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"math"
+	"regexp"
 )
+
+var validUsername = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,16}$`)
 
 type EntityState struct {
 	ID        uint16
@@ -83,10 +86,17 @@ func DecodeJoin(buf []byte) (string, error) {
 		return "", errors.New("invalid join size")
 	}
 	usernameLen := int(buf[1])
+	if usernameLen == 0 || usernameLen > 16 {
+		return "", errors.New("invalid username length")
+	}
 	if len(buf) < 2+usernameLen {
 		return "", errors.New("invalid join size for username")
 	}
-	return string(buf[2 : 2+usernameLen]), nil
+	username := string(buf[2 : 2+usernameLen])
+	if !validUsername.MatchString(username) {
+		return "", errors.New("invalid characters in username")
+	}
+	return username, nil
 }
 
 func DecodeInput(buf []byte) (ClientInput, error) {
