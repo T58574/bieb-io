@@ -18,12 +18,22 @@ func TestVectorOps(t *testing.T) {
 
 	v4 := v1.Sub(v2)
 	if v4.X != 2 || v4.Y != 2 {
-		t.Errorf("sub error")
+		t.Errorf("sub error: expected {2, 2}, got {%v, %v}", v4.X, v4.Y)
 	}
 
 	v5 := v1.Mul(2.0)
 	if v5.X != 6 || v5.Y != 8 {
-		t.Errorf("mul error")
+		t.Errorf("mul error: expected {6, 8}, got {%v, %v}", v5.X, v5.Y)
+	}
+
+	v6 := v1.Mul(-0.5)
+	if v6.X != -1.5 || v6.Y != -2.0 {
+		t.Errorf("mul negative error: expected {-1.5, -2.0}, got {%v, %v}", v6.X, v6.Y)
+	}
+
+	v7 := v1.Mul(0)
+	if v7.X != 0 || v7.Y != 0 {
+		t.Errorf("mul zero error: expected {0, 0}, got {%v, %v}", v7.X, v7.Y)
 	}
 }
 
