@@ -20,18 +20,58 @@ func TestWelcome(t *testing.T) {
 }
 
 func TestJoin(t *testing.T) {
-	username := "antigravity"
-	payload := make([]byte, 2+len(username))
+	validUsername := "antigravity"
+	payload := make([]byte, 2+len(validUsername))
 	payload[0] = 1
-	payload[1] = uint8(len(username))
-	copy(payload[2:], []byte(username))
+	payload[1] = uint8(len(validUsername))
+	copy(payload[2:], []byte(validUsername))
 
 	decoded, err := DecodeJoin(payload)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if decoded != username {
-		t.Errorf("expected %s, got %s", username, decoded)
+	if decoded != validUsername {
+		t.Errorf("expected %s, got %s", validUsername, decoded)
+	}
+
+	// Test invalid characters
+	invalidUsername := "hello world"
+	invalidPayload := make([]byte, 2+len(invalidUsername))
+	invalidPayload[0] = 1
+	invalidPayload[1] = uint8(len(invalidUsername))
+	copy(invalidPayload[2:], []byte(invalidUsername))
+
+	_, err = DecodeJoin(invalidPayload)
+	if err == nil {
+		t.Errorf("expected error for invalid characters, got nil")
+	} else if err.Error() != "invalid characters in username" {
+		t.Errorf("expected 'invalid characters in username', got '%s'", err.Error())
+	}
+
+	// Test too long username
+	longUsername := "averylongusernamethatshouldfail"
+	longPayload := make([]byte, 2+len(longUsername))
+	longPayload[0] = 1
+	longPayload[1] = uint8(len(longUsername))
+	copy(longPayload[2:], []byte(longUsername))
+
+	_, err = DecodeJoin(longPayload)
+	if err == nil {
+		t.Errorf("expected error for too long username, got nil")
+	} else if err.Error() != "invalid username length" {
+		t.Errorf("expected 'invalid username length', got '%s'", err.Error())
+	}
+
+	// Test empty username
+	emptyPayload := make([]byte, 2)
+	emptyPayload[0] = 1
+	emptyPayload[1] = 0
+
+	_, err = DecodeJoin(emptyPayload)
+	if err == nil {
+		t.Errorf("expected error for empty username, got nil")
+	} else if err.Error() != "invalid username length" {
+		t.Errorf("expected 'invalid username length', got '%s'", err.Error())
 	}
 }
 
