@@ -413,20 +413,14 @@ function drawUpgradePanel() {
 
   const barX = panelX + labelW;
 
-  const stats: [string, number, string, string][] = [
-    ["Regen", statRegen, "#10b981", "1"],
-    ["Max HP", statMaxHP, "#22c55e", "2"],
-    ["Speed", statSpeed, "#3b82f6", "3"],
-    ["M.Damage", statMinionDmg, "#ef4444", "4"],
-    ["M.Speed", statMinionSpeed, "#f97316", "5"],
-    ["M.Health", statMinionHP, "#06b6d4", "6"],
-    ["M.Pierce", statMinionPierce, "#8b5cf6", "7"],
-    ["M.Regen", statMinionRegen, "#a3e635", "8"],
-  ];
-
-  for (let i = 0; i < stats.length; i++) {
-    drawStatBar(stats[i][0], stats[i][1], barX, panelY + i * rowH, stats[i][2], stats[i][3]);
-  }
+  drawStatBar("Regen", statRegen, barX, panelY, "#10b981", "1");
+  drawStatBar("Max HP", statMaxHP, barX, panelY + rowH, "#22c55e", "2");
+  drawStatBar("Speed", statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3");
+  drawStatBar("M.Damage", statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4");
+  drawStatBar("M.Speed", statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5");
+  drawStatBar("M.Health", statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6");
+  drawStatBar("M.Pierce", statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7");
+  drawStatBar("M.Regen", statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8");
 }
 
 function drawHUD() {
