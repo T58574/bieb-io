@@ -625,18 +625,15 @@ function renderGame() {
   ctx.fillStyle = "#0f172a";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  for (const ent of renderEntities.values()) {
-    ent.x = lerp(ent.x, ent.targetX, 0.2);
-    ent.y = lerp(ent.y, ent.targetY, 0.2);
-    ent.angle = lerpAngle(ent.angle, ent.targetAngle, 0.2);
-  }
-
   let px = arenaWidth / 2;
   let py = arenaHeight / 2;
 
   if (playerId !== null) {
     const me = renderEntities.get(playerId);
     if (me) {
+      me.x = lerp(me.x, me.targetX, 0.2);
+      me.y = lerp(me.y, me.targetY, 0.2);
+      me.angle = lerpAngle(me.angle, me.targetAngle, 0.2);
       px = me.x;
       py = me.y;
     }
@@ -649,6 +646,12 @@ function renderGame() {
   ctx.strokeRect(canvas.width / 2 - px, canvas.height / 2 - py, arenaWidth, arenaHeight);
 
   for (const ent of renderEntities.values()) {
+    if (ent.id !== playerId) {
+      ent.x = lerp(ent.x, ent.targetX, 0.2);
+      ent.y = lerp(ent.y, ent.targetY, 0.2);
+      ent.angle = lerpAngle(ent.angle, ent.targetAngle, 0.2);
+    }
+
     const rx = ent.x - px + canvas.width / 2;
     const ry = ent.y - py + canvas.height / 2;
 
