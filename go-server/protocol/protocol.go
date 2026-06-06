@@ -7,15 +7,15 @@ import (
 )
 
 type EntityState struct {
-	ID        uint16
-	Type      uint8
-	Subtype   uint8
-	X         float32
-	Y         float32
-	Angle     float32
-	Health    uint16
-	MaxHealth uint16
-	Radius    uint16
+	ID         uint16
+	Type       uint8
+	Subtype    uint8
+	X          float32
+	Y          float32
+	Angle      float32
+	Health     uint16
+	MaxHealth  uint16
+	Radius     uint16
 	StateFlags uint32
 }
 
@@ -34,9 +34,10 @@ func EncodeWelcome(playerID uint16, arenaWidth, arenaHeight float32) []byte {
 	return buf
 }
 
-func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32, health, maxHealth uint16, upgradePoints uint8, statsPack1, statsPack2 uint32, waveNumber uint16, entities []EntityState) []byte {
+func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32, health, maxHealth uint16, upgradePoints uint8, statsPack1, statsPack2 uint32, waveNumber uint16, entities []EntityState, removedIDs []uint16) []byte {
 	count := len(entities)
-	bufSize := 36 + count*26
+	removedCount := len(removedIDs)
+	bufSize := 38 + count*26 + removedCount*2 // +2 for removedCount
 	buf := make([]byte, bufSize)
 	buf[0] = 2
 	binary.LittleEndian.PutUint32(buf[1:5], tick)
@@ -51,8 +52,9 @@ func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32,
 	binary.LittleEndian.PutUint32(buf[28:32], statsPack2)
 	binary.LittleEndian.PutUint16(buf[32:34], waveNumber)
 	binary.LittleEndian.PutUint16(buf[34:36], uint16(count))
+	binary.LittleEndian.PutUint16(buf[36:38], uint16(removedCount))
 
-	offset := 36
+	offset := 38
 	for i := 0; i < count; i++ {
 		ent := &entities[i]
 		binary.LittleEndian.PutUint16(buf[offset:offset+2], ent.ID)
@@ -67,6 +69,12 @@ func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32,
 		binary.LittleEndian.PutUint32(buf[offset+22:offset+26], ent.StateFlags)
 		offset += 26
 	}
+
+	for i := 0; i < removedCount; i++ {
+		binary.LittleEndian.PutUint16(buf[offset:offset+2], removedIDs[i])
+		offset += 2
+	}
+
 	return buf
 }
 

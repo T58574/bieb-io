@@ -120,6 +120,7 @@ func (s *GameServer) broadcastState(tick uint32) {
 		return
 	}
 	states := s.world.ExportState()
+	removedIDs := s.world.GetAndClearRemovedIDs()
 
 	for _, client := range s.clients {
 		if !client.joined {
@@ -152,6 +153,7 @@ func (s *GameServer) broadcastState(tick uint32) {
 			statsPack2,
 			uint16(s.world.WaveNumber),
 			states,
+			removedIDs,
 		)
 		_ = client.send(stateBuf)
 	}

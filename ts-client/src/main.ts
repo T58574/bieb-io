@@ -143,9 +143,7 @@ function connectToServer() {
       statMinionPierce = msg.statMinionPierce;
       statMinionRegen = msg.statMinionRegen;
 
-      const receivedIds = new Set<number>();
       for (const ent of msg.entities) {
-        receivedIds.add(ent.id);
         const existing = renderEntities.get(ent.id);
         if (existing) {
           existing.targetX = ent.x;
@@ -173,10 +171,8 @@ function connectToServer() {
           });
         }
       }
-      for (const id of renderEntities.keys()) {
-        if (!receivedIds.has(id)) {
-          renderEntities.delete(id);
-        }
+      for (const id of msg.removedIds) {
+        renderEntities.delete(id);
       }
     } else if (msg.type === "gameOver") {
       gameOverScore = msg.score;

@@ -110,44 +110,46 @@ type InputEvent struct {
 }
 
 type GameWorld struct {
-	Players        map[uint16]*Player
-	Mobs           map[uint16]*Mob
-	Bullets        map[uint16]*Bullet
-	Orbs           map[uint16]*ExpOrb
-	Minions        map[uint16]*Minion
-	nextID         uint16
-	Width          float64
-	Height         float64
-	mu             sync.RWMutex
-	rand           *rand.Rand
-	ElapsedTime    float64
-	WaveNumber     uint32
-	WaveActive     bool
-	WavePauseTimer float64
-	WaveMobsLeft   int
-	WaveSpawnTimer float64
-	bulletPool     sync.Pool
-	mobPool        sync.Pool
-	orbPool        sync.Pool
-	grid           [20][20][]HashItem
-	inputChan      chan InputEvent
+	Players          map[uint16]*Player
+	Mobs             map[uint16]*Mob
+	Bullets          map[uint16]*Bullet
+	Orbs             map[uint16]*ExpOrb
+	Minions          map[uint16]*Minion
+	nextID           uint16
+	Width            float64
+	Height           float64
+	mu               sync.RWMutex
+	rand             *rand.Rand
+	ElapsedTime      float64
+	WaveNumber       uint32
+	WaveActive       bool
+	WavePauseTimer   float64
+	WaveMobsLeft     int
+	WaveSpawnTimer   float64
+	bulletPool       sync.Pool
+	mobPool          sync.Pool
+	orbPool          sync.Pool
+	grid             [20][20][]HashItem
+	inputChan        chan InputEvent
+	RemovedEntityIDs []uint16
 }
 
 func NewGameWorld() *GameWorld {
 	w := &GameWorld{
-		Players:    make(map[uint16]*Player),
-		Mobs:       make(map[uint16]*Mob),
-		Bullets:    make(map[uint16]*Bullet),
-		Orbs:       make(map[uint16]*ExpOrb),
-		Minions:    make(map[uint16]*Minion),
-		nextID:     100,
-		Width:      2000.0,
-		Height:     2000.0,
-		rand:       rand.New(rand.NewSource(time.Now().UnixNano())),
-		WaveNumber: 0,
-		WaveActive: false,
-		WavePauseTimer: 2.0,
-		inputChan:  make(chan InputEvent, 4096),
+		Players:          make(map[uint16]*Player),
+		Mobs:             make(map[uint16]*Mob),
+		Bullets:          make(map[uint16]*Bullet),
+		Orbs:             make(map[uint16]*ExpOrb),
+		Minions:          make(map[uint16]*Minion),
+		nextID:           100,
+		Width:            2000.0,
+		Height:           2000.0,
+		rand:             rand.New(rand.NewSource(time.Now().UnixNano())),
+		WaveNumber:       0,
+		WaveActive:       false,
+		WavePauseTimer:   2.0,
+		inputChan:        make(chan InputEvent, 4096),
+		RemovedEntityIDs: make([]uint16, 0, 128),
 	}
 
 	w.bulletPool = sync.Pool{
@@ -186,20 +188,20 @@ func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	p := &Player{
-		ID:        id,
-		Username:  username,
-		Pos:       physics.Vector2D{X: w.Width / 2, Y: w.Height / 2},
-		Radius:    24,
-		Health:    100,
-		MaxHealth: 100,
-		XP:        0,
-		MaxXP:     60,
-		Level:     1,
-		Score:     0,
-		Alive:     true,
-		ClassID:   uint8(w.rand.Intn(4) + 1), // Assign random class 1-4
-		Mass:      1.0,
-		StateFlags: 0,
+		ID:          id,
+		Username:    username,
+		Pos:         physics.Vector2D{X: w.Width / 2, Y: w.Height / 2},
+		Radius:      24,
+		Health:      100,
+		MaxHealth:   100,
+		XP:          0,
+		MaxXP:       60,
+		Level:       1,
+		Score:       0,
+		Alive:       true,
+		ClassID:     uint8(w.rand.Intn(4) + 1), // Assign random class 1-4
+		Mass:        1.0,
+		StateFlags:  0,
 		ChargeLevel: 0.0,
 	}
 	if p.ClassID == 1 {
@@ -218,8 +220,10 @@ func (w *GameWorld) RemovePlayer(id uint16) {
 		return
 	}
 	for _, mID := range p.MinionIDs {
+		w.RemovedEntityIDs = append(w.RemovedEntityIDs, mID)
 		delete(w.Minions, mID)
 	}
+	w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 	delete(w.Players, id)
 }
 
@@ -485,7 +489,9 @@ func (w *GameWorld) updatePlayers(dt float64) {
 
 		if p.Health <= 0 {
 			p.Alive = false
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, p.ID)
 			for _, mID := range p.MinionIDs {
+				w.RemovedEntityIDs = append(w.RemovedEntityIDs, mID)
 				delete(w.Minions, mID)
 			}
 			p.MinionIDs = nil
@@ -608,6 +614,7 @@ func (w *GameWorld) updateMobs(dt float64) {
 		if m.Health <= 0 {
 			w.spawnOrb(m.Pos, m.XPValue)
 			w.mobPool.Put(m)
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Mobs, id)
 		}
 	}
@@ -632,6 +639,7 @@ func (w *GameWorld) updateBullets(dt float64) {
 
 		if b.Lifetime <= 0 || b.Pos.X < 0 || b.Pos.X > w.Width || b.Pos.Y < 0 || b.Pos.Y > w.Height {
 			w.bulletPool.Put(b)
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Bullets, id)
 		}
 	}
@@ -646,6 +654,7 @@ func (w *GameWorld) updateMinions(dt float64) {
 	for id, m := range w.Minions {
 		owner, ok := w.Players[m.OwnerID]
 		if !ok || !owner.Alive {
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Minions, id)
 			continue
 		}
@@ -698,6 +707,7 @@ func (w *GameWorld) updateMinions(dt float64) {
 
 		if m.Health <= 0 {
 			w.removeMinionFromPlayer(owner, id)
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Minions, id)
 		}
 	}
@@ -749,6 +759,7 @@ func (w *GameWorld) spawnMinion(ownerID uint16, pos physics.Vector2D) {
 	if len(owner.MinionIDs) >= maxLimit {
 		oldID := owner.MinionIDs[0]
 		w.removeMinionFromPlayer(owner, oldID)
+		w.RemovedEntityIDs = append(w.RemovedEntityIDs, oldID)
 		delete(w.Minions, oldID)
 	}
 
@@ -792,6 +803,7 @@ func (w *GameWorld) updateOrbs(dt float64) {
 		}
 		if o.Pos.X < 0 || o.Pos.X > w.Width || o.Pos.Y < 0 || o.Pos.Y > w.Height {
 			w.orbPool.Put(o)
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Orbs, id)
 		}
 	}
@@ -930,6 +942,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 				p.UpgradePoints++
 			}
 			w.orbPool.Put(o)
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, b.ID)
 			delete(w.Orbs, b.ID)
 		}
 		return
@@ -943,15 +956,15 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 			continue
 		}
 		states = append(states, protocol.EntityState{
-			ID:        p.ID,
-			Type:      0,
-			Subtype:   p.ClassID,
-			X:         float32(p.Pos.X),
-			Y:         float32(p.Pos.Y),
-			Angle:     float32(p.MouseAngle),
-			Health:    uint16(math.Max(0, p.Health)),
-			MaxHealth: uint16(p.MaxHealth),
-			Radius:    uint16(p.Radius),
+			ID:         p.ID,
+			Type:       0,
+			Subtype:    p.ClassID,
+			X:          float32(p.Pos.X),
+			Y:          float32(p.Pos.Y),
+			Angle:      float32(p.MouseAngle),
+			Health:     uint16(math.Max(0, p.Health)),
+			MaxHealth:  uint16(p.MaxHealth),
+			Radius:     uint16(p.Radius),
 			StateFlags: p.StateFlags,
 		})
 	}
@@ -1008,4 +1021,16 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 		})
 	}
 	return states
+}
+
+func (w *GameWorld) GetAndClearRemovedIDs() []uint16 {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if len(w.RemovedEntityIDs) == 0 {
+		return nil
+	}
+	ids := make([]uint16, len(w.RemovedEntityIDs))
+	copy(ids, w.RemovedEntityIDs)
+	w.RemovedEntityIDs = w.RemovedEntityIDs[:0]
+	return ids
 }
