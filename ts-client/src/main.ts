@@ -15,6 +15,8 @@ interface RenderEntity {
   radius: number;
 }
 
+type GameState = "menu" | "playing" | "gameover";
+
 const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 
@@ -25,6 +27,7 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
+let gameState: GameState = "menu";
 let playerId: number | null = null;
 let arenaWidth = 2000;
 let arenaHeight = 2000;
@@ -36,82 +39,197 @@ let currentLevel = 1;
 let currentScore = 0;
 let playerHealth = 100;
 let playerMaxHealth = 100;
-let upgradeLevelAvailable = 0;
+let upgradePoints = 0;
+let waveNumber = 0;
 let selectedUpgradeChoice = 0;
 
-const socket = new WebSocket("ws://" + window.location.hostname + ":8080/ws");
-socket.binaryType = "arraybuffer";
+let statRegen = 0;
+let statMaxHP = 0;
+let statSpeed = 0;
+let statMinionDmg = 0;
+let statMinionSpeed = 0;
+let statMinionHP = 0;
+let statMinionPierce = 0;
+let statMinionRegen = 0;
 
-socket.onopen = () => {
-  socket.send(serializeJoin("Player" + Math.floor(Math.random() * 1000)));
-};
+let gameOverScore = 0;
+let gameOverWave = 0;
 
-socket.onmessage = (event) => {
-  const msg = deserializeMessage(event.data);
-  if (!msg) return;
-  if (msg.type === "welcome") {
-    playerId = msg.playerId;
-    arenaWidth = msg.arenaWidth;
-    arenaHeight = msg.arenaHeight;
-  } else if (msg.type === "worldState") {
-    currentXP = msg.xp;
-    maxXP = msg.maxXp;
-    currentLevel = msg.level;
-    currentScore = msg.score;
-    playerHealth = msg.health;
-    playerMaxHealth = msg.maxHealth;
-    upgradeLevelAvailable = msg.activeUpgradesMask;
+let socket: WebSocket | null = null;
+let inputInterval: number | null = null;
 
-    const receivedIds = new Set<number>();
-    for (const ent of msg.entities) {
-      receivedIds.add(ent.id);
-      const existing = renderEntities.get(ent.id);
-      if (existing) {
-        existing.targetX = ent.x;
-        existing.targetY = ent.y;
-        existing.targetAngle = ent.angle;
-        existing.health = ent.health;
-        existing.maxHealth = ent.maxHealth;
-        existing.radius = ent.radius;
-      } else {
-        renderEntities.set(ent.id, {
-          id: ent.id,
-          type: ent.type,
-          subtype: ent.subtype,
-          x: ent.x,
-          y: ent.y,
-          angle: ent.angle,
-          targetX: ent.x,
-          targetY: ent.y,
-          targetAngle: ent.angle,
-          health: ent.health,
-          maxHealth: ent.maxHealth,
-          radius: ent.radius,
-        });
-      }
-    }
-    for (const id of renderEntities.keys()) {
-      if (!receivedIds.has(id)) {
-        renderEntities.delete(id);
-      }
-    }
-  }
-};
+let playerUsername = "Player" + Math.floor(Math.random() * 9000 + 1000);
+let usernameInput = playerUsername;
+let menuAnimAngle = 0;
 
-const keys = { w: false, a: false, s: false, d: false, space: false };
+const keys = { w: false, a: false, s: false, d: false };
 let mouseAngle = 0;
+let mouseX = 0;
+let mouseY = 0;
+
+function connectToServer() {
+  if (socket && socket.readyState !== WebSocket.CLOSED) {
+    socket.close();
+  }
+
+  playerId = null;
+  renderEntities.clear();
+  currentXP = 0;
+  maxXP = 100;
+  currentLevel = 1;
+  currentScore = 0;
+  playerHealth = 100;
+  playerMaxHealth = 100;
+  upgradePoints = 0;
+  waveNumber = 0;
+  statRegen = 0;
+  statMaxHP = 0;
+  statSpeed = 0;
+  statMinionDmg = 0;
+  statMinionSpeed = 0;
+  statMinionHP = 0;
+  statMinionPierce = 0;
+  statMinionRegen = 0;
+
+  socket = new WebSocket("ws://" + window.location.hostname + ":8080/ws");
+  socket.binaryType = "arraybuffer";
+
+  socket.onopen = () => {
+    socket!.send(serializeJoin(playerUsername));
+    gameState = "playing";
+  };
+
+  socket.onmessage = (event) => {
+    const msg = deserializeMessage(event.data);
+    if (!msg) return;
+    if (msg.type === "welcome") {
+      playerId = msg.playerId;
+      arenaWidth = msg.arenaWidth;
+      arenaHeight = msg.arenaHeight;
+    } else if (msg.type === "worldState") {
+      currentXP = msg.xp;
+      maxXP = msg.maxXp;
+      currentLevel = msg.level;
+      currentScore = msg.score;
+      playerHealth = msg.health;
+      playerMaxHealth = msg.maxHealth;
+      upgradePoints = msg.upgradePoints;
+      waveNumber = msg.waveNumber;
+      statRegen = msg.statRegen;
+      statMaxHP = msg.statMaxHP;
+      statSpeed = msg.statSpeed;
+      statMinionDmg = msg.statMinionDmg;
+      statMinionSpeed = msg.statMinionSpeed;
+      statMinionHP = msg.statMinionHP;
+      statMinionPierce = msg.statMinionPierce;
+      statMinionRegen = msg.statMinionRegen;
+
+      const receivedIds = new Set<number>();
+      for (const ent of msg.entities) {
+        receivedIds.add(ent.id);
+        const existing = renderEntities.get(ent.id);
+        if (existing) {
+          existing.targetX = ent.x;
+          existing.targetY = ent.y;
+          existing.targetAngle = ent.angle;
+          existing.health = ent.health;
+          existing.maxHealth = ent.maxHealth;
+          existing.radius = ent.radius;
+        } else {
+          renderEntities.set(ent.id, {
+            id: ent.id,
+            type: ent.type,
+            subtype: ent.subtype,
+            x: ent.x,
+            y: ent.y,
+            angle: ent.angle,
+            targetX: ent.x,
+            targetY: ent.y,
+            targetAngle: ent.angle,
+            health: ent.health,
+            maxHealth: ent.maxHealth,
+            radius: ent.radius,
+          });
+        }
+      }
+      for (const id of renderEntities.keys()) {
+        if (!receivedIds.has(id)) {
+          renderEntities.delete(id);
+        }
+      }
+    } else if (msg.type === "gameOver") {
+      gameOverScore = msg.score;
+      gameOverWave = msg.wave;
+      gameState = "gameover";
+      if (socket) {
+        socket.close();
+        socket = null;
+      }
+      if (inputInterval !== null) {
+        clearInterval(inputInterval);
+        inputInterval = null;
+      }
+    }
+  };
+
+  socket.onclose = () => {
+    if (gameState === "playing") {
+      gameState = "gameover";
+      gameOverScore = currentScore;
+      gameOverWave = waveNumber;
+    }
+  };
+
+  if (inputInterval !== null) {
+    clearInterval(inputInterval);
+  }
+  inputInterval = window.setInterval(() => {
+    if (socket && socket.readyState === WebSocket.OPEN && gameState === "playing") {
+      let mask = 0;
+      if (keys.w) mask |= 0x01;
+      if (keys.a) mask |= 0x02;
+      if (keys.s) mask |= 0x04;
+      if (keys.d) mask |= 0x08;
+      socket.send(serializeInput(mask, mouseAngle, selectedUpgradeChoice));
+      if (selectedUpgradeChoice !== 0) {
+        selectedUpgradeChoice = 0;
+      }
+    }
+  }, 1000 / 60);
+}
 
 window.addEventListener("keydown", (e) => {
+  if (gameState === "menu") {
+    if (e.key === "Backspace") {
+      usernameInput = usernameInput.slice(0, -1);
+    } else if (e.key === "Enter") {
+      if (usernameInput.length > 0) {
+        playerUsername = usernameInput;
+        connectToServer();
+      }
+    } else if (e.key.length === 1 && usernameInput.length < 16) {
+      usernameInput += e.key;
+    }
+    return;
+  }
+
+  if (gameState === "gameover") {
+    if (e.key === "Enter") {
+      gameState = "menu";
+    }
+    return;
+  }
+
   if (e.key === "w" || e.key === "W") keys.w = true;
   if (e.key === "a" || e.key === "A") keys.a = true;
   if (e.key === "s" || e.key === "S") keys.s = true;
   if (e.key === "d" || e.key === "D") keys.d = true;
-  if (e.key === " ") keys.space = true;
 
-  if (upgradeLevelAvailable !== 0) {
-    if (e.key === "1") selectedUpgradeChoice = 1;
-    if (e.key === "2") selectedUpgradeChoice = 2;
-    if (e.key === "3") selectedUpgradeChoice = 3;
+  if (upgradePoints > 0) {
+    const num = parseInt(e.key);
+    if (num >= 1 && num <= 8) {
+      selectedUpgradeChoice = num;
+    }
   }
 });
 
@@ -120,50 +238,46 @@ window.addEventListener("keyup", (e) => {
   if (e.key === "a" || e.key === "A") keys.a = false;
   if (e.key === "s" || e.key === "S") keys.s = false;
   if (e.key === "d" || e.key === "D") keys.d = false;
-  if (e.key === " ") keys.space = false;
 });
 
 window.addEventListener("mousemove", (e) => {
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-  mouseAngle = Math.atan2(e.clientY - cy, e.clientX - cx);
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  if (gameState === "playing") {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    mouseAngle = Math.atan2(e.clientY - cy, e.clientX - cx);
+  }
 });
 
 window.addEventListener("mousedown", (e) => {
-  if (upgradeLevelAvailable !== 0 && e.clientX < 220) {
-    const startY = 150;
-    const boxHeight = 70;
-    const gap = 15;
-    for (let i = 0; i < 3; i++) {
-      const top = startY + i * (boxHeight + gap);
-      if (e.clientY >= top && e.clientY <= top + boxHeight) {
-        selectedUpgradeChoice = i + 1;
-        break;
+  if (gameState === "menu") {
+    const cx = canvas.width / 2;
+    const btnW = 260;
+    const btnH = 56;
+    const btnX = cx - btnW / 2;
+    const btnY = canvas.height / 2 + 80;
+    if (e.clientX >= btnX && e.clientX <= btnX + btnW && e.clientY >= btnY && e.clientY <= btnY + btnH) {
+      if (usernameInput.length > 0) {
+        playerUsername = usernameInput;
+        connectToServer();
       }
     }
-  } else {
-    keys.space = true;
+    return;
   }
-});
 
-window.addEventListener("mouseup", () => {
-  keys.space = false;
-});
-
-setInterval(() => {
-  if (socket.readyState === WebSocket.OPEN) {
-    let mask = 0;
-    if (keys.w) mask |= 0x01;
-    if (keys.a) mask |= 0x02;
-    if (keys.s) mask |= 0x04;
-    if (keys.d) mask |= 0x08;
-    if (keys.space) mask |= 0x10;
-    socket.send(serializeInput(mask, mouseAngle, selectedUpgradeChoice));
-    if (selectedUpgradeChoice !== 0) {
-      selectedUpgradeChoice = 0;
+  if (gameState === "gameover") {
+    const cx = canvas.width / 2;
+    const btnW = 260;
+    const btnH = 56;
+    const btnX = cx - btnW / 2;
+    const btnY = canvas.height / 2 + 100;
+    if (e.clientX >= btnX && e.clientX <= btnX + btnW && e.clientY >= btnY && e.clientY <= btnY + btnH) {
+      gameState = "menu";
     }
+    return;
   }
-}, 1000 / 60);
+});
 
 function lerp(start: number, end: number, amt: number) {
   return (1 - amt) * start + amt * end;
@@ -196,6 +310,87 @@ function drawGrid(cx: number, cy: number) {
     ctx.moveTo(0, y - cy + canvas.height / 2);
     ctx.lineTo(canvas.width, y - cy + canvas.height / 2);
     ctx.stroke();
+  }
+}
+
+function drawStatBar(label: string, level: number, x: number, y: number, color: string, hotkey: string) {
+  const barW = 140;
+  const barH = 16;
+  const maxLvl = 7;
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "bold 11px sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText(label, x - 6, y + 12);
+
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(x, y, barW, barH);
+
+  const fillW = (level / maxLvl) * barW;
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, fillW, barH);
+
+  ctx.strokeStyle = "#334155";
+  ctx.lineWidth = 1;
+  for (let i = 1; i < maxLvl; i++) {
+    const sx = x + (i / maxLvl) * barW;
+    ctx.beginPath();
+    ctx.moveTo(sx, y);
+    ctx.lineTo(sx, y + barH);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = "#475569";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(x, y, barW, barH);
+
+  if (upgradePoints > 0 && level < maxLvl) {
+    ctx.fillStyle = "#fbbf24";
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("+" + hotkey, x + barW + 4, y + 13);
+  }
+}
+
+function drawUpgradePanel() {
+  const panelX = 12;
+  const panelY = 100;
+  const rowH = 24;
+  const labelW = 90;
+
+  ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+  ctx.fillRect(panelX - 4, panelY - 30, labelW + 160, rowH * 8 + 50);
+  ctx.strokeStyle = "#334155";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(panelX - 4, panelY - 30, labelW + 160, rowH * 8 + 50);
+
+  if (upgradePoints > 0) {
+    ctx.fillStyle = "#fbbf24";
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(`POINTS: ${upgradePoints}`, panelX, panelY - 12);
+  } else {
+    ctx.fillStyle = "#64748b";
+    ctx.font = "bold 12px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("STATS", panelX, panelY - 12);
+  }
+
+  const barX = panelX + labelW;
+
+  const stats: [string, number, string, string][] = [
+    ["Regen", statRegen, "#10b981", "1"],
+    ["Max HP", statMaxHP, "#22c55e", "2"],
+    ["Speed", statSpeed, "#3b82f6", "3"],
+    ["M.Damage", statMinionDmg, "#ef4444", "4"],
+    ["M.Speed", statMinionSpeed, "#f97316", "5"],
+    ["M.Health", statMinionHP, "#06b6d4", "6"],
+    ["M.Pierce", statMinionPierce, "#8b5cf6", "7"],
+    ["M.Regen", statMinionRegen, "#a3e635", "8"],
+  ];
+
+  for (let i = 0; i < stats.length; i++) {
+    drawStatBar(stats[i][0], stats[i][1], barX, panelY + i * rowH, stats[i][2], stats[i][3]);
   }
 }
 
@@ -237,51 +432,146 @@ function drawHUD() {
   }
   ctx.textAlign = "right";
   ctx.fillText(`MINIONS: ${activeMinions}`, canvas.width - 20, 35);
+
+  ctx.fillStyle = "#64748b";
+  ctx.font = "bold 14px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`WAVE ${waveNumber}`, centerX, bottomY - 54);
 }
 
-function drawUpgradeUI() {
-  if (upgradeLevelAvailable === 0) return;
+function drawMenuShape(x: number, y: number, radius: number, sides: number, angle: number, color: string) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.fillStyle = color;
+  ctx.strokeStyle = "#0f172a";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i < sides; i++) {
+    const a = (i * 2 * Math.PI) / sides - Math.PI / 2;
+    ctx.lineTo(Math.cos(a) * radius, Math.sin(a) * radius);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
 
-  const startY = 150;
-  const boxWidth = 200;
-  const boxHeight = 70;
-  const gap = 15;
+function renderMenu() {
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  const options = [
-    { title: "1. CADET", desc: "Max 8 Minions, +30% Dmg" },
-    { title: "2. OVERLORD", desc: "Minions fire guns" },
-    { title: "3. BATTERING RAM", desc: "Minions front shield" },
-  ];
+  menuAnimAngle += 0.008;
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
 
-  ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
-  ctx.fillRect(10, startY - 40, boxWidth + 20, 300);
+  for (let i = 0; i < 12; i++) {
+    const a = menuAnimAngle + (i / 12) * Math.PI * 2;
+    const r = 280 + Math.sin(menuAnimAngle * 2 + i) * 40;
+    const sx = cx + Math.cos(a) * r;
+    const sy = cy + Math.sin(a) * r;
+    const sides = [3, 4, 5, 6][i % 4];
+    const colors = ["#f43f5e33", "#a855f733", "#0ea5e933", "#fbbf2433"];
+    drawMenuShape(sx, sy, 20 + (i % 3) * 8, sides, menuAnimAngle * (i % 2 === 0 ? 1 : -1), colors[i % 4]);
+  }
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 52px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("NECRO-GEOMETRY", cx, cy - 120);
+
+  ctx.fillStyle = "#64748b";
+  ctx.font = "18px sans-serif";
+  ctx.fillText("Summoner Rogue-like Bullet Hell", cx, cy - 80);
+
+  const inputW = 280;
+  const inputH = 44;
+  const inputX = cx - inputW / 2;
+  const inputY = cy - 10;
+
+  ctx.fillStyle = "#1e293b";
+  ctx.fillRect(inputX, inputY, inputW, inputH);
   ctx.strokeStyle = "#475569";
   ctx.lineWidth = 2;
-  ctx.strokeRect(10, startY - 40, boxWidth + 20, 300);
+  ctx.strokeRect(inputX, inputY, inputW, inputH);
 
-  ctx.fillStyle = "#fbbf24";
-  ctx.font = "bold 14px sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText("UPGRADE AVAILABLE!", 20, startY - 15);
+  ctx.fillStyle = usernameInput.length > 0 ? "#ffffff" : "#64748b";
+  ctx.font = "18px sans-serif";
+  ctx.textAlign = "center";
+  const displayText = usernameInput.length > 0 ? usernameInput : "Enter your name...";
+  const blink = Math.floor(Date.now() / 500) % 2 === 0 && usernameInput.length > 0 ? "|" : "";
+  ctx.fillText(displayText + blink, cx, inputY + 28);
 
-  for (let i = 0; i < options.length; i++) {
-    const top = startY + i * (boxHeight + gap);
-    ctx.fillStyle = "#1e293b";
-    ctx.fillRect(20, top, boxWidth, boxHeight);
-    ctx.strokeStyle = "#64748b";
-    ctx.strokeRect(20, top, boxWidth, boxHeight);
+  const btnW = 260;
+  const btnH = 56;
+  const btnX = cx - btnW / 2;
+  const btnY = cy + 80;
 
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 13px sans-serif";
-    ctx.fillText(options[i].title, 30, top + 25);
+  const hovered = mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH;
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px sans-serif";
-    ctx.fillText(options[i].desc, 30, top + 48);
-  }
+  const gradient = ctx.createLinearGradient(btnX, btnY, btnX + btnW, btnY + btnH);
+  gradient.addColorStop(0, hovered ? "#0ea5e9" : "#0284c7");
+  gradient.addColorStop(1, hovered ? "#06b6d4" : "#0369a1");
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.roundRect(btnX, btnY, btnW, btnH, 8);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 22px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("PLAY", cx, btnY + 36);
+
+  ctx.fillStyle = "#475569";
+  ctx.font = "13px sans-serif";
+  ctx.fillText("WASD to move | Summon minions to fight", cx, canvas.height - 40);
 }
 
-function render() {
+function renderGameOver() {
+  ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+
+  ctx.fillStyle = "#ef4444";
+  ctx.font = "bold 56px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("GAME OVER", cx, cy - 100);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 28px sans-serif";
+  ctx.fillText(`SCORE: ${gameOverScore}`, cx, cy - 30);
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "22px sans-serif";
+  ctx.fillText(`Wave Reached: ${gameOverWave}`, cx, cy + 20);
+
+  const btnW = 260;
+  const btnH = 56;
+  const btnX = cx - btnW / 2;
+  const btnY = cy + 100;
+
+  const hovered = mouseX >= btnX && mouseX <= btnX + btnW && mouseY >= btnY && mouseY <= btnY + btnH;
+
+  const gradient = ctx.createLinearGradient(btnX, btnY, btnX + btnW, btnY + btnH);
+  gradient.addColorStop(0, hovered ? "#0ea5e9" : "#0284c7");
+  gradient.addColorStop(1, hovered ? "#06b6d4" : "#0369a1");
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.roundRect(btnX, btnY, btnW, btnH, 8);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 22px sans-serif";
+  ctx.fillText("PLAY AGAIN", cx, btnY + 36);
+
+  ctx.fillStyle = "#475569";
+  ctx.font = "14px sans-serif";
+  ctx.fillText("Press ENTER to return to menu", cx, canvas.height - 40);
+}
+
+function renderGame() {
   ctx.fillStyle = "#0f172a";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -321,28 +611,16 @@ function render() {
     ctx.rotate(ent.angle);
 
     if (ent.type === 0) {
-      ctx.fillStyle = "#475569";
-      ctx.fillRect(0, -9, 32, 18);
-      ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(0, -9, 32, 18);
-
-      if (ent.subtype === 1) {
-        ctx.fillStyle = "#0ea5e9";
-      } else if (ent.subtype === 2) {
-        ctx.fillStyle = "#8b5cf6";
-      } else if (ent.subtype === 3) {
-        ctx.fillStyle = "#ec4899";
-      } else {
-        ctx.fillStyle = "#0284c7";
-      }
-
+      ctx.fillStyle = "#0284c7";
       ctx.beginPath();
       ctx.arc(0, 0, ent.radius, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 3;
       ctx.stroke();
 
       if (ent.health < ent.maxHealth) {
+        ctx.rotate(-ent.angle);
         ctx.fillStyle = "#ef4444";
         ctx.fillRect(-ent.radius, -ent.radius - 12, ent.radius * 2, 5);
         ctx.fillStyle = "#22c55e";
@@ -388,6 +666,7 @@ function render() {
       }
 
       if (ent.health < ent.maxHealth) {
+        ctx.rotate(-ent.angle);
         ctx.fillStyle = "#ef4444";
         ctx.fillRect(-ent.radius, -ent.radius - 10, ent.radius * 2, 4);
         ctx.fillStyle = "#22c55e";
@@ -423,13 +702,30 @@ function render() {
       ctx.strokeStyle = "#0f172a";
       ctx.lineWidth = 2;
       ctx.stroke();
+
+      if (ent.health < ent.maxHealth) {
+        ctx.rotate(-ent.angle);
+        ctx.fillStyle = "#ef4444";
+        ctx.fillRect(-ent.radius, -ent.radius - 8, ent.radius * 2, 3);
+        ctx.fillStyle = "#22c55e";
+        ctx.fillRect(-ent.radius, -ent.radius - 8, ent.radius * 2 * (ent.health / ent.maxHealth), 3);
+      }
     }
     ctx.restore();
   }
 
   drawHUD();
-  drawUpgradeUI();
+  drawUpgradePanel();
+}
 
+function render() {
+  if (gameState === "menu") {
+    renderMenu();
+  } else if (gameState === "playing") {
+    renderGame();
+  } else if (gameState === "gameover") {
+    renderGameOver();
+  }
   requestAnimationFrame(render);
 }
 requestAnimationFrame(render);

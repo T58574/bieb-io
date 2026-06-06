@@ -118,9 +118,6 @@ func (s *GameServer) broadcastState(tick uint32) {
 		return
 	}
 	states := s.world.ExportState()
-	if len(states) == 0 {
-		return
-	}
 
 	for _, client := range s.clients {
 		if !client.joined {
@@ -130,10 +127,16 @@ func (s *GameServer) broadcastState(tick uint32) {
 		if !exists {
 			continue
 		}
-		var mask uint32
-		if p.PendingUpgrade {
-			mask = uint32(p.Level)
+
+		if !p.Alive {
+			gameOverBuf := protocol.EncodeGameOver(p.Score, s.world.WaveNumber)
+			_ = client.send(gameOverBuf)
+			continue
 		}
+
+		statsPack1 := uint32(p.StatRegen) | uint32(p.StatMaxHP)<<8 | uint32(p.StatSpeed)<<16 | uint32(p.StatMinionDmg)<<24
+		statsPack2 := uint32(p.StatMinionSpeed) | uint32(p.StatMinionHP)<<8 | uint32(p.StatMinionPierce)<<16 | uint32(p.StatMinionRegen)<<24
+
 		stateBuf := protocol.EncodeWorldState(
 			tick,
 			p.XP,
@@ -142,7 +145,10 @@ func (s *GameServer) broadcastState(tick uint32) {
 			p.Score,
 			uint16(p.Health),
 			uint16(p.MaxHealth),
-			mask,
+			p.UpgradePoints,
+			statsPack1,
+			statsPack2,
+			uint16(s.world.WaveNumber),
 			states,
 		)
 		_ = client.send(stateBuf)
