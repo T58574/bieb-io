@@ -197,10 +197,13 @@ func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 		Level:     1,
 		Score:     0,
 		Alive:     true,
-		ClassID:   0,
+		ClassID:   uint8(w.rand.Intn(4) + 1), // Assign random class 1-4
 		Mass:      1.0,
 		StateFlags: 0,
 		ChargeLevel: 0.0,
+	}
+	if p.ClassID == 1 {
+		p.Mass = 2.5 // Warrior Kinetic Mass
 	}
 	w.Players[id] = p
 	w.spawnMinion(id, p.Pos.Add(physics.Vector2D{X: 40, Y: 0}))
@@ -507,6 +510,29 @@ func (w *GameWorld) updatePlayers(dt float64) {
 
 		p.Vel = p.Vel.Add(physics.Vector2D{X: ax, Y: ay})
 		p.Vel = p.Vel.Mul(0.88)
+
+		if p.ChargeLevel > 0 {
+			p.ChargeLevel -= dt
+		}
+
+		// Abilities
+		if p.ClassID == 1 && p.Keys&0x10 != 0 && p.ChargeLevel <= 0 {
+			// Warrior Dash
+			dashDir := physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
+			p.Vel = p.Vel.Add(dashDir.Mul(150.0))
+			p.ChargeLevel = 2.0 // 2 second cooldown
+		} else if p.ClassID == 3 && p.Keys&0x10 != 0 && p.ChargeLevel <= 0 {
+			// Rogue Stealth
+			p.StateFlags |= 1 // Set Invisible Flag
+			p.ChargeLevel = 5.0
+		}
+
+		// Handle stealth duration
+		if p.StateFlags&1 != 0 && p.ChargeLevel <= 2.0 {
+			// 3 seconds of stealth (5.0 - 2.0)
+			p.StateFlags &^= 1 // Clear Invisible Flag
+		}
+
 		p.Pos = p.Pos.Add(p.Vel)
 
 		physics.ResolveCircleBox(&p.Pos, p.Radius, &p.Vel, 0, 0, w.Width, w.Height, 0.2)

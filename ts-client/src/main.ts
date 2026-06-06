@@ -224,6 +224,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "a" || e.key === "A") keys.a = true;
   if (e.key === "s" || e.key === "S") keys.s = true;
   if (e.key === "d" || e.key === "D") keys.d = true;
+  if (e.key === " ") keys.space = true;
 
   if (upgradePoints > 0) {
     const num = parseInt(e.key);
@@ -238,6 +239,7 @@ window.addEventListener("keyup", (e) => {
   if (e.key === "a" || e.key === "A") keys.a = false;
   if (e.key === "s" || e.key === "S") keys.s = false;
   if (e.key === "d" || e.key === "D") keys.d = false;
+  if (e.key === " ") keys.space = false;
 });
 
 window.addEventListener("mousemove", (e) => {
@@ -276,6 +278,16 @@ window.addEventListener("mousedown", (e) => {
       gameState = "menu";
     }
     return;
+  }
+
+  if (gameState === "playing") {
+    if (e.button === 0) keys.mouseLeft = true;
+  }
+});
+
+window.addEventListener("mouseup", (e) => {
+  if (gameState === "playing") {
+    if (e.button === 0) keys.mouseLeft = false;
   }
 });
 
@@ -611,13 +623,58 @@ function renderGame() {
     ctx.rotate(ent.angle);
 
     if (ent.type === 0) {
+      if (ent.subtype === 3 && (ent.stateFlags & 1) !== 0) {
+        ctx.globalAlpha = 0.3; // Rogue stealth
+      }
+
       ctx.fillStyle = "#0284c7";
-      ctx.beginPath();
-      ctx.arc(0, 0, ent.radius, 0, Math.PI * 2);
-      ctx.fill();
       ctx.strokeStyle = "#0f172a";
       ctx.lineWidth = 3;
-      ctx.stroke();
+
+      if (ent.subtype === 1) { // Warrior (Hexagon)
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a = (i * Math.PI) / 3;
+          ctx.lineTo(Math.cos(a) * ent.radius, Math.sin(a) * ent.radius);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else if (ent.subtype === 2) { // Archer (Triangle)
+        ctx.beginPath();
+        for (let i = 0; i < 3; i++) {
+          const a = (i * 2 * Math.PI) / 3;
+          ctx.lineTo(Math.cos(a) * ent.radius, Math.sin(a) * ent.radius);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else if (ent.subtype === 3) { // Rogue (Diamond)
+        ctx.beginPath();
+        for (let i = 0; i < 4; i++) {
+          const a = (i * Math.PI) / 2;
+          ctx.lineTo(Math.cos(a) * ent.radius, Math.sin(a) * ent.radius);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else if (ent.subtype === 4) { // Mage (Octagon)
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const a = (i * Math.PI) / 4;
+          ctx.lineTo(Math.cos(a) * ent.radius, Math.sin(a) * ent.radius);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else { // Default Tank (Circle)
+        ctx.beginPath();
+        ctx.arc(0, 0, ent.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      ctx.globalAlpha = 1.0;
 
       if (ent.health < ent.maxHealth) {
         ctx.rotate(-ent.angle);
@@ -727,5 +784,8 @@ function render() {
     renderGameOver();
   }
   requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+);
 }
 requestAnimationFrame(render);
