@@ -1,0 +1,57 @@
+entity_structures:
+  Vector2D:
+    x: float64
+    y: float64
+  Player:
+    id: uint16
+    username: string
+    pos: Vector2D
+    vel: Vector2D
+    radius: float64
+    health: float64
+    max_health: float64
+    xp: uint32
+    max_xp: uint32
+    level: uint16
+    score: uint32
+    mouse_angle: float64
+    shoot_cooldown: float64
+    class_type: uint8
+  Mob:
+    id: uint16
+    type: uint8
+    subtype: uint8
+    pos: Vector2D
+    vel: Vector2D
+    radius: float64
+    health: float64
+    max_health: float64
+    damage: float64
+    xp_value: uint32
+  Bullet:
+    id: uint16
+    owner_id: uint16
+    owner_type: uint8
+    pos: Vector2D
+    vel: Vector2D
+    radius: float64
+    damage: float64
+    lifetime: float64
+  ExpOrb:
+    id: uint16
+    pos: Vector2D
+    vel: Vector2D
+    radius: float64
+    xp_value: uint32
+    attract_target: uint16
+  Minion:
+    id: uint16
+    owner_id: uint16
+    pos: Vector2D
+    vel: Vector2D
+    radius: float64
+    health: float64
+    max_health: float64
+    damage: float64
+    angle: float64
+    minion_type: uint8

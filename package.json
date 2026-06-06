@@ -1,0 +1,11 @@
+{
+  "name": "necro-geometry-root",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "concurrently \"npm run dev --prefix ts-client\" \"start-server.bat\"",
+    "server": "start-server.bat"
+  },
+  "dependencies": {
+    "concurrently": "^8.0.0"
+  }
+}

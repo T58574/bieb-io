@@ -1,0 +1,112 @@
+schemas:
+  packet_types:
+    C2S:
+      1:
+        name: Join
+        layout:
+          - name: opcode
+            type: uint8
+            value: 1
+          - name: username_len
+            type: uint8
+          - name: username
+            type: string
+            length_ref: username_len
+      2:
+        name: Input
+        layout:
+          - name: opcode
+            type: uint8
+            value: 2
+          - name: keys
+            type: uint8
+            bitmask:
+              0x01: key_w
+              0x02: key_a
+              0x04: key_s
+              0x08: key_d
+              0x10: key_shoot
+          - name: mouse_angle
+            type: float32
+          - name: upgrade_select
+            type: uint8
+            description: 0 if no selection, otherwise ID of selected upgrade
+    S2C:
+      1:
+        name: Welcome
+        layout:
+          - name: opcode
+            type: uint8
+            value: 1
+          - name: player_id
+            type: uint16
+          - name: arena_width
+            type: float32
+          - name: arena_height
+            type: float32
+      2:
+        name: WorldState
+        layout:
+          - name: opcode
+            type: uint8
+            value: 2
+          - name: tick
+            type: uint32
+          - name: xp
+            type: uint32
+          - name: max_xp
+            type: uint32
+          - name: level
+            type: uint16
+          - name: score
+            type: uint32
+          - name: health
+            type: uint16
+          - name: max_health
+            type: uint16
+          - name: active_upgrades_mask
+            type: uint32
+          - name: entities_count
+            type: uint16
+          - name: entities
+            type: array
+            length_ref: entities_count
+            item_layout:
+              - name: id
+                type: uint16
+              - name: type
+                type: uint8
+                enum:
+                  0: Player
+                  1: Mob
+                  2: Bullet
+                  3: ExpOrb
+                  4: Minion
+              - name: subtype
+                type: uint8
+              - name: x
+                type: float32
+              - name: y
+                type: float32
+              - name: angle
+                type: float32
+              - name: health
+                type: uint16
+              - name: max_health
+                type: uint16
+              - name: radius
+                type: uint16
+      3:
+        name: UpgradeOptions
+        layout:
+          - name: opcode
+            type: uint8
+            value: 3
+          - name: options_count
+            type: uint8
+          - name: options
+            type: array
+            length_ref: options_count
+            item_layout:
+              - name: upgrade_id
+                type: uint8
