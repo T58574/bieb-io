@@ -211,6 +211,8 @@ function connectToServer() {
       if (keys.a) mask |= 0x02;
       if (keys.s) mask |= 0x04;
       if (keys.d) mask |= 0x08;
+      if (keys.space) mask |= 0x10;
+      if (keys.mouseLeft) mask |= 0x20;
       socket.send(serializeInput(mask, mouseAngle, selectedUpgradeChoice));
       if (selectedUpgradeChoice !== 0) {
         selectedUpgradeChoice = 0;
@@ -684,6 +686,15 @@ function renderGame() {
           c.stroke();
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
+
+        const chargePct = (ent.stateFlags >> 8) / 100.0;
+        if (chargePct > 0) {
+          ctx.beginPath();
+          ctx.arc(0, 0, ent.radius + 5 + chargePct * 10, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(250, 204, 21, 0.8)`;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
       } else if (ent.subtype === 3) { // Rogue (Diamond)
         const cacheKey = `p_rogue_${ent.radius}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
