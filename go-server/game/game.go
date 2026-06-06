@@ -553,14 +553,70 @@ func (w *GameWorld) updateMobs(dt float64) {
 	for id, m := range w.Mobs {
 		var target *Player
 		var minDist float64 = -1
-		for _, p := range w.Players {
-			if !p.Alive {
+
+		// 1. Query 3x3 spatial grid
+		c := int(m.Pos.X / 100.0)
+		r := int(m.Pos.Y / 100.0)
+
+		for dr := -1; dr <= 1; dr++ {
+			nr := r + dr
+			if nr < 0 || nr >= 20 {
 				continue
 			}
-			distSq := p.Pos.Sub(m.Pos).LengthSq()
-			if minDist < 0 || distSq < minDist {
-				minDist = distSq
-				target = p
+			for dc := -1; dc <= 1; dc++ {
+				nc := c + dc
+				if nc < 0 || nc >= 20 {
+					continue
+				}
+				for _, item := range w.grid[nr][nc] {
+					if item.Type == 0 { // Player type
+						p := w.Players[item.ID]
+						if p != nil && p.Alive {
+							distSq := m.Pos.Sub(item.Pos).LengthSq()
+							if minDist < 0 || distSq < minDist {
+								minDist = distSq
+								target = p
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// 2. Fallback check: if no target found or target might not be the absolute closest
+		// because the closest could theoretically be outside the 3x3 grid
+		needsFallback := true
+		if target != nil {
+			// Calculate distance to the edge of the 3x3 search area
+			distToEdgeX := m.Pos.X - float64((c-1)*100)
+			if rightEdge := float64((c+2)*100) - m.Pos.X; rightEdge < distToEdgeX {
+				distToEdgeX = rightEdge
+			}
+			distToEdgeY := m.Pos.Y - float64((r-1)*100)
+			if bottomEdge := float64((r+2)*100) - m.Pos.Y; bottomEdge < distToEdgeY {
+				distToEdgeY = bottomEdge
+			}
+
+			minDistToEdgeSq := distToEdgeX * distToEdgeX
+			if distToEdgeY*distToEdgeY < minDistToEdgeSq {
+				minDistToEdgeSq = distToEdgeY * distToEdgeY
+			}
+
+			if minDist <= minDistToEdgeSq {
+				needsFallback = false
+			}
+		}
+
+		if needsFallback {
+			for _, p := range w.Players {
+				if !p.Alive {
+					continue
+				}
+				distSq := p.Pos.Sub(m.Pos).LengthSq()
+				if minDist < 0 || distSq < minDist {
+					minDist = distSq
+					target = p
+				}
 			}
 		}
 
