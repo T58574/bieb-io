@@ -521,6 +521,34 @@ func (w *GameWorld) updatePlayers(dt float64) {
 			dashDir := physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
 			p.Vel = p.Vel.Add(dashDir.Mul(150.0))
 			p.ChargeLevel = 2.0 // 2 second cooldown
+		} else if p.ClassID == 2 {
+			if p.Keys&0x20 != 0 {
+				p.ChargeLevel += dt
+				if p.ChargeLevel > 2.0 {
+					p.ChargeLevel = 2.0
+				}
+				chargePct := math.Min(1.0, p.ChargeLevel/2.0)
+				p.StateFlags = (p.StateFlags & 0xFF) | (uint32(chargePct*100) << 8)
+			} else if p.ChargeLevel > 0 {
+				chargePct := math.Min(1.0, p.ChargeLevel/2.0)
+				bID := w.GenerateID()
+				b := w.bulletPool.Get().(*Bullet)
+				*b = Bullet{}
+				b.ID = bID
+				b.OwnerID = p.ID
+				b.OwnerType = 0
+				dir := physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
+				b.Pos = p.Pos.Add(dir.Mul(p.Radius + 5))
+				b.Vel = dir.Mul(6.0 + 8.0*chargePct)
+				b.Radius = 6
+				b.Damage = 10.0 + 30.0*chargePct
+				b.Lifetime = 2.0
+				b.Pierce = 1 + int(4.0*chargePct)
+				w.Bullets[bID] = b
+
+				p.ChargeLevel = 0
+				p.StateFlags &= 0xFF
+			}
 		} else if p.ClassID == 3 && p.Keys&0x10 != 0 && p.ChargeLevel <= 0 {
 			// Rogue Stealth
 			p.StateFlags |= 1 // Set Invisible Flag
