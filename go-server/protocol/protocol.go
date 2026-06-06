@@ -109,3 +109,10 @@ func DecodeInput(buf []byte) (ClientInput, error) {
 	input.UpgradeSelect = buf[6]
 	return input, nil
 }
+
+func DecodeUpgradeClass(buf []byte) (uint8, error) {
+	if len(buf) < 2 {
+		return 0, errors.New("invalid upgrade class size")
+	}
+	return buf[1], nil
+}

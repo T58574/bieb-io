@@ -124,6 +124,13 @@ func (s *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 					s.world.UpdateInput(client.id, input.Keys, input.MouseAngle, input.UpgradeSelect)
 				}
 			}
+		} else if opcode == 5 {
+			if client.joined {
+				classID, err := protocol.DecodeUpgradeClass(msg)
+				if err == nil {
+					s.world.UpgradePlayerClass(client.id, classID)
+				}
+			}
 		}
 	}
 }
