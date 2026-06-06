@@ -15,6 +15,16 @@ func TestVectorOps(t *testing.T) {
 	if v3.X != 4 || v3.Y != 6 {
 		t.Errorf("add error")
 	}
+
+	v4 := v1.Sub(v2)
+	if v4.X != 2 || v4.Y != 2 {
+		t.Errorf("sub error")
+	}
+
+	v5 := v1.Mul(2.0)
+	if v5.X != 6 || v5.Y != 8 {
+		t.Errorf("mul error")
+	}
 }
 
 func TestResolveCircleCircle(t *testing.T) {
