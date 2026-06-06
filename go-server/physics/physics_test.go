@@ -46,3 +46,19 @@ func TestResolveCircleBox(t *testing.T) {
 		t.Errorf("expected velocity bounce to flip, got %f", v.X)
 	}
 }
+
+func TestVectorNormalize(t *testing.T) {
+	// Happy path
+	v := Vector2D{3, 4}
+	norm := v.Normalize()
+	if math.Abs(norm.X-0.6) > 1e-6 || math.Abs(norm.Y-0.8) > 1e-6 {
+		t.Errorf("expected {0.6, 0.8}, got {%f, %f}", norm.X, norm.Y)
+	}
+
+	// Edge case: zero length
+	vZero := Vector2D{0, 0}
+	normZero := vZero.Normalize()
+	if normZero.X != 0 || normZero.Y != 0 {
+		t.Errorf("expected {0, 0}, got {%f, %f}", normZero.X, normZero.Y)
+	}
+}
