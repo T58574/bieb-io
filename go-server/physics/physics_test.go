@@ -23,7 +23,7 @@ func TestResolveCircleCircle(t *testing.T) {
 	v1 := Vector2D{1, 0}
 	v2 := Vector2D{-1, 0}
 
-	collided := ResolveCircleCircle(&p1, &p2, 1.0, 1.0, &v1, &v2, 0.5)
+	collided := ResolveCircleCircle(&p1, &p2, 1.0, 1.0, &v1, &v2, 1.0, 1.0, 0.5)
 	if !collided {
 		t.Errorf("expected collision")
 	}

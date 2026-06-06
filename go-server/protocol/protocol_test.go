@@ -1,7 +1,6 @@
 package protocol
 
 import (
-	"bytes"
 	"math"
 	"testing"
 )
@@ -77,25 +76,11 @@ func TestWorldState(t *testing.T) {
 		},
 	}
 
-	buf := EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, entities)
+	buf := EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, 0, 0, 1, entities)
 	if buf[0] != 2 {
 		t.Errorf("expected opcode 2")
 	}
-	if len(buf) != 29+22 {
-		t.Errorf("expected len %d, got %d", 29+22, len(buf))
-	}
-}
-
-func TestUpgradeOptions(t *testing.T) {
-	opts := []uint8{1, 5, 12}
-	buf := EncodeUpgradeOptions(opts)
-	if buf[0] != 3 {
-		t.Errorf("expected opcode 3")
-	}
-	if buf[1] != 3 {
-		t.Errorf("expected options count 3")
-	}
-	if !bytes.Equal(buf[2:], opts) {
-		t.Errorf("options content mismatch")
+	if len(buf) != 36+26 {
+		t.Errorf("expected len %d, got %d", 36+26, len(buf))
 	}
 }

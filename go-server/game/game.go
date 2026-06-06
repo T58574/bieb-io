@@ -37,6 +37,10 @@ type Player struct {
 	StatMinionPierce uint8
 	StatMinionRegen  uint8
 	RegenAccum       float64
+	ClassID          uint8
+	Mass             float64
+	StateFlags       uint32
+	ChargeLevel      float64
 }
 
 type Mob struct {
@@ -193,6 +197,10 @@ func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 		Level:     1,
 		Score:     0,
 		Alive:     true,
+		ClassID:   0,
+		Mass:      1.0,
+		StateFlags: 0,
+		ChargeLevel: 0.0,
 	}
 	w.Players[id] = p
 	w.spawnMinion(id, p.Pos.Add(physics.Vector2D{X: 40, Y: 0}))
@@ -711,7 +719,7 @@ func (w *GameWorld) spawnMinion(ownerID uint16, pos physics.Vector2D) {
 	if !ok {
 		return
 	}
-	maxLimit := 4
+	maxLimit := 1000
 	if len(owner.MinionIDs) >= maxLimit {
 		oldID := owner.MinionIDs[0]
 		w.removeMinionFromPlayer(owner, oldID)
@@ -808,7 +816,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		m1, ok1 := w.Mobs[a.ID]
 		m2, ok2 := w.Mobs[b.ID]
 		if ok1 && ok2 {
-			physics.ResolveCircleCircle(&m1.Pos, &m2.Pos, m1.Radius, m2.Radius, &m1.Vel, &m2.Vel, 0.15)
+			physics.ResolveCircleCircle(&m1.Pos, &m2.Pos, m1.Radius, m2.Radius, &m1.Vel, &m2.Vel, 1.0, 1.0, 0.15)
 		}
 		return
 	}
@@ -817,7 +825,12 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		p, ok1 := w.Players[a.ID]
 		m, ok2 := w.Mobs[b.ID]
 		if ok1 && ok2 && p.Alive {
-			if physics.ResolveCircleCircle(&p.Pos, &m.Pos, p.Radius, m.Radius, &p.Vel, &m.Vel, 0.3) {
+			relVelStart := p.Vel.Sub(m.Vel).Length()
+			if physics.ResolveCircleCircle(&p.Pos, &m.Pos, p.Radius, m.Radius, &p.Vel, &m.Vel, p.Mass, 1.0, 0.3) {
+				kineticEnergy := 0.5 * p.Mass * (relVelStart * relVelStart)
+				if p.ClassID == 1 && relVelStart > 100.0 {
+					m.Health -= kineticEnergy * 0.005
+				}
 				p.Health -= m.Damage * 0.12
 				m.Health -= p.Radius * 0.25
 				if m.Type == 2 {
@@ -865,7 +878,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		minion, ok1 := w.Minions[a.ID]
 		m, ok2 := w.Mobs[b.ID]
 		if ok1 && ok2 {
-			if physics.ResolveCircleCircle(&minion.Pos, &m.Pos, minion.Radius, m.Radius, &minion.Vel, &m.Vel, 0.25) {
+			if physics.ResolveCircleCircle(&minion.Pos, &m.Pos, minion.Radius, m.Radius, &minion.Vel, &m.Vel, 1.0, 1.0, 0.25) {
 				m.Health -= minion.Damage
 				minion.Health -= m.Damage * 0.4
 				if m.Type == 2 {
@@ -906,13 +919,14 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 		states = append(states, protocol.EntityState{
 			ID:        p.ID,
 			Type:      0,
-			Subtype:   0,
+			Subtype:   p.ClassID,
 			X:         float32(p.Pos.X),
 			Y:         float32(p.Pos.Y),
 			Angle:     float32(p.MouseAngle),
 			Health:    uint16(math.Max(0, p.Health)),
 			MaxHealth: uint16(p.MaxHealth),
 			Radius:    uint16(p.Radius),
+			StateFlags: p.StateFlags,
 		})
 	}
 	for _, m := range w.Mobs {

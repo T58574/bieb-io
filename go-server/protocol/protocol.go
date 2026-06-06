@@ -16,6 +16,7 @@ type EntityState struct {
 	Health    uint16
 	MaxHealth uint16
 	Radius    uint16
+	StateFlags uint32
 }
 
 type ClientInput struct {
@@ -35,7 +36,7 @@ func EncodeWelcome(playerID uint16, arenaWidth, arenaHeight float32) []byte {
 
 func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32, health, maxHealth uint16, upgradePoints uint8, statsPack1, statsPack2 uint32, waveNumber uint16, entities []EntityState) []byte {
 	count := len(entities)
-	bufSize := 36 + count*22
+	bufSize := 36 + count*26
 	buf := make([]byte, bufSize)
 	buf[0] = 2
 	binary.LittleEndian.PutUint32(buf[1:5], tick)
@@ -63,7 +64,8 @@ func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32,
 		binary.LittleEndian.PutUint16(buf[offset+16:offset+18], ent.Health)
 		binary.LittleEndian.PutUint16(buf[offset+18:offset+20], ent.MaxHealth)
 		binary.LittleEndian.PutUint16(buf[offset+20:offset+22], ent.Radius)
-		offset += 22
+		binary.LittleEndian.PutUint32(buf[offset+22:offset+26], ent.StateFlags)
+		offset += 26
 	}
 	return buf
 }

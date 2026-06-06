@@ -37,5 +37,6 @@
 - [Phase 1]: Arch Design & AI Context
 - [Phase 2]: Go Server Core & Physics
 - [Phase 3]: Entity System & Canvas Render
-- [Phase 4]: Rogue-like Wave & AI Logic
-- [Phase 5]: Optimization & Stress Test
+- [Phase 4]: Fantasy Class System (Warrior, Archer, Rogue, Mage) & Mechanics
+- [Phase 5]: Rogue-like Wave & AI Logic
+- [Phase 6]: Optimization & Stress Test

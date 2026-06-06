@@ -15,6 +15,7 @@ export interface EntityState {
   health: number;
   maxHealth: number;
   radius: number;
+  stateFlags: number;
 }
 
 export interface WorldStateMessage {
@@ -149,6 +150,11 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       type: "gameOver",
       score: view.getUint32(1, true),
       wave: view.getUint32(5, true),
+    };
+  }
+  return null;
+}
+ue),
     };
   }
   return null;

@@ -1,0 +1,23 @@
+{
+  "class_tree_specification": {
+    "base_class": "Tank_Tier_0",
+    "branches": {
+      "warrior": {
+        "mechanic_modifier": "Kinetic_Mass_Multiplier: 2.5, Recoil_As_Propulsion: true",
+        "tier_2_upgrades": ["Shield_Knight", "Gladiator"]
+      },
+      "archer": {
+        "mechanic_modifier": "Charge_Shot_Enabled: true, Max_Range_Boost: 1.8",
+        "tier_2_upgrades": ["Ricochet_Sniper", "Trapper"]
+      },
+      "rogue": {
+        "mechanic_modifier": "Invisibility_Stealth_Frames: 120, Dash_Cooldown: 4.0",
+        "tier_2_upgrades": ["Assassin_Blink", "Trickster_Decoy"]
+      },
+      "mage": {
+        "mechanic_modifier": "Field_Spawn_On_Impact: true, Drone_Control_Limit: 8",
+        "tier_2_upgrades": ["Chronomancer", "Geometric_Necromancer"]
+      }
+    }
+  }
+}

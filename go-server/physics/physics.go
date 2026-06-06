@@ -35,7 +35,7 @@ func (v Vector2D) Normalize() Vector2D {
 	return Vector2D{v.X / l, v.Y / l}
 }
 
-func ResolveCircleCircle(p1, p2 *Vector2D, r1, r2 float64, v1, v2 *Vector2D, bounce float64) bool {
+func ResolveCircleCircle(p1, p2 *Vector2D, r1, r2 float64, v1, v2 *Vector2D, m1, m2 float64, bounce float64) bool {
 	delta := p2.Sub(*p1)
 	distSq := delta.LengthSq()
 	minDist := r1 + r2
@@ -48,18 +48,37 @@ func ResolveCircleCircle(p1, p2 *Vector2D, r1, r2 float64, v1, v2 *Vector2D, bou
 	}
 	normal := delta.Mul(1.0 / dist)
 	overlap := minDist - dist
-	separation := normal.Mul(overlap * 0.5)
-	*p1 = p1.Sub(separation)
-	*p2 = p2.Add(separation)
+
+	totalMass := m1 + m2
+	var sep1, sep2 float64
+	if totalMass > 0 {
+		sep1 = overlap * (m2 / totalMass)
+		sep2 = overlap * (m1 / totalMass)
+	} else {
+		sep1 = overlap * 0.5
+		sep2 = overlap * 0.5
+	}
+	*p1 = p1.Sub(normal.Mul(sep1))
+	*p2 = p2.Add(normal.Mul(sep2))
 
 	relVel := v2.Sub(*v1)
 	velAlongNormal := relVel.X*normal.X + relVel.Y*normal.Y
 	if velAlongNormal > 0 {
 		return true
 	}
-	impulse := -(1.0 + bounce) * velAlongNormal / 2.0
-	*v1 = v1.Sub(normal.Mul(impulse))
-	*v2 = v2.Add(normal.Mul(impulse))
+
+	invMass1 := 0.0
+	if m1 > 0 {
+		invMass1 = 1.0 / m1
+	}
+	invMass2 := 0.0
+	if m2 > 0 {
+		invMass2 = 1.0 / m2
+	}
+
+	impulse := -(1.0 + bounce) * velAlongNormal / (invMass1 + invMass2)
+	*v1 = v1.Sub(normal.Mul(impulse * invMass1))
+	*v2 = v2.Add(normal.Mul(impulse * invMass2))
 	return true
 }
 
