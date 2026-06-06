@@ -222,7 +222,24 @@ function connectToServer() {
     }
   };
 
-  startInputLoop();
+  if (inputInterval !== null) {
+    clearInterval(inputInterval);
+  }
+  inputInterval = window.setInterval(() => {
+    if (socket && socket.readyState === WebSocket.OPEN && gameState === "playing") {
+      let mask = 0;
+      if (keys.w) mask |= 0x01;
+      if (keys.a) mask |= 0x02;
+      if (keys.s) mask |= 0x04;
+      if (keys.d) mask |= 0x08;
+      if (keys.space) mask |= 0x10;
+      if (keys.mouseLeft) mask |= 0x20;
+      socket.send(serializeInput(mask, mouseAngle, selectedUpgradeChoice));
+      if (selectedUpgradeChoice !== 0) {
+        selectedUpgradeChoice = 0;
+      }
+    }
+  }, 1000 / 60);
 }
 
 window.addEventListener("keydown", (e) => {
@@ -417,20 +434,14 @@ function drawUpgradePanel() {
 
   const barX = panelX + labelW;
 
-  const stats: [string, number, string, string][] = [
-    ["Regen", statRegen, "#10b981", "1"],
-    ["Max HP", statMaxHP, "#22c55e", "2"],
-    ["Speed", statSpeed, "#3b82f6", "3"],
-    ["M.Damage", statMinionDmg, "#ef4444", "4"],
-    ["M.Speed", statMinionSpeed, "#f97316", "5"],
-    ["M.Health", statMinionHP, "#06b6d4", "6"],
-    ["M.Pierce", statMinionPierce, "#8b5cf6", "7"],
-    ["M.Regen", statMinionRegen, "#a3e635", "8"],
-  ];
-
-  for (let i = 0; i < stats.length; i++) {
-    drawStatBar(stats[i][0], stats[i][1], barX, panelY + i * rowH, stats[i][2], stats[i][3]);
-  }
+  drawStatBar("Regen", statRegen, barX, panelY, "#10b981", "1");
+  drawStatBar("Max HP", statMaxHP, barX, panelY + rowH, "#22c55e", "2");
+  drawStatBar("Speed", statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3");
+  drawStatBar("M.Damage", statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4");
+  drawStatBar("M.Speed", statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5");
+  drawStatBar("M.Health", statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6");
+  drawStatBar("M.Pierce", statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7");
+  drawStatBar("M.Regen", statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8");
 }
 
 function drawHUD() {
@@ -690,6 +701,15 @@ function renderGame() {
           c.stroke();
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
+
+        const chargePct = (ent.stateFlags >> 8) / 100.0;
+        if (chargePct > 0) {
+          ctx.beginPath();
+          ctx.arc(0, 0, ent.radius + 5 + chargePct * 10, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(250, 204, 21, 0.8)`;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
       } else if (ent.subtype === 3) { // Rogue (Diamond)
         const cacheKey = `p_rogue_${ent.radius}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
