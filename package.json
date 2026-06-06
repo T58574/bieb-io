@@ -2,7 +2,8 @@
   "name": "necro-geometry-root",
   "version": "1.0.0",
   "scripts": {
-    "start": "concurrently \"npm run dev --prefix ts-client\" \"start-server.bat\"",
+    "prestart": "npx --yes kill-port 8080 5173 || true",
+    "start": "concurrently --kill-others \"npm run dev --prefix ts-client\" \"start-server.bat\"",
     "server": "start-server.bat"
   },
   "dependencies": {
