@@ -356,10 +356,8 @@ func (w *GameWorld) updateMobs(dt float64) {
 					if (p.StateFlags & (1 << 8)) != 0 {
 						hasNecrosis = true
 					}
-					for _, mID := range p.Inventory {
-						if mID == 3 {
-							hasNecrosis = true
-						}
+					if count, ok := p.Inventory[3]; ok && count > 0 {
+						hasNecrosis = true
 					}
 					break
 				}
@@ -418,22 +416,42 @@ func (w *GameWorld) spawnDrone(ownerID uint16, pos physics.Vector2D) {
 func (w *GameWorld) dropLoot(pos physics.Vector2D, rarity uint8, mobType uint8) {
 	roll := w.rand.Float64()
 	var itemID uint8
+
+	commonChance := 0.70
+	rareChance := 0.25
+	uniqueChance := 0.05
+
+	uniqueChance += float64(w.WaveNumber) * 0.01
+	rareChance += float64(w.WaveNumber) * 0.005
+	total := commonChance + rareChance + uniqueChance
+	commonChance /= total
+	rareChance /= total
+	uniqueChance /= total
+
 	if mobType == 10 || mobType == 11 || mobType == 12 {
 		if roll < 0.5 {
-			itemID = 2
+			itemID = 4
 		} else {
 			itemID = 3
 		}
 	} else if rarity > 0 {
-		if roll < 0.10 {
-			if roll < 0.07 {
-				itemID = 1
+		if roll < uniqueChance*3 {
+			if roll < (uniqueChance*3)/2 {
+				itemID = 3
 			} else {
-				itemID = 2
+				itemID = 4
 			}
+		} else if roll < (uniqueChance*3 + rareChance*2) {
+			itemID = 2
+		} else if roll < (uniqueChance*3 + rareChance*2 + commonChance*0.3) {
+			itemID = 1
 		}
 	} else {
-		if roll < 0.01 {
+		if roll < uniqueChance*0.2 {
+			itemID = 4
+		} else if roll < (uniqueChance*0.2 + rareChance*0.2) {
+			itemID = 2
+		} else if roll < (uniqueChance*0.2 + rareChance*0.2 + commonChance*0.05) {
 			itemID = 1
 		}
 	}

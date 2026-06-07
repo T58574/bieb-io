@@ -204,7 +204,7 @@ func (s *GameServer) broadcastState(tick uint32) {
 			p.CardChoices[0],
 			p.CardChoices[1],
 			p.CardChoices[2],
-			p.Inventory[:],
+			p.GetInventoryArray(),
 			states,
 		)
 		_ = client.send(stateBuf)
