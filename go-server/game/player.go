@@ -124,6 +124,9 @@ func (w *GameWorld) RemovePlayer(id uint16) {
 	}
 	w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 	delete(w.Players, id)
+	if len(w.Players) == 0 {
+		w.reset()
+	}
 }
 
 func (w *GameWorld) UpdateInput(id uint16, keys uint8, angle float32, upgradeSelect uint8, deleteSlotSelect uint8) {
