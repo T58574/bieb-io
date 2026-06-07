@@ -99,3 +99,6 @@ celerybeat-schedule
 # --- LOGS ---
 *.log
 logs/
+
+# --- RELEASE ---
+release/
