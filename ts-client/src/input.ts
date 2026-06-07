@@ -60,7 +60,7 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
   window.addEventListener("keydown", (e) => {
     if (e.key === "x" || e.key === "X") {
       const itemCounts = new Map<number, number>();
-      for (let i = 0; i < 16; i++) {
+      for (let i = 0; i < 100; i++) {
         const itemID = state.inventory[2 * i];
         const count = state.inventory[2 * i + 1];
         if (itemID && itemID !== 0 && count > 0) {

@@ -102,7 +102,7 @@ describe('protocol serialization', () => {
 
     describe('WorldStateMessage (Opcode 2)', () => {
       it('should deserialize a valid world state message with zero entities', () => {
-        const buffer = new ArrayBuffer(73);
+        const buffer = new ArrayBuffer(241);
         const view = new DataView(buffer);
         view.setUint8(0, 2);
         view.setUint32(1, 100, true);
@@ -129,10 +129,10 @@ describe('protocol serialization', () => {
         view.setUint8(40, 2);
         view.setUint8(41, 3);
         view.setUint8(42, 4);
-        view.setUint16(71, 0, true);
+        view.setUint16(239, 0, true);
 
         const msg = deserializeMessage(buffer);
-        const expectedInventory = Array(32).fill(0);
+        const expectedInventory = Array(200).fill(0);
         expectedInventory[0] = 1;
         expectedInventory[1] = 2;
         expectedInventory[2] = 3;
@@ -167,7 +167,7 @@ describe('protocol serialization', () => {
       });
 
       it('should deserialize a valid world state message with entities', () => {
-        const buffer = new ArrayBuffer(73 + 26);
+        const buffer = new ArrayBuffer(241 + 26);
         const view = new DataView(buffer);
         view.setUint8(0, 2); // Opcode
         view.setUint16(34, 1, true); // entitiesCount
@@ -178,9 +178,9 @@ describe('protocol serialization', () => {
         view.setUint8(40, 0); // slot2
         view.setUint8(41, 0); // slot3
         view.setUint8(42, 0); // slot4
-        view.setUint16(71, 0, true);
+        view.setUint16(239, 0, true);
 
-        const offset = 73;
+        const offset = 241;
         view.setUint16(offset, 101, true); // id
         view.setUint8(offset + 2, 1); // type
         view.setUint8(offset + 3, 2); // subtype
@@ -212,14 +212,14 @@ describe('protocol serialization', () => {
       });
 
       it('should stop reading entities if buffer is truncated', () => {
-        const buffer = new ArrayBuffer(73 + 26);
+        const buffer = new ArrayBuffer(241 + 26);
         const view = new DataView(buffer);
         view.setUint8(0, 2);
         view.setUint16(34, 2, true);
         view.setUint8(36, 0);
         view.setUint8(37, 0);
         view.setUint8(38, 0);
-        view.setUint16(71, 0, true);
+        view.setUint16(239, 0, true);
 
         const msg = deserializeMessage(buffer);
         expect(msg?.type).toBe('worldState');
@@ -229,7 +229,7 @@ describe('protocol serialization', () => {
       });
 
       it('should return null if buffer is too short for base world state', () => {
-        const buffer = new ArrayBuffer(72);
+        const buffer = new ArrayBuffer(240);
         const view = new DataView(buffer);
         view.setUint8(0, 2);
         expect(deserializeMessage(buffer)).toBeNull();
