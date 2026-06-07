@@ -70,15 +70,15 @@ export function drawGrid(ctx: CanvasRenderingContext2D, cx: number, cy: number, 
   }
 }
 
-export function drawStatBar(ctx: CanvasRenderingContext2D, label: string, level: number, x: number, y: number, color: string, hotkey: string) {
-  const barW = 140;
-  const barH = 16;
+export function drawStatBar(ctx: CanvasRenderingContext2D, label: string, level: number, x: number, y: number, color: string, hotkey: string, uiScale: number) {
+  const barW = 140 * uiScale;
+  const barH = 16 * uiScale;
   const maxLvl = 7;
 
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "bold 10px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${10 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "right";
-  ctx.fillText(label, x - 8, y + 12);
+  ctx.fillText(label, x - 8 * uiScale, y + 12 * uiScale);
 
   ctx.fillStyle = "rgba(5, 5, 8, 0.85)";
   ctx.beginPath();
@@ -111,13 +111,13 @@ export function drawStatBar(ctx: CanvasRenderingContext2D, label: string, level:
 
   if (state.upgradePoints > 0 && level < maxLvl) {
     ctx.fillStyle = "#fbbf24";
-    ctx.font = "bold 11px 'JetBrains Mono', monospace";
+    ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
     ctx.textAlign = "left";
-    ctx.fillText("+" + hotkey, x + barW + 6, y + 13);
+    ctx.fillText("+" + hotkey, x + barW + 6 * uiScale, y + 13 * uiScale);
   }
 }
 
-export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
+export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
   ctx.fillStyle = "rgba(5, 5, 8, 0.85)";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
@@ -125,15 +125,15 @@ export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWid
   const cy = canvasHeight / 2;
 
   ctx.fillStyle = "#00f0ff";
-  ctx.font = "bold 24px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${24 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "center";
-  ctx.fillText("ДОСТУПНО ОБНОВЛЕНИЕ ПО", cx, cy - 200);
+  ctx.fillText("ДОСТУПНО ОБНОВЛЕНИЕ ПО", cx, cy - 200 * uiScale);
 
-  const cardW = 200;
-  const cardH = 280;
-  const gap = 30;
-  const startX = cx - 330;
-  const startY = cy - 140;
+  const cardW = 200 * uiScale;
+  const cardH = 280 * uiScale;
+  const gap = 30 * uiScale;
+  const startX = cx - 330 * uiScale;
+  const startY = cy - 140 * uiScale;
 
   const cardDetails: Record<number, { title: string; color: string; desc: string; rarity: string }> = {
     1: { title: "ОПТИМИЗАЦИЯ СКОРОСТИ", color: "#10b981", desc: "Увеличение тактовой частоты на +10%", rarity: "Common" },
@@ -169,31 +169,31 @@ export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWid
     ctx.stroke();
 
     ctx.fillStyle = details.color;
-    ctx.font = "bold 10px 'JetBrains Mono', monospace";
+    ctx.font = `bold ${10 * uiScale}px 'JetBrains Mono', monospace`;
     ctx.textAlign = "center";
-    ctx.fillText(details.rarity.toUpperCase(), x + cardW / 2, y + 30);
+    ctx.fillText(details.rarity.toUpperCase(), x + cardW / 2, y + 30 * uiScale);
 
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 12px 'JetBrains Mono', monospace";
+    ctx.font = `bold ${12 * uiScale}px 'JetBrains Mono', monospace`;
     const titleWords = details.title.split(" ");
-    let titleY = y + 70;
+    let titleY = y + 70 * uiScale;
     for (const w of titleWords) {
       ctx.fillText(w, x + cardW / 2, titleY);
-      titleY += 16;
+      titleY += 16 * uiScale;
     }
 
     ctx.fillStyle = "#94a3b8";
     ctx.font = "10px 'JetBrains Mono', monospace";
     const descWords = details.desc.split(" ");
     let descLine = "";
-    let descY = y + 170;
+    let descY = y + 170 * uiScale;
     for (let n = 0; n < descWords.length; n++) {
       const testLine = descLine + descWords[n] + " ";
       const metrics = ctx.measureText(testLine);
-      if (metrics.width > cardW - 24 && n > 0) {
+      if (metrics.width > cardW - 24 * uiScale && n > 0) {
         ctx.fillText(descLine, x + cardW / 2, descY);
         descLine = descWords[n] + " ";
-        descY += 14;
+        descY += 14 * uiScale;
       } else {
         descLine = testLine;
       }
@@ -201,19 +201,19 @@ export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWid
     ctx.fillText(descLine, x + cardW / 2, descY);
 
     ctx.fillStyle = hovered ? "#00f0ff" : "#64748b";
-    ctx.font = "bold 11px 'JetBrains Mono', monospace";
-    ctx.fillText(`[НАЖМИТЕ ${i + 1}]`, x + cardW / 2, y + cardH - 25);
+    ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
+    ctx.fillText(`[НАЖМИТЕ ${i + 1}]`, x + cardW / 2, y + cardH - 25 * uiScale);
   }
 }
 
-export function drawUpgradePanel(ctx: CanvasRenderingContext2D) {
+export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number) {
   if (state.upgradePoints > 0) {
     return;
   }
-  const panelX = 12;
-  const panelY = 100;
-  const rowH = 24;
-  const labelW = 90;
+  const panelX = 12 * uiScale;
+  const panelY = 100 * uiScale;
+  const rowH = 24 * uiScale;
+  const labelW = 90 * uiScale;
 
   ctx.fillStyle = "rgba(5, 5, 8, 0.75)";
   ctx.beginPath();
@@ -226,50 +226,63 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D) {
   ctx.stroke();
 
   ctx.fillStyle = "#64748b";
-  ctx.font = "bold 11px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "left";
-  ctx.fillText("МЕТРИКИ ЯДРА СИСТЕМЫ", panelX, panelY - 14);
+  ctx.fillText("МЕТРИКИ ЯДРА СИСТЕМЫ", panelX, panelY - 14 * uiScale);
 
   const barX = panelX + labelW;
 
-  drawStatBar(ctx, "РЕГЕН. ЯДРА", state.statRegen, barX, panelY, "#10b981", "1");
-  drawStatBar(ctx, "СТАБИЛЬНОСТЬ", state.statMaxHP, barX, panelY + rowH, "#22c55e", "2");
-  drawStatBar(ctx, "ЧАСТОТА", state.statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3");
-  drawStatBar(ctx, "УРОН ДРОНОВ", state.statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4");
-  drawStatBar(ctx, "СКОР. ДРОНОВ", state.statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5");
-  drawStatBar(ctx, "ХП ДРОНОВ", state.statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6");
-  drawStatBar(ctx, "ПРОБИВ. ДР.", state.statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7");
-  drawStatBar(ctx, "РЕГЕН. ДР.", state.statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8");
+  drawStatBar(ctx, "РЕГЕН. ЯДРА", state.statRegen, barX, panelY, "#10b981", "1", uiScale);
+  drawStatBar(ctx, "СТАБИЛЬНОСТЬ", state.statMaxHP, barX, panelY + rowH, "#22c55e", "2", uiScale);
+  drawStatBar(ctx, "ЧАСТОТА", state.statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3", uiScale);
+  drawStatBar(ctx, "УРОН ДРОНОВ", state.statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4", uiScale);
+  drawStatBar(ctx, "СКОР. ДРОНОВ", state.statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5", uiScale);
+  drawStatBar(ctx, "ХП ДРОНОВ", state.statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6", uiScale);
+  drawStatBar(ctx, "ПРОБИВ. ДР.", state.statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7", uiScale);
+  drawStatBar(ctx, "РЕГЕН. ДР.", state.statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8", uiScale);
 }
 
-export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
-  const startY = 120;
-  const slotW = 44;
-  const slotH = 44;
-  const gap = 6;
-  const rightX = canvasWidth - 210;
+export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
+  const startY = 120 * uiScale;
+  const slotW = 44 * uiScale;
+  const slotH = 44 * uiScale;
+  const gap = 6 * uiScale;
+  const rightX = canvasWidth - 210 * uiScale;
 
-  const itemDetails: Record<number, { name: string; color: string; desc: string; abbrev: string }> = {
-    1: { name: "КОНДЕНСАТОР", color: "#10b981", desc: "+10% Частота", abbrev: "Opt\nCap" },
-    2: { name: "СОПРОЦЕССОР", color: "#fbbf24", desc: "+15% Вычисления\n+5% Вамп", abbrev: "Over\nProc" },
-    3: { name: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Взрывы на\nубийстве", abbrev: "Necr\nCore" }
+  const itemDetails: Record<number, { name: string; color: string; desc: string; abbrev: string; rarity: string }> = {
+    1: { name: "КОНДЕНСАТОР", color: "#10b981", desc: "+10% Частота", abbrev: "Opt\nCap", rarity: "Common" },
+    2: { name: "СОПРОЦЕССОР", color: "#fbbf24", desc: "+15% Вычисления\n+5% Вамп", abbrev: "Over\nProc", rarity: "Rare" },
+    3: { name: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Взрывы на\nубийстве", abbrev: "Necr\nCore", rarity: "Unique" }
   };
+
+  const itemCounts = new Map<number, number>();
+  for (let i = 0; i < 32; i++) {
+    const itemID = state.inventory[i];
+    if (itemID && itemID !== 0) {
+      itemCounts.set(itemID, (itemCounts.get(itemID) || 0) + 1);
+    }
+  }
+
+  const uniqueItems = Array.from(itemCounts.keys());
+  const rows = Math.max(1, Math.ceil(uniqueItems.length / 4));
+  const height = rows * (slotH + gap) + 50 * uiScale;
 
   ctx.fillStyle = "rgba(5, 5, 8, 0.65)";
   ctx.beginPath();
-  ctx.roundRect(rightX - 10, startY - 30, 214, 439, 10);
+  ctx.roundRect(rightX - 10 * uiScale, startY - 30 * uiScale, 214 * uiScale, height, 10 * uiScale);
   ctx.fill();
   ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1.5 * uiScale;
   ctx.stroke();
 
   ctx.fillStyle = "#64748b";
-  ctx.font = "bold 10px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${10 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "center";
-  ctx.fillText("МОДУЛИ", rightX + 97, startY - 10);
+  ctx.fillText("МОДУЛИ", rightX + 97 * uiScale, startY - 10 * uiScale);
 
-  for (let i = 0; i < 32; i++) {
-    const itemID = state.inventory[i] || 0;
+  for (let i = 0; i < uniqueItems.length; i++) {
+    const itemID = uniqueItems[i];
+    const count = itemCounts.get(itemID) || 1;
     const c = i % 4;
     const r = Math.floor(i / 4);
     const x = rightX + c * (slotW + gap);
@@ -277,76 +290,85 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
 
     const hovered = state.mouseX >= x && state.mouseX <= x + slotW && state.mouseY >= y && state.mouseY <= y + slotH;
 
+    let borderColor = "rgba(255, 255, 255, 0.15)";
+    const details = itemDetails[itemID];
+    if (details) {
+      if (details.rarity === "Common") borderColor = "#10b981";
+      else if (details.rarity === "Rare") borderColor = "#3b82f6";
+      else if (details.rarity === "Unique") borderColor = "#f97316";
+    }
+
     ctx.fillStyle = hovered ? "rgba(30, 41, 59, 0.75)" : "rgba(10, 15, 26, 0.75)";
-    ctx.strokeStyle = itemID !== 0 ? (itemDetails[itemID]?.color || "rgba(255, 255, 255, 0.15)") : "rgba(255, 255, 255, 0.08)";
-    ctx.lineWidth = itemID !== 0 && hovered ? 2.5 : 1.5;
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = hovered ? 2.5 * uiScale : 1.5 * uiScale;
 
     ctx.beginPath();
-    ctx.roundRect(x, y, slotW, slotH, 6);
+    ctx.roundRect(x, y, slotW, slotH, 6 * uiScale);
     ctx.fill();
     ctx.stroke();
 
-    if (itemID !== 0) {
-      const details = itemDetails[itemID];
-      if (details) {
-        ctx.fillStyle = details.color;
-        ctx.font = "bold 8px 'JetBrains Mono', monospace";
-        ctx.textAlign = "center";
-        const lines = details.abbrev.split("\n");
-        ctx.fillText(lines[0], x + slotW / 2, y + 18);
-        ctx.fillText(lines[1], x + slotW / 2, y + 28);
-
-        if (hovered) {
-          ctx.save();
-          ctx.fillStyle = "rgba(5, 5, 8, 0.95)";
-          ctx.strokeStyle = details.color;
-          ctx.lineWidth = 1.5;
-          const popW = 180;
-          const popH = 80;
-          const popX = rightX - popW - 15;
-          const popY = y - 5;
-          ctx.beginPath();
-          ctx.roundRect(popX, popY, popW, popH, 8);
-          ctx.fill();
-          ctx.stroke();
-
-          ctx.fillStyle = "#ffffff";
-          ctx.font = "bold 11px 'JetBrains Mono', monospace";
-          ctx.textAlign = "left";
-          ctx.fillText(details.name, popX + 10, popY + 18);
-
-          ctx.fillStyle = "#94a3b8";
-          ctx.font = "9px 'JetBrains Mono', monospace";
-          const descLines = details.desc.split("\n");
-          ctx.fillText(descLines[0], popX + 10, popY + 34);
-          if (descLines[1]) {
-            ctx.fillText(descLines[1], popX + 10, popY + 46);
-          }
-
-          ctx.fillStyle = "#ef4444";
-          ctx.font = "bold 9px 'JetBrains Mono', monospace";
-          ctx.fillText("[НАЖМИТЕ X ДЛЯ УДАЛЕНИЯ]", popX + 10, popY + popH - 12);
-          ctx.restore();
-        }
-      }
-    } else {
-      ctx.fillStyle = "#334155";
-      ctx.font = "bold 10px 'JetBrains Mono', monospace";
+    if (details) {
+      ctx.fillStyle = details.color;
+      ctx.font = `bold ${8 * uiScale}px 'JetBrains Mono', monospace`;
       ctx.textAlign = "center";
-      ctx.fillText("-", x + slotW / 2, y + 26);
+      const lines = details.abbrev.split("\n");
+      ctx.fillText(lines[0], x + slotW / 2, y + 18 * uiScale);
+      if (lines[1]) {
+        ctx.fillText(lines[1], x + slotW / 2, y + 28 * uiScale);
+      }
+
+      if (count > 1) {
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
+        ctx.textAlign = "right";
+        ctx.fillText(`x${count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale);
+      }
+
+      if (hovered) {
+        ctx.save();
+        ctx.fillStyle = "rgba(5, 5, 8, 0.95)";
+        ctx.strokeStyle = details.color;
+        ctx.lineWidth = 1.5 * uiScale;
+        const popW = 180 * uiScale;
+        const popH = 80 * uiScale;
+        const popX = rightX - popW - 15 * uiScale;
+        const popY = y - 5 * uiScale;
+        ctx.beginPath();
+        ctx.roundRect(popX, popY, popW, popH, 8 * uiScale);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
+        ctx.textAlign = "left";
+        ctx.fillText(details.name, popX + 10 * uiScale, popY + 18 * uiScale);
+
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = `${9 * uiScale}px 'JetBrains Mono', monospace`;
+        const descLines = details.desc.split("\n");
+        ctx.fillText(descLines[0], popX + 10 * uiScale, popY + 34 * uiScale);
+        if (descLines[1]) {
+          ctx.fillText(descLines[1], popX + 10 * uiScale, popY + 46 * uiScale);
+        }
+
+        ctx.fillStyle = "#ef4444";
+        ctx.font = `bold ${9 * uiScale}px 'JetBrains Mono', monospace`;
+        ctx.fillText("[НАЖМИТЕ X ДЛЯ УДАЛЕНИЯ]", popX + 10 * uiScale, popY + popH - 12 * uiScale);
+        ctx.restore();
+      }
     }
   }
 }
 
-export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
-  const barWidth = 350;
-  const barHeight = 16;
+export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
+  const barWidth = 350 * uiScale;
+  const barHeight = 16 * uiScale;
   const centerX = canvasWidth / 2;
-  const bottomY = canvasHeight - 30;
+  const bottomY = canvasHeight - 30 * uiScale;
 
   ctx.fillStyle = "rgba(5, 5, 8, 0.85)";
   ctx.beginPath();
-  ctx.roundRect(centerX - barWidth / 2, bottomY - 24, barWidth, barHeight, 6);
+  ctx.roundRect(centerX - barWidth / 2, bottomY - 24 * uiScale, barWidth, barHeight, 6);
   ctx.fill();
   ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
   ctx.lineWidth = 1.5;
@@ -359,7 +381,7 @@ export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canv
     hpGrad.addColorStop(1, "#6366f1");
     ctx.fillStyle = hpGrad;
     ctx.beginPath();
-    ctx.roundRect(centerX - barWidth / 2, bottomY - 24, barWidth * hpPct, barHeight, 6);
+    ctx.roundRect(centerX - barWidth / 2, bottomY - 24 * uiScale, barWidth * hpPct, barHeight, 6);
     ctx.fill();
   }
 
@@ -383,29 +405,29 @@ export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canv
   }
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 13px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "center";
-  ctx.fillText(`ПРОШИВКА ЯДРА: v${state.currentLevel}`, centerX, bottomY - 28);
+  ctx.fillText(`ПРОШИВКА ЯДРА: v${state.currentLevel}`, centerX, bottomY - 28 * uiScale);
 
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "bold 16px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${16 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "left";
-  ctx.fillText(`ПАКЕТОВ ДАННЫХ: ${state.currentScore}`, 20, canvasHeight - 25);
+  ctx.fillText(`ПАКЕТОВ ДАННЫХ: ${state.currentScore}`, 20 * uiScale, canvasHeight - 25 * uiScale);
 
   let activeMinions = 0;
   for (const ent of renderEntities.values()) {
     if (ent.type === 4) activeMinions++;
   }
   ctx.textAlign = "right";
-  ctx.font = "bold 16px 'JetBrains Mono', monospace";
-  ctx.fillText(`АКТИВНЫЕ ДРОНЫ: ${activeMinions}`, canvasWidth - 20, 35);
+  ctx.font = `bold ${16 * uiScale}px 'JetBrains Mono', monospace`;
+  ctx.fillText(`АКТИВНЫЕ ДРОНЫ: ${activeMinions}`, canvasWidth - 20 * uiScale, 35 * uiScale);
 
   ctx.fillStyle = "#64748b";
-  ctx.font = "bold 13px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "center";
-  ctx.fillText(`СЕКТОР ЧИПА: ${state.waveNumber}`, centerX, bottomY - 54);
+  ctx.fillText(`СЕКТОР ЧИПА: ${state.waveNumber}`, centerX, bottomY - 54 * uiScale);
 
-  drawInventoryHUD(ctx, canvasWidth, canvasHeight);
+  drawInventoryHUD(ctx, canvasWidth, canvasHeight, uiScale);
 }
 
 export function drawMenuShape(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, sides: number, angle: number, color: string) {
@@ -427,6 +449,7 @@ export function drawMenuShape(ctx: CanvasRenderingContext2D, x: number, y: numbe
 }
 
 export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
+  const uiScale = Math.min(canvasWidth / 1920, canvasHeight / 1080);
   ctx.fillStyle = "#050508";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
@@ -457,7 +480,7 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.fillText("NECRO-GEOMETRY", cx, cy - 120);
 
   ctx.fillStyle = "#64748b";
-  ctx.font = "bold 13px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.fillText("[СИНХРОНИЗАЦИЯ КОГНИТИВНОГО ЯДРА // АКТИВНО]", cx, cy - 85);
 
   const inputW = 320;
@@ -474,7 +497,7 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.stroke();
 
   ctx.fillStyle = state.usernameInput.length > 0 ? "#ffffff" : "#64748b";
-  ctx.font = "bold 13px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "center";
   const displayText = state.usernameInput.length > 0 ? `>> ID: ${state.usernameInput}` : ">> ВВЕДИТЕ ИДЕНТИФИКАТОР...";
   const blink = Math.floor(Date.now() / 500) % 2 === 0 && state.usernameInput.length > 0 ? "|" : "";
@@ -496,16 +519,17 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.stroke();
 
   ctx.fillStyle = hovered ? "#00f0ff" : "#ffffff";
-  ctx.font = "bold 15px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${15 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "center";
   ctx.fillText("[ЗАПУСТИТЬ ЯДРО]", cx, btnY + 32);
 
   ctx.fillStyle = "#475569";
-  ctx.font = "bold 11px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.fillText("WASD/ДВИЖЕНИЕ | МЫШЬ/ПРИЦЕЛ | ЛКМ/СТРЕЛЬБА | ПРОБЕЛ/ПРИЗЫВ", cx, canvasHeight - 40);
 }
 
 export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
+  const uiScale = Math.min(canvasWidth / 1920, canvasHeight / 1080);
   ctx.fillStyle = "rgba(5, 5, 8, 0.95)";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
@@ -518,7 +542,7 @@ export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: numbe
   ctx.fillText("КРИТИЧЕСКИЙ СБОЙ ЯДРА", cx, cy - 100);
 
   ctx.fillStyle = "#64748b";
-  ctx.font = "bold 13px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.fillText("ОТЧЕТ МЕТРИК СЕКТОРА // АВАРИЙНЫЙ КОЛЛАПС", cx, cy - 65);
 
   ctx.fillStyle = "#ffffff";
@@ -545,15 +569,15 @@ export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: numbe
   ctx.stroke();
 
   ctx.fillStyle = hovered ? "#00f0ff" : "#ffffff";
-  ctx.font = "bold 15px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${15 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.fillText("[ПЕРЕЗАПУСК ЯДРА]", cx, btnY + 32);
 
   ctx.fillStyle = "#475569";
-  ctx.font = "bold 11px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.fillText("Нажмите ENTER для перезапуска ядра", cx, canvasHeight - 40);
 }
 
-export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
+export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
   ctx.fillStyle = "rgba(5, 5, 8, 0.85)";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
@@ -561,15 +585,15 @@ export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth:
   const cy = canvasHeight / 2;
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 24px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${24 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "center";
-  ctx.fillText("ВЫБЕРИТЕ СПЕЦИФИКАЦИЮ АРХИТЕКТУРЫ", cx, cy - 180);
+  ctx.fillText("ВЫБЕРИТЕ СПЕЦИФИКАЦИЮ АРХИТЕКТУРЫ", cx, cy - 180 * uiScale);
 
-  const cardW = 200;
-  const cardH = 260;
-  const gap = 24;
-  const startX = cx - 312;
-  const startY = cy - 120;
+  const cardW = 200 * uiScale;
+  const cardH = 260 * uiScale;
+  const gap = 24 * uiScale;
+  const startX = cx - 312 * uiScale;
+  const startY = cy - 120 * uiScale;
 
   const classes = [
     { name: "РЕЙНДЖЕР", color: "#00f0ff", desc: "Направленный Лазерный Импульс линейный высокий DPS. Пассивка: Разгон Кэша - взрыв на каждый 3-й хит.", shape: 6 },
@@ -594,13 +618,13 @@ export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth:
     ctx.stroke();
 
     ctx.save();
-    ctx.translate(x + cardW / 2, y + 60);
+    ctx.translate(x + cardW / 2, y + 60 * uiScale);
     ctx.fillStyle = cls.color + "33";
     ctx.strokeStyle = cls.color;
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     const sides = cls.shape;
-    const r = 28;
+    const r = 28 * uiScale;
     for (let j = 0; j < sides; j++) {
       const a = (j * 2 * Math.PI) / sides - Math.PI / 2;
       ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
@@ -611,23 +635,23 @@ export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth:
     ctx.restore();
 
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 15px 'JetBrains Mono', monospace";
+    ctx.font = `bold ${15 * uiScale}px 'JetBrains Mono', monospace`;
     ctx.textAlign = "center";
-    ctx.fillText(cls.name, x + cardW / 2, y + 130);
+    ctx.fillText(cls.name, x + cardW / 2, y + 130 * uiScale);
 
     ctx.fillStyle = "#94a3b8";
     ctx.font = "10px 'JetBrains Mono', monospace";
 
     const words = cls.desc.split(" ");
     let line = "";
-    let lineY = y + 165;
+    let lineY = y + 165 * uiScale;
     for (let n = 0; n < words.length; n++) {
       const testLine = line + words[n] + " ";
       const metrics = ctx.measureText(testLine);
-      if (metrics.width > cardW - 24 && n > 0) {
+      if (metrics.width > cardW - 24 * uiScale && n > 0) {
         ctx.fillText(line, x + cardW / 2, lineY);
         line = words[n] + " ";
-        lineY += 15;
+        lineY += 15 * uiScale;
       } else {
         line = testLine;
       }
@@ -636,7 +660,7 @@ export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth:
   }
 }
 
-export function drawPauseUI(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
+export function drawPauseUI(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
   ctx.fillStyle = "rgba(5, 5, 8, 0.65)";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
@@ -644,13 +668,13 @@ export function drawPauseUI(ctx: CanvasRenderingContext2D, canvasWidth: number, 
   const cy = canvasHeight / 2;
 
   ctx.fillStyle = "#00f0ff";
-  ctx.font = "bold 28px 'JetBrains Mono', monospace";
+  ctx.font = `bold ${28 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "center";
-  ctx.fillText("СИСТЕМА НА ПАУЗЕ", cx, cy - 20);
+  ctx.fillText("СИСТЕМА НА ПАУЗЕ", cx, cy - 20 * uiScale);
 
   ctx.fillStyle = "#94a3b8";
-  ctx.font = "bold 13px 'JetBrains Mono', monospace";
-  ctx.fillText("[НАЖМИТЕ ESC ДЛЯ ПРОДОЛЖЕНИЯ]", cx, cy + 20);
+  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
+  ctx.fillText("[НАЖМИТЕ ESC ДЛЯ ПРОДОЛЖЕНИЯ]", cx, cy + 20 * uiScale);
 }
 
 export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
@@ -1188,21 +1212,22 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-  drawHUD(ctx, canvasWidth, canvasHeight);
-  drawUpgradePanel(ctx);
+  const uiScale = Math.min(canvasWidth / 1920, canvasHeight / 1080);
+  drawHUD(ctx, canvasWidth, canvasHeight, uiScale);
+  drawUpgradePanel(ctx, uiScale);
 
   if (state.playerId !== null) {
     const me = renderEntities.get(state.playerId);
     if (me && me.subtype === 0 && state.currentLevel >= 10) {
-      drawClassSelectionUI(ctx, canvasWidth, canvasHeight);
+      drawClassSelectionUI(ctx, canvasWidth, canvasHeight, uiScale);
     }
   }
 
   if (state.upgradePoints > 0) {
-    drawUpgradeCardsOverlay(ctx, canvasWidth, canvasHeight);
+    drawUpgradeCardsOverlay(ctx, canvasWidth, canvasHeight, uiScale);
   }
 
   if (state.isGamePaused && state.upgradePoints === 0) {
-    drawPauseUI(ctx, canvasWidth, canvasHeight);
+    drawPauseUI(ctx, canvasWidth, canvasHeight, uiScale);
   }
 }
