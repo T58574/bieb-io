@@ -28,14 +28,7 @@ export interface WorldStateMessage {
   health: number;
   maxHealth: number;
   upgradePoints: number;
-  statRegen: number;
-  statMaxHP: number;
-  statSpeed: number;
-  statMinionDmg: number;
-  statMinionSpeed: number;
-  statMinionHP: number;
-  statMinionPierce: number;
-  statMinionRegen: number;
+  upgrades: number[];
   waveNumber: number;
   card1: number;
   card2: number;
@@ -89,7 +82,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       arenaHeight: view.getFloat32(7, true),
     };
   } else if (opcode === 2) {
-    if (view.byteLength < 241) return null;
+    if (view.byteLength < 257) return null;
     const tick = view.getUint32(1, true);
     const xp = view.getUint32(5, true);
     const maxXp = view.getUint32(9, true);
@@ -98,30 +91,23 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
     const health = view.getUint16(19, true);
     const maxHealth = view.getUint16(21, true);
     const upgradePoints = view.getUint8(23);
-    const statsPack1 = view.getUint32(24, true);
-    const statsPack2 = view.getUint32(28, true);
-    const waveNumber = view.getUint16(32, true);
-    const entitiesCount = view.getUint16(34, true);
-    const card1 = view.getUint8(36);
-    const card2 = view.getUint8(37);
-    const card3 = view.getUint8(38);
+    const upgrades: number[] = [];
+    for (let i = 0; i < 24; i++) {
+      upgrades.push(view.getUint8(24 + i));
+    }
+    const waveNumber = view.getUint16(48, true);
+    const entitiesCount = view.getUint16(50, true);
+    const card1 = view.getUint8(52);
+    const card2 = view.getUint8(53);
+    const card3 = view.getUint8(54);
     const inventory: number[] = [];
     for (let i = 0; i < 200; i++) {
-      inventory.push(view.getUint8(39 + i));
+      inventory.push(view.getUint8(55 + i));
     }
-    const removedCount = view.getUint16(239, true);
-
-    const statRegen = statsPack1 & 0xFF;
-    const statMaxHP = (statsPack1 >> 8) & 0xFF;
-    const statSpeed = (statsPack1 >> 16) & 0xFF;
-    const statMinionDmg = (statsPack1 >> 24) & 0xFF;
-    const statMinionSpeed = statsPack2 & 0xFF;
-    const statMinionHP = (statsPack2 >> 8) & 0xFF;
-    const statMinionPierce = (statsPack2 >> 16) & 0xFF;
-    const statMinionRegen = (statsPack2 >> 24) & 0xFF;
+    const removedCount = view.getUint16(255, true);
 
     const entities: EntityState[] = [];
-    let offset = 241;
+    let offset = 257;
     for (let i = 0; i < entitiesCount; i++) {
       if (offset + 26 > view.byteLength) break;
       entities.push({
@@ -156,14 +142,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       health,
       maxHealth,
       upgradePoints,
-      statRegen,
-      statMaxHP,
-      statSpeed,
-      statMinionDmg,
-      statMinionSpeed,
-      statMinionHP,
-      statMinionPierce,
-      statMinionRegen,
+      upgrades,
       waveNumber,
       card1,
       card2,

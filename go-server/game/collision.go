@@ -10,6 +10,7 @@ type HashItem struct {
 	ID        uint16
 	Type      uint8
 	Pos       physics.Vector2D
+	PrevPos   physics.Vector2D
 	Radius    float64
 	Damage    float64
 	OwnerID   uint16
@@ -32,7 +33,7 @@ func (w *GameWorld) rebuildSpatialGrid() {
 		w.insertToGrid(HashItem{ID: m.ID, Type: 1, Pos: m.Pos, Radius: m.Radius, Damage: m.Damage})
 	}
 	for _, b := range w.Bullets {
-		w.insertToGrid(HashItem{ID: b.ID, Type: 2, Pos: b.Pos, Radius: b.Radius, Damage: b.Damage, OwnerID: b.OwnerID, OwnerType: b.OwnerType})
+		w.insertBulletToGrid(b)
 	}
 
 	for _, minion := range w.Minions {
@@ -59,6 +60,68 @@ func (w *GameWorld) insertToGrid(item HashItem) {
 	w.grid[row][col] = append(w.grid[row][col], item)
 }
 
+func (w *GameWorld) insertBulletToGrid(b *Bullet) {
+	diff := b.Pos.Sub(b.PrevPos)
+	dist := diff.Length()
+	item := HashItem{
+		ID:        b.ID,
+		Type:      2,
+		Pos:       b.Pos,
+		PrevPos:   b.PrevPos,
+		Radius:    b.Radius,
+		Damage:    b.Damage,
+		OwnerID:   b.OwnerID,
+		OwnerType: b.OwnerType,
+	}
+	if dist <= 40.0 {
+		w.insertToGrid(item)
+		return
+	}
+	steps := int(math.Ceil(dist / 40.0))
+	lastCol, lastRow := -1, -1
+	for i := 0; i <= steps; i++ {
+		t := float64(i) / float64(steps)
+		pt := b.PrevPos.Add(diff.Mul(t))
+		col := int(pt.X / 100.0)
+		row := int(pt.Y / 100.0)
+		if col < 0 {
+			col = 0
+		} else if col >= 60 {
+			col = 59
+		}
+		if row < 0 {
+			row = 0
+		} else if row >= 60 {
+			row = 59
+		}
+		if col != lastCol || row != lastRow {
+			w.grid[row][col] = append(w.grid[row][col], item)
+			lastCol, lastRow = col, row
+		}
+	}
+}
+
+func checkCollisionSegmentCircle(s0, s1 physics.Vector2D, rS float64, c physics.Vector2D, rC float64) bool {
+	v := s1.Sub(s0)
+	w := c.Sub(s0)
+	c1 := w.Dot(v)
+	var distSq float64
+	if c1 <= 0 {
+		distSq = w.LengthSq()
+	} else {
+		c2 := v.Dot(v)
+		if c2 <= c1 {
+			distSq = c.Sub(s1).LengthSq()
+		} else {
+			b := c1 / c2
+			pb := s0.Add(v.Mul(b))
+			distSq = c.Sub(pb).LengthSq()
+		}
+	}
+	minDist := rS + rC
+	return distSq < minDist*minDist
+}
+
 func (w *GameWorld) resolveCollisionsOptimized() {
 	for r := 0; r < 60; r++ {
 		for c := 0; c < 60; c++ {
@@ -82,9 +145,17 @@ func (w *GameWorld) resolveCollisionsOptimized() {
 					if itemA.ID == itemB.ID && itemA.Type == itemB.Type {
 						continue
 					}
-					distSq := itemA.Pos.Sub(itemB.Pos).LengthSq()
-					minDist := itemA.Radius + itemB.Radius
-					if distSq >= minDist*minDist {
+					collided := false
+					if itemA.Type == 2 && itemB.Type != 2 {
+						collided = checkCollisionSegmentCircle(itemA.PrevPos, itemA.Pos, itemA.Radius, itemB.Pos, itemB.Radius)
+					} else if itemB.Type == 2 && itemA.Type != 2 {
+						collided = checkCollisionSegmentCircle(itemB.PrevPos, itemB.Pos, itemB.Radius, itemA.Pos, itemA.Radius)
+					} else {
+						distSq := itemA.Pos.Sub(itemB.Pos).LengthSq()
+						minDist := itemA.Radius + itemB.Radius
+						collided = distSq < minDist*minDist
+					}
+					if !collided {
 						continue
 					}
 					w.handleCollisionPair(itemA, itemB)
@@ -140,6 +211,9 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		bullet, ok1 := w.Bullets[a.ID]
 		m, ok2 := w.Mobs[b.ID]
 		if ok1 && ok2 {
+			if bullet.Lifetime <= 0 || bullet.Pierce <= 0 {
+				return
+			}
 			if bullet.OwnerType == 0 || bullet.OwnerType == 2 {
 				dmg := bullet.Damage
 				if m.Modifiers&8 != 0 {
@@ -224,6 +298,9 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		bullet, ok1 := w.Bullets[a.ID]
 		p, ok2 := w.Players[b.ID]
 		if ok1 && ok2 && p.Alive {
+			if bullet.Lifetime <= 0 || bullet.Pierce <= 0 {
+				return
+			}
 			if bullet.OwnerType == 1 {
 				dmgToPlayer := bullet.Damage * (1.0 - math.Min(0.5, float64(p.StatCritDefiance)*0.05))
 				if len(p.MinionIDs) > 0 {
@@ -244,6 +321,9 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		bullet, ok1 := w.Bullets[a.ID]
 		minion, ok2 := w.Minions[b.ID]
 		if ok1 && ok2 {
+			if bullet.Lifetime <= 0 || bullet.Pierce <= 0 {
+				return
+			}
 			if bullet.OwnerType == 1 {
 				minion.Health -= bullet.Damage
 				bullet.Lifetime = 0

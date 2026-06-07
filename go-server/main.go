@@ -157,7 +157,7 @@ func (s *GameServer) broadcastState(tick uint32) {
 		return
 	}
 	states := s.world.ExportState()
-	removedIDs := s.world.GetAndClearRemovedIDs()
+	removedIDs := s.world.GetRemovedIDs()
 
 	for _, client := range s.clients {
 		if !client.joined {
@@ -174,8 +174,7 @@ func (s *GameServer) broadcastState(tick uint32) {
 			continue
 		}
 
-		statsPack1 := uint32(p.StatRegen&0xFF) | uint32(p.StatMaxHP&0xFF)<<8 | uint32(p.StatSpeed&0xFF)<<16 | uint32(p.StatMinionDmg&0xFF)<<24
-		statsPack2 := uint32(p.StatMinionSpeed&0xFF) | uint32(p.StatMinionHP&0xFF)<<8 | uint32(p.StatMinionPierce&0xFF)<<16 | uint32(p.StatMinionRegen&0xFF)<<24
+		upgradeLevels := p.GetUpgradeLevels()
 
 		stateBuf := protocol.EncodeWorldState(
 			tick,
@@ -186,8 +185,7 @@ func (s *GameServer) broadcastState(tick uint32) {
 			uint16(p.Health),
 			uint16(p.MaxHealth),
 			p.UpgradePoints,
-			statsPack1,
-			statsPack2,
+			upgradeLevels,
 			func() uint16 {
 				wv := uint16(s.world.WaveNumber)
 				hasUpgrades := false
@@ -211,6 +209,7 @@ func (s *GameServer) broadcastState(tick uint32) {
 		)
 		_ = client.send(stateBuf)
 	}
+	s.world.ClearRemovedIDs()
 }
 
 func main() {

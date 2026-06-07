@@ -90,6 +90,36 @@ func (p *Player) GetInventoryArray() []uint8 {
 	return invList
 }
 
+func (p *Player) GetUpgradeLevels() []uint8 {
+	levels := make([]uint8, 24)
+	levels[1] = uint8(p.StatSpeed)
+	levels[2] = uint8(math.Round(p.Vampirism / 0.05))
+	levels[3] = uint8(p.StatMaxHP)
+	levels[4] = uint8(p.StatRegen)
+	levels[5] = uint8(p.StatMinionDmg)
+	levels[6] = uint8(p.StatMinionSpeed)
+	levels[7] = uint8(p.StatMinionHP)
+	levels[8] = uint8(p.StatMinionPierce)
+	levels[9] = uint8(p.StatMinionRegen)
+	levels[10] = uint8((p.StateFlags >> 4) & 0xF)
+	if (p.StateFlags & 256) != 0 {
+		levels[11] = 1
+	} else {
+		levels[11] = 0
+	}
+	levels[12] = uint8(p.StatDamageMod)
+	levels[13] = uint8(p.StatCooldownMod)
+	levels[14] = uint8(p.StatCritChance)
+	levels[15] = uint8(p.StatCritDamage)
+	levels[16] = uint8(p.StatCritDefiance)
+	levels[17] = uint8(p.StatAddProjectiles)
+	levels[18] = uint8(p.StatPierceCount)
+	levels[19] = uint8(p.StatSpread)
+	levels[20] = uint8(p.StatExpMod)
+	levels[21] = uint8(p.StatLootQuantity)
+	return levels
+}
+
 func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -443,6 +473,7 @@ func (w *GameWorld) updatePlayers(dt float64) {
 				b.Subtype = bSubtype
 				dir := physics.Vector2D{X: math.Cos(angle), Y: math.Sin(angle)}
 				b.Pos = p.Pos.Add(dir.Mul(p.Radius + 5))
+				b.PrevPos = b.Pos
 				b.Vel = dir.Mul(bSpeed)
 				b.Radius = bRadius
 				b.Damage = bDamage

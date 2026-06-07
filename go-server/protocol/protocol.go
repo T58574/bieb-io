@@ -38,10 +38,10 @@ func EncodeWelcome(playerID uint16, arenaWidth, arenaHeight float32) []byte {
 	return buf
 }
 
-func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32, health, maxHealth uint16, upgradePoints uint8, statsPack1, statsPack2 uint32, waveNumber uint16, card1, card2, card3 uint8, inventory []uint8, entities []EntityState, removedIDs []uint16) []byte {
+func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32, health, maxHealth uint16, upgradePoints uint8, upgradeLevels []uint8, waveNumber uint16, card1, card2, card3 uint8, inventory []uint8, entities []EntityState, removedIDs []uint16) []byte {
 	count := len(entities)
 	removedCount := len(removedIDs)
-	bufSize := 241 + count*26 + removedCount*2
+	bufSize := 257 + count*26 + removedCount*2
 	buf := make([]byte, bufSize)
 	buf[0] = 2
 	binary.LittleEndian.PutUint32(buf[1:5], tick)
@@ -52,23 +52,28 @@ func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32,
 	binary.LittleEndian.PutUint16(buf[19:21], health)
 	binary.LittleEndian.PutUint16(buf[21:23], maxHealth)
 	buf[23] = upgradePoints
-	binary.LittleEndian.PutUint32(buf[24:28], statsPack1)
-	binary.LittleEndian.PutUint32(buf[28:32], statsPack2)
-	binary.LittleEndian.PutUint16(buf[32:34], waveNumber)
-	binary.LittleEndian.PutUint16(buf[34:36], uint16(count))
-	buf[36] = card1
-	buf[37] = card2
-	buf[38] = card3
-	for i := 0; i < 200; i++ {
-		if i < len(inventory) {
-			buf[39+i] = inventory[i]
+	for i := 0; i < 24; i++ {
+		if i < len(upgradeLevels) {
+			buf[24+i] = upgradeLevels[i]
 		} else {
-			buf[39+i] = 0
+			buf[24+i] = 0
 		}
 	}
-	binary.LittleEndian.PutUint16(buf[239:241], uint16(removedCount))
+	binary.LittleEndian.PutUint16(buf[48:50], waveNumber)
+	binary.LittleEndian.PutUint16(buf[50:52], uint16(count))
+	buf[52] = card1
+	buf[53] = card2
+	buf[54] = card3
+	for i := 0; i < 200; i++ {
+		if i < len(inventory) {
+			buf[55+i] = inventory[i]
+		} else {
+			buf[55+i] = 0
+		}
+	}
+	binary.LittleEndian.PutUint16(buf[255:257], uint16(removedCount))
 
-	offset := 241
+	offset := 257
 	for i := 0; i < count; i++ {
 		ent := &entities[i]
 		binary.LittleEndian.PutUint16(buf[offset:offset+2], ent.ID)

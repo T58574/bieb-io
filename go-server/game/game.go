@@ -230,16 +230,21 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 	return states
 }
 
-func (w *GameWorld) GetAndClearRemovedIDs() []uint16 {
-	w.mu.Lock()
-	defer w.mu.Unlock()
+func (w *GameWorld) GetRemovedIDs() []uint16 {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
 	if len(w.RemovedEntityIDs) == 0 {
 		return nil
 	}
 	ids := make([]uint16, len(w.RemovedEntityIDs))
 	copy(ids, w.RemovedEntityIDs)
-	w.RemovedEntityIDs = w.RemovedEntityIDs[:0]
 	return ids
+}
+
+func (w *GameWorld) ClearRemovedIDs() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.RemovedEntityIDs = w.RemovedEntityIDs[:0]
 }
 
 func (w *GameWorld) TogglePause() {

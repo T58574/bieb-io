@@ -104,6 +104,7 @@ func (w *GameWorld) minionShoot(m *Minion, owner *Player) {
 		b.OwnerType = 2
 		b.Subtype = 4
 		b.Pos = m.Pos.Add(dir.Mul(m.Radius + 3))
+		b.PrevPos = b.Pos
 		b.Vel = dir.Mul(12.0)
 		b.Radius = 6
 		b.Damage = m.Damage

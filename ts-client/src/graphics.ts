@@ -183,14 +183,66 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
   }
 
   const activeUpgrades: UpgradeDetail[] = [];
-  if (state.statRegen > 0) activeUpgrades.push({ id: "regen", name: "РЕГЕНЕРАЦИЯ", count: state.statRegen, color: "#10b981", abbrev: "HP\nReg", desc: "Автоматическое восстановление здоровья." });
-  if (state.statMaxHP > 0) activeUpgrades.push({ id: "hp", name: "МАКС. ЗДОРОВЬЕ", count: state.statMaxHP, color: "#22c55e", abbrev: "Max\nHP", desc: "Увеличение максимального здоровья." });
-  if (state.statSpeed > 0) activeUpgrades.push({ id: "speed", name: "СКОРОСТЬ ДВИЖЕНИЯ", count: state.statSpeed, color: "#3b82f6", abbrev: "Move\nSpd", desc: "Повышение скорости перемещения." });
-  if (state.statMinionDmg > 0) activeUpgrades.push({ id: "minion_dmg", name: "УРОН ДРОНОВ", count: state.statMinionDmg, color: "#ef4444", abbrev: "Drn\nDmg", desc: "Увеличение урона дронов." });
-  if (state.statMinionSpeed > 0) activeUpgrades.push({ id: "minion_speed", name: "СКОРОСТЬ ДРОНОВ", count: state.statMinionSpeed, color: "#f97316", abbrev: "Drn\nSpd", desc: "Повышение скорости дронов." });
-  if (state.statMinionHP > 0) activeUpgrades.push({ id: "minion_hp", name: "ЗДОРОВЬЕ ДРОНОВ", count: state.statMinionHP, color: "#06b6d4", abbrev: "Drn\nHP", desc: "Увеличение прочности дронов." });
-  if (state.statMinionPierce > 0) activeUpgrades.push({ id: "minion_pierce", name: "ПРОБИВАЕМОСТЬ ДРОНОВ", count: state.statMinionPierce, color: "#8b5cf6", abbrev: "Drn\nPrc", desc: "Количество пробиваемых врагов." });
-  if (state.statMinionRegen > 0) activeUpgrades.push({ id: "minion_regen", name: "РЕГЕНЕРАЦИЯ ДРОНОВ", count: state.statMinionRegen, color: "#a3e635", abbrev: "Drn\nReg", desc: "Восстановление прочности дронов." });
+  const cardDetails: Record<number, { title: string; color: string; desc: string; abbrev: string }> = {
+    1: { title: "ОПТИМИЗАЦИЯ СКОРОСТИ", color: "#3b82f6", desc: "Увеличение скорости на +10%", abbrev: "Move\nSpd" },
+    2: { title: "СОПРОЦЕССОР", color: "#fbbf24", desc: "Увеличение мощности и +5% вампиризм", abbrev: "Vamp" },
+    3: { title: "СТАБИЛИЗАТОР ЯДРА", color: "#22c55e", desc: "Увеличение макс здоровья на +25", abbrev: "Max\nHP" },
+    4: { title: "РЕГЕНЕРАЦИЯ", color: "#10b981", desc: "Увеличение регенерации здоровья", abbrev: "HP\nReg" },
+    5: { title: "ДРОНЫ: ВЫЧИСЛЕНИЯ", color: "#ef4444", desc: "Увеличение урона дронов на +15%", abbrev: "Drn\nDmg" },
+    6: { title: "ДРОНЫ: ЧАСТОТА", color: "#f97316", desc: "Увеличение скорости дронов на +15%", abbrev: "Drn\nSpd" },
+    7: { title: "ДРОНЫ: СТАБИЛЬНОСТЬ", color: "#06b6d4", desc: "Увеличение макс. ХП дронов на +15%", abbrev: "Drn\nHP" },
+    8: { title: "ДРОНЫ: ПРОБИТИЕ", color: "#8b5cf6", desc: "Дроны пробивают на +1 цель больше", abbrev: "Drn\nPrc" },
+    9: { title: "ДРОНЫ: РЕГЕНЕРАЦИЯ", color: "#a3e635", desc: "Увеличение регенерации дронов на +15%", abbrev: "Drn\nReg" },
+    10: { title: "МИКРО-ЩИТЫ", color: "#00f0ff", desc: "Запуск защитного орбитального щита (макс 4)", abbrev: "Shld" },
+    11: { title: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Все ваши снаряды взрывают убитые вирусы", abbrev: "Necr\nCore" },
+    12: { title: "УСИЛИТЕЛЬ УРОНА", color: "#ef4444", desc: "Увеличение урона снарядов на +5%", abbrev: "Dmg" },
+    13: { title: "РАЗГОН ОРУЖИЯ", color: "#f97316", desc: "Снижение задержки выстрела на 1%", abbrev: "Fire\nRate" },
+    14: { title: "ВЕРОЯТНОСТЬ КРИТА", color: "#f59e0b", desc: "Шанс крит. урона +5%", abbrev: "Crit\nChn" },
+    15: { title: "СИЛА КРИТА", color: "#eab308", desc: "Множитель крит. урона +5%", abbrev: "Crit\nDmg" },
+    16: { title: "КИНЕТИЧЕСКИЙ БАРЬЕР", color: "#84cc16", desc: "Снижение получаемого урона на 5%", abbrev: "Def" },
+    17: { title: "МНОЖИТЕЛЬ СНАРЯДОВ", color: "#22c55e", desc: "+1 доп. снаряд", abbrev: "Proj" },
+    18: { title: "БРОНЕБОЙНОСТЬ", color: "#10b981", desc: "+1 пробитие снарядов", abbrev: "Prc" },
+    19: { title: "УГОЛ АТАКИ", color: "#14b8a6", desc: "Увеличение разброса на +5%", abbrev: "Sprd" },
+    20: { title: "ОБУЧЕНИЕ НЕЙРОСЕТИ", color: "#0ea5e9", desc: "Получаемый опыт +1%", abbrev: "XP\nMod" },
+    21: { title: "КВАНТОВЫЙ АНАЛИЗАТОР", color: "#6366f1", desc: "Шанс дропа предметов +5%", abbrev: "Loot\nQty" }
+  };
+
+  for (let id = 1; id <= 21; id++) {
+    const details = cardDetails[id];
+    if (details) {
+      let count = 0;
+      if (id === 1) count = state.statSpeed;
+      else if (id === 2) count = state.statVampirism;
+      else if (id === 3) count = state.statMaxHP;
+      else if (id === 4) count = state.statRegen;
+      else if (id === 5) count = state.statMinionDmg;
+      else if (id === 6) count = state.statMinionSpeed;
+      else if (id === 7) count = state.statMinionHP;
+      else if (id === 8) count = state.statMinionPierce;
+      else if (id === 9) count = state.statMinionRegen;
+      else if (id === 10) count = state.statOrbitShield;
+      else if (id === 11) count = state.statFlagUnlock;
+      else if (id === 12) count = state.statDamageMod;
+      else if (id === 13) count = state.statCooldownMod;
+      else if (id === 14) count = state.statCritChance;
+      else if (id === 15) count = state.statCritDamage;
+      else if (id === 16) count = state.statCritDefiance;
+      else if (id === 17) count = state.statAddProjectiles;
+      else if (id === 18) count = state.statPierceCount;
+      else if (id === 19) count = state.statSpread;
+      else if (id === 20) count = state.statExpMod;
+      else if (id === 21) count = state.statLootQuantity;
+
+      activeUpgrades.push({
+        id: String(id),
+        name: details.title,
+        count: count,
+        color: details.color,
+        abbrev: details.abbrev,
+        desc: details.desc
+      });
+    }
+  }
 
   if (activeUpgrades.length === 0) {
     return;
@@ -245,12 +297,10 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
       ctx.fillText(lines[1], x + slotW / 2, y + 28 * uiScale);
     }
 
-    if (upg.count > 0) {
-      ctx.fillStyle = "#ffffff";
-      ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-      ctx.textAlign = "right";
-      ctx.fillText(`v${upg.count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale);
-    }
+    ctx.fillStyle = upg.count > 0 ? "#ffffff" : "#64748b";
+    ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = "right";
+    ctx.fillText(`v${upg.count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale);
 
     if (hovered) {
       ctx.save();

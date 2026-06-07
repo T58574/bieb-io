@@ -288,6 +288,7 @@ func (w *GameWorld) updateMobs(dt float64) {
 					b.OwnerType = 1
 					b.Subtype = 5
 					b.Pos = m.Pos.Add(dir.Mul(m.Radius + 5))
+					b.PrevPos = b.Pos
 					b.Vel = dir.Mul(7.0)
 					b.Radius = 7
 					b.Damage = 4
@@ -315,6 +316,7 @@ func (w *GameWorld) updateMobs(dt float64) {
 						b.OwnerType = 1
 						b.Subtype = 5
 						b.Pos = m.Pos.Add(bDir.Mul(m.Radius + 5))
+						b.PrevPos = b.Pos
 						b.Vel = bDir.Mul(5.0)
 						b.Radius = 9
 						b.Damage = m.Damage * 0.5
