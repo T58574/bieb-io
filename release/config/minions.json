@@ -1,0 +1,21 @@
+{
+  "baseHP": 35.0,
+  "hpPerLevel": 10.0,
+  "baseDamage": 10.0,
+  "damagePerLevel": 3.0,
+  "radius": 12,
+  "orbitOffset": 38.0,
+  "orbitAngularSpeed": 2.5,
+  "followSpeed": 0.18,
+  "speedPerLevel": 0.06,
+  "shootCooldown": 1.2,
+  "shootRange": 350,
+  "bulletSpeed": 12.0,
+  "bulletRadius": 6,
+  "bulletLifetime": 1.5,
+  "bulletSubtype": 4,
+  "maxLimit": 64,
+  "regenPerLevel": 0.5,
+  "droneLifetime": 15.0,
+  "droneHasLifetime": true
+}

@@ -1,0 +1,54 @@
+{
+  "types": {
+    "10": {
+      "name": "boss_sentinel",
+      "baseHP": 600,
+      "radius": 48,
+      "baseDamage": 18,
+      "baseXP": 500,
+      "acceleration": 0.15,
+      "baseSpeed": 1.4,
+      "shootCooldown": 2.5,
+      "shootRange": 500,
+      "bulletCount": 8,
+      "bulletSpeed": 5.0,
+      "bulletRadius": 9,
+      "bulletDamageMultiplier": 0.5,
+      "bulletLifetime": 4.0,
+      "bulletPierce": 1,
+      "bulletSubtype": 5
+    },
+    "11": {
+      "name": "boss_charger",
+      "baseHP": 900,
+      "radius": 56,
+      "baseDamage": 28,
+      "baseXP": 800,
+      "chargeCooldown": 3.2,
+      "chargeSpeed": 9.0,
+      "chargeDuration": 1.2,
+      "idleAcceleration": 0.1,
+      "idleSpeed": 1.8
+    },
+    "12": {
+      "name": "boss_final",
+      "baseHP": 2500,
+      "radius": 72,
+      "baseDamage": 45,
+      "baseXP": 2000,
+      "killAllPlayersOnDeath": true
+    }
+  },
+  "spawnDistance": 900,
+  "schedule": [
+    { "wave": 5, "bosses": [10] },
+    { "wave": 10, "bosses": [11] },
+    { "wave": 50, "bosses": [12] }
+  ],
+  "recurringRule": {
+    "interval": 5,
+    "maxWave": 49,
+    "minWave": 11,
+    "bosses": [10, 11]
+  }
+}
