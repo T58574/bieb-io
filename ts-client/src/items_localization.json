@@ -1,24 +1,27 @@
 {
   "ui": {
-    "module_title": "МОДУЛИ",
-    "sector_prefix": "СЕКТОР ЧИПА: ",
-    "class_selection_title": "ВЫБЕРИТЕ СПЕЦИФИКАЦИЮ АРХИТЕКТУРЫ",
+    "module_title": "ИНВЕНТАРЬ ПРЕДМЕТОВ",
+    "sector_prefix": "УРОВЕНЬ ВОЛНЫ: ",
+    "class_selection_title": "ВЫБЕРИТЕ ИГРОВОЙ КЛАСС",
+    "stats_title": "ХАРАКТЕРИСТИКИ ПЕРСОНАЖА",
+    "restart_prompt": "Нажмите ENTER для перезапуска",
     "stats": {
-      "hp": "ИНТЕГРИТИ",
-      "speed": "ТАКТОВАЯ ЧАСТОТА",
+      "hp": "МАКС. ЗДОРОВЬЕ",
+      "speed": "СКОРОСТЬ ПЕРЕДВИЖЕНИЯ",
       "damage": "МНОЖИТЕЛЬ УРОНА",
-      "regen": "ВОССТАНОВЛЕНИЕ",
-      "minion_dmg": "УРОН ДРОНОВ",
-      "minion_hp": "ХП ДРОНОВ",
-      "minion_pierce": "ПРОБИВ. ДР.",
-      "minion_regen": "РЕГЕН. ДР."
+      "regen": "РЕГЕНЕРАЦИЯ ЗДОРОВЬЯ",
+      "minion_dmg": "УРОН ПРИЗВАННЫХ",
+      "minion_speed": "СКОРОСТЬ ПРИЗВАННЫХ",
+      "minion_hp": "ЗДОРОВЬЕ ПРИЗВАННЫХ",
+      "minion_pierce": "ПРОБИВАНИЕ ПРИЗВ.",
+      "minion_regen": "РЕГЕНЕРАЦИЯ ПРИЗВ."
     }
   },
   "items": {
-    "1": { "name": "КОНДЕНСАТОР", "color": "#10b981", "desc": "+10% Частота", "abbrev": "Opt\nCap", "rarity": "Common" },
-    "2": { "name": "СОПРОЦЕССОР", "color": "#fbbf24", "desc": "+15% Вычисления\n+5% Вамп", "abbrev": "Over\nProc", "rarity": "Rare" },
-    "3": { "name": "ЯДРО НЕКРОЗА", "color": "#d946ef", "desc": "Взрывы на\nубийстве", "abbrev": "Necr\nCore", "rarity": "Unique" },
-    "4": { "name": "МУЛЬТИСПЛИТ", "color": "#ef4444", "desc": "+1 снаряд при стрельбе", "abbrev": "Multi\nSplit", "rarity": "Unique" }
+    "1": { "name": "БОТИНОК", "color": "#10b981", "desc": "+10% к Скорости", "abbrev": "Boot", "rarity": "Common" },
+    "2": { "name": "КИНЖАЛ", "color": "#fbbf24", "desc": "+15% к Урону\n+5% Вамп", "abbrev": "Dagg", "rarity": "Rare" },
+    "3": { "name": "ВЗРЫВНАЯ СФЕРА", "color": "#d946ef", "desc": "Взрывы при\nубийстве", "abbrev": "Expl\nOrba", "rarity": "Unique" },
+    "4": { "name": "МУЛЬТИВЫСТРЕЛ", "color": "#ef4444", "desc": "+1 снаряд при стрельбе", "abbrev": "Mult\nShot", "rarity": "Unique" }
   },
   "classes": [
     { "id": 1, "name": "ВОИН", "color": "#ef4444", "desc": "Увеличенная масса и кинетический урон.", "shape": 6 },
