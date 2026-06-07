@@ -94,10 +94,7 @@ function handleServerMessage(event: MessageEvent) {
     state.card1 = msg.card1;
     state.card2 = msg.card2;
     state.card3 = msg.card3;
-    state.slot1 = msg.slot1;
-    state.slot2 = msg.slot2;
-    state.slot3 = msg.slot3;
-    state.slot4 = msg.slot4;
+    state.inventory = msg.inventory;
     state.cameraZoom = Math.max(0.5, 1.0 - (state.currentLevel - 1) * 0.01);
 
     const receivedIds = new Set<number>();

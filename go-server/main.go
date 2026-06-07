@@ -121,7 +121,7 @@ func (s *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 			if client.joined {
 				input, err := protocol.DecodeInput(msg)
 				if err == nil {
-					s.world.UpdateInput(client.id, input.Keys, input.MouseAngle, input.UpgradeSelect)
+					s.world.UpdateInput(client.id, input.Keys, input.MouseAngle, input.UpgradeSelect, input.DeleteSlotSelect)
 				}
 			}
 		} else if opcode == 5 {
@@ -189,7 +189,14 @@ func (s *GameServer) broadcastState(tick uint32) {
 			statsPack2,
 			func() uint16 {
 				wv := uint16(s.world.WaveNumber)
-				if s.world.Paused {
+				hasUpgrades := false
+				for _, player := range s.world.Players {
+					if player.Alive && player.UpgradePoints > 0 {
+						hasUpgrades = true
+						break
+					}
+				}
+				if s.world.Paused || hasUpgrades {
 					wv |= 0x8000
 				}
 				return wv
@@ -197,10 +204,7 @@ func (s *GameServer) broadcastState(tick uint32) {
 			p.CardChoices[0],
 			p.CardChoices[1],
 			p.CardChoices[2],
-			p.Inventory[0],
-			p.Inventory[1],
-			p.Inventory[2],
-			p.Inventory[3],
+			p.Inventory[:],
 			states,
 		)
 		_ = client.send(stateBuf)

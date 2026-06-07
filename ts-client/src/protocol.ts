@@ -40,10 +40,7 @@ export interface WorldStateMessage {
   card1: number;
   card2: number;
   card3: number;
-  slot1: number;
-  slot2: number;
-  slot3: number;
-  slot4: number;
+  inventory: number[];
   entities: EntityState[];
 }
 
@@ -67,13 +64,14 @@ export function serializeJoin(username: string): ArrayBuffer {
   return buffer;
 }
 
-export function serializeInput(keys: number, mouseAngle: number, upgradeSelect: number): ArrayBuffer {
-  const buffer = new ArrayBuffer(7);
+export function serializeInput(keys: number, mouseAngle: number, upgradeSelect: number, deleteSlotSelect: number): ArrayBuffer {
+  const buffer = new ArrayBuffer(8);
   const view = new DataView(buffer);
   view.setUint8(0, 2);
   view.setUint8(1, keys);
   view.setFloat32(2, mouseAngle, true);
   view.setUint8(6, upgradeSelect);
+  view.setUint8(7, deleteSlotSelect);
   return buffer;
 }
 
@@ -90,7 +88,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       arenaHeight: view.getFloat32(7, true),
     };
   } else if (opcode === 2) {
-    if (view.byteLength < 43) return null;
+    if (view.byteLength < 71) return null;
     const tick = view.getUint32(1, true);
     const xp = view.getUint32(5, true);
     const maxXp = view.getUint32(9, true);
@@ -106,10 +104,10 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
     const card1 = view.getUint8(36);
     const card2 = view.getUint8(37);
     const card3 = view.getUint8(38);
-    const slot1 = view.getUint8(39);
-    const slot2 = view.getUint8(40);
-    const slot3 = view.getUint8(41);
-    const slot4 = view.getUint8(42);
+    const inventory: number[] = [];
+    for (let i = 0; i < 32; i++) {
+      inventory.push(view.getUint8(39 + i));
+    }
 
     const statRegen = statsPack1 & 0xFF;
     const statMaxHP = (statsPack1 >> 8) & 0xFF;
@@ -121,7 +119,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
     const statMinionRegen = (statsPack2 >> 24) & 0xFF;
 
     const entities: EntityState[] = [];
-    let offset = 43;
+    let offset = 71;
     for (let i = 0; i < entitiesCount; i++) {
       if (offset + 26 > view.byteLength) break;
       entities.push({
@@ -160,10 +158,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       card1,
       card2,
       card3,
-      slot1,
-      slot2,
-      slot3,
-      slot4,
+      inventory,
       entities,
     };
   } else if (opcode === 4) {

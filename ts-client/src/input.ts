@@ -56,6 +56,26 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
     if (e.key === " ") keys.space = false;
   });
 
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "x" || e.key === "X") {
+      const rightX = canvas.width - 210;
+      const startY = 120;
+      const slotW = 44;
+      const slotH = 44;
+      const gap = 6;
+      for (let i = 0; i < 32; i++) {
+        const c = i % 4;
+        const r = Math.floor(i / 4);
+        const sx = rightX + c * (slotW + gap);
+        const sy = startY + r * (slotH + gap);
+        if (state.mouseX >= sx && state.mouseX <= sx + slotW && state.mouseY >= sy && state.mouseY <= sy + slotH) {
+          state.selectedDeleteChoice = i + 1;
+          break;
+        }
+      }
+    }
+  });
+
   window.addEventListener("mousemove", (e) => {
     state.mouseX = e.clientX;
     state.mouseY = e.clientY;
@@ -155,9 +175,12 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
         if (keys.space) mask |= 0x10;
         if (keys.mouseLeft) mask |= 0x20;
       }
-      socket.send(serializeInput(mask, state.mouseAngle, state.selectedUpgradeChoice));
+      socket.send(serializeInput(mask, state.mouseAngle, state.selectedUpgradeChoice, state.selectedDeleteChoice || 0));
       if (state.selectedUpgradeChoice !== 0) {
         state.selectedUpgradeChoice = 0;
+      }
+      if (state.selectedDeleteChoice !== 0) {
+        state.selectedDeleteChoice = 0;
       }
     }
   }, 1000 / 60);

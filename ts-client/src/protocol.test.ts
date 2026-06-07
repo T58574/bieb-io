@@ -20,19 +20,20 @@ describe('protocol serialization', () => {
 
   describe('serializeInput', () => {
     it('should correctly serialize input state', () => {
-      const keys = 5; // e.g., binary 101
+      const keys = 5;
       const mouseAngle = 3.14159;
       const upgradeSelect = 2;
+      const deleteSlotSelect = 4;
 
-      const buffer = serializeInput(keys, mouseAngle, upgradeSelect);
+      const buffer = serializeInput(keys, mouseAngle, upgradeSelect, deleteSlotSelect);
       const view = new DataView(buffer);
 
-      expect(buffer.byteLength).toBe(7);
-      expect(view.getUint8(0)).toBe(2); // Opcode
+      expect(buffer.byteLength).toBe(8);
+      expect(view.getUint8(0)).toBe(2);
       expect(view.getUint8(1)).toBe(keys);
-      // float32 precision loss is expected, so we use toBeCloseTo
       expect(view.getFloat32(2, true)).toBeCloseTo(mouseAngle, 5);
       expect(view.getUint8(6)).toBe(upgradeSelect);
+      expect(view.getUint8(7)).toBe(deleteSlotSelect);
     });
   });
 
@@ -101,17 +102,17 @@ describe('protocol serialization', () => {
 
     describe('WorldStateMessage (Opcode 2)', () => {
       it('should deserialize a valid world state message with zero entities', () => {
-        const buffer = new ArrayBuffer(43);
+        const buffer = new ArrayBuffer(71);
         const view = new DataView(buffer);
-        view.setUint8(0, 2); // Opcode
-        view.setUint32(1, 100, true); // tick
-        view.setUint32(5, 50, true); // xp
-        view.setUint32(9, 200, true); // maxXp
-        view.setUint16(13, 5, true); // level
-        view.setUint32(15, 1000, true); // score
-        view.setUint16(19, 80, true); // health
-        view.setUint16(21, 100, true); // maxHealth
-        view.setUint8(23, 2); // upgradePoints
+        view.setUint8(0, 2);
+        view.setUint32(1, 100, true);
+        view.setUint32(5, 50, true);
+        view.setUint32(9, 200, true);
+        view.setUint16(13, 5, true);
+        view.setUint32(15, 1000, true);
+        view.setUint16(19, 80, true);
+        view.setUint16(21, 100, true);
+        view.setUint8(23, 2);
 
         const statsPack1 = 1 | (2 << 8) | (3 << 16) | (4 << 24);
         view.setUint32(24, statsPack1, true);
@@ -119,17 +120,23 @@ describe('protocol serialization', () => {
         const statsPack2 = 5 | (6 << 8) | (7 << 16) | (8 << 24);
         view.setUint32(28, statsPack2, true);
 
-        view.setUint16(32, 3, true); // waveNumber
-        view.setUint16(34, 0, true); // entitiesCount
-        view.setUint8(36, 11); // card1
-        view.setUint8(37, 12); // card2
-        view.setUint8(38, 13); // card3
-        view.setUint8(39, 1);  // slot1
-        view.setUint8(40, 2);  // slot2
-        view.setUint8(41, 3);  // slot3
-        view.setUint8(42, 4);  // slot4
+        view.setUint16(32, 3, true);
+        view.setUint16(34, 0, true);
+        view.setUint8(36, 11);
+        view.setUint8(37, 12);
+        view.setUint8(38, 13);
+        view.setUint8(39, 1);
+        view.setUint8(40, 2);
+        view.setUint8(41, 3);
+        view.setUint8(42, 4);
 
         const msg = deserializeMessage(buffer);
+        const expectedInventory = Array(32).fill(0);
+        expectedInventory[0] = 1;
+        expectedInventory[1] = 2;
+        expectedInventory[2] = 3;
+        expectedInventory[3] = 4;
+
         expect(msg).toEqual({
           type: 'worldState',
           tick: 100,
@@ -152,16 +159,13 @@ describe('protocol serialization', () => {
           card1: 11,
           card2: 12,
           card3: 13,
-          slot1: 1,
-          slot2: 2,
-          slot3: 3,
-          slot4: 4,
+          inventory: expectedInventory,
           entities: []
         });
       });
 
       it('should deserialize a valid world state message with entities', () => {
-        const buffer = new ArrayBuffer(43 + 26);
+        const buffer = new ArrayBuffer(71 + 26);
         const view = new DataView(buffer);
         view.setUint8(0, 2); // Opcode
         view.setUint16(34, 1, true); // entitiesCount
@@ -173,7 +177,7 @@ describe('protocol serialization', () => {
         view.setUint8(41, 0); // slot3
         view.setUint8(42, 0); // slot4
 
-        const offset = 43;
+        const offset = 71;
         view.setUint16(offset, 101, true); // id
         view.setUint8(offset + 2, 1); // type
         view.setUint8(offset + 3, 2); // subtype
@@ -205,17 +209,13 @@ describe('protocol serialization', () => {
       });
 
       it('should stop reading entities if buffer is truncated', () => {
-        const buffer = new ArrayBuffer(43 + 26);
+        const buffer = new ArrayBuffer(71 + 26);
         const view = new DataView(buffer);
-        view.setUint8(0, 2); // Opcode
-        view.setUint16(34, 2, true); // entitiesCount = 2, but buffer length is only enough for 1
+        view.setUint8(0, 2);
+        view.setUint16(34, 2, true);
         view.setUint8(36, 0);
         view.setUint8(37, 0);
         view.setUint8(38, 0);
-        view.setUint8(39, 0);
-        view.setUint8(40, 0);
-        view.setUint8(41, 0);
-        view.setUint8(42, 0);
 
         const msg = deserializeMessage(buffer);
         expect(msg?.type).toBe('worldState');
@@ -225,7 +225,7 @@ describe('protocol serialization', () => {
       });
 
       it('should return null if buffer is too short for base world state', () => {
-        const buffer = new ArrayBuffer(42);
+        const buffer = new ArrayBuffer(70);
         const view = new DataView(buffer);
         view.setUint8(0, 2);
         expect(deserializeMessage(buffer)).toBeNull();

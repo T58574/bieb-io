@@ -1,7 +1,7 @@
 # GEMINI CONTEXT INDEX
 
 ## PROJECT STATUS
-[Completed] - 2D Rogue-like bullet-hell game Necro-Geometry is fully implemented, optimized, and ready.
+[Completed] - 2D Rogue-like bullet-hell game Necro-Geometry is fully transitioned to a Sci-Fi setting (Bio-Shells, infected viruses, AI Architect boss) with 32 inventory slots, automatic upgrade pauses, and custom canvas drawings.
 
 ## DIRECTORY STRUCTURE & RELATION GRAPH
 ```

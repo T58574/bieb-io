@@ -40,7 +40,7 @@ type Player struct {
 	ShootCooldown    float64
 	FlashTimer       float64
 	CardChoices      [3]uint8
-	Inventory        [4]uint8
+	Inventory        [32]uint8
 	Vampirism        float64
 	LaserHitsCount   map[uint16]uint8
 }
@@ -87,9 +87,9 @@ func (w *GameWorld) RemovePlayer(id uint16) {
 	delete(w.Players, id)
 }
 
-func (w *GameWorld) UpdateInput(id uint16, keys uint8, angle float32, upgradeSelect uint8) {
+func (w *GameWorld) UpdateInput(id uint16, keys uint8, angle float32, upgradeSelect uint8, deleteSlotSelect uint8) {
 	select {
-	case w.inputChan <- InputEvent{PlayerID: id, Keys: keys, Angle: angle, Upgrade: upgradeSelect}:
+	case w.inputChan <- InputEvent{PlayerID: id, Keys: keys, Angle: angle, Upgrade: upgradeSelect, Delete: deleteSlotSelect}:
 	default:
 	}
 }
@@ -173,6 +173,9 @@ func (w *GameWorld) processInputs() {
 				p.MouseAngle = float64(ev.Angle)
 				if ev.Upgrade != 0 && p.UpgradePoints > 0 {
 					w.applyCardUpgrade(p, ev.Upgrade)
+				}
+				if ev.Delete != 0 && ev.Delete <= 32 {
+					p.Inventory[ev.Delete-1] = 0
 				}
 			}
 		default:

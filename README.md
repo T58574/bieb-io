@@ -75,3 +75,18 @@ Run client unit tests:
 cd ts-client
 npm run test
 ```
+
+## Configuring and Adding Custom Items
+
+To add or modify active Nano-Modules:
+
+### 1. Server-Side Behavior & Drops
+- **Drops Configuration**: In [mob.go](file:///c:/Users/user/Documents/projects/freeproject_4/go-server/game/mob.go), locate the `dropLoot` function. Here you configure the drop probability and specify which `ItemID` gets spawned on the ground.
+- **Speed Multiplier**: In [player.go](file:///c:/Users/user/Documents/projects/freeproject_4/go-server/game/player.go), search for `speedMul` calculation. Add item ID conditions to grant custom movement speed buffs.
+- **Damage Multiplier**: In [player.go](file:///c:/Users/user/Documents/projects/freeproject_4/go-server/game/player.go), search for `dmgMul` calculation. Add item ID conditions to grant custom projectile damage buffs.
+- **On-Kill Passives**: In [collision.go](file:///c:/Users/user/Documents/projects/freeproject_4/go-server/game/collision.go), inside the combat resolution loops (e.g. mob death), add handlers for items like `Necrose Core` (ID 3) that trigger area-of-effect explosions.
+
+### 2. Client-Side HUD & Tooltips
+- **Module Names & Details**: In [graphics.ts](file:///c:/Users/user/Documents/projects/freeproject_4/ts-client/src/graphics.ts), inside the `drawInventoryHUD` function, locate `itemDetails`. Map your new `ItemID` to its localized name, border color, tooltip description, and abbreviation text.
+- **Rarity Colors**: The loot drop colors on the ground are mapped dynamically in [graphics.ts](file:///c:/Users/user/Documents/projects/freeproject_4/ts-client/src/graphics.ts) inside the `ent.type === 6` renderer block.
+

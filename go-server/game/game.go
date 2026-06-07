@@ -15,6 +15,7 @@ type InputEvent struct {
 	Keys     uint8
 	Angle    float32
 	Upgrade  uint8
+	Delete   uint8
 }
 
 type LootDrop struct {
@@ -110,7 +111,14 @@ func (w *GameWorld) Tick(dt float64) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.processInputs()
-	if w.Paused {
+	hasUpgrades := false
+	for _, p := range w.Players {
+		if p.Alive && p.UpgradePoints > 0 {
+			hasUpgrades = true
+			break
+		}
+	}
+	if w.Paused || hasUpgrades {
 		return
 	}
 	w.ElapsedTime += dt

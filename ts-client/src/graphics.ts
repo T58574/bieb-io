@@ -68,19 +68,6 @@ export function drawGrid(ctx: CanvasRenderingContext2D, cx: number, cy: number, 
     ctx.lineTo(canvasWidth, y - cy + canvasHeight / 2);
     ctx.stroke();
   }
-
-  const grad = ctx.createRadialGradient(
-    canvasWidth / 2,
-    canvasHeight / 2,
-    0,
-    canvasWidth / 2,
-    canvasHeight / 2,
-    Math.max(canvasWidth, canvasHeight) * 0.8
-  );
-  grad.addColorStop(0, "rgba(5, 5, 8, 0)");
-  grad.addColorStop(1, "rgba(5, 5, 8, 0.85)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 }
 
 export function drawStatBar(ctx: CanvasRenderingContext2D, label: string, level: number, x: number, y: number, color: string, hotkey: string) {
@@ -256,11 +243,11 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D) {
 }
 
 export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
-  const startY = 100;
-  const slotW = 52;
-  const slotH = 52;
-  const gap = 12;
-  const rightX = canvasWidth - 70;
+  const startY = 120;
+  const slotW = 44;
+  const slotH = 44;
+  const gap = 6;
+  const rightX = canvasWidth - 210;
 
   const itemDetails: Record<number, { name: string; color: string; desc: string; abbrev: string }> = {
     1: { name: "КОНДЕНСАТОР", color: "#10b981", desc: "+10% Частота", abbrev: "Opt\nCap" },
@@ -270,7 +257,7 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
 
   ctx.fillStyle = "rgba(5, 5, 8, 0.65)";
   ctx.beginPath();
-  ctx.roundRect(rightX - 10, startY - 30, slotW + 20, slotH * 4 + gap * 3 + 45, 10);
+  ctx.roundRect(rightX - 10, startY - 30, 214, 439, 10);
   ctx.fill();
   ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
   ctx.lineWidth = 1.5;
@@ -279,22 +266,23 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
   ctx.fillStyle = "#64748b";
   ctx.font = "bold 10px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  ctx.fillText("МОДУЛИ", rightX + slotW / 2, startY - 10);
+  ctx.fillText("МОДУЛИ", rightX + 97, startY - 10);
 
-  const slots = [state.slot1, state.slot2, state.slot3, state.slot4];
+  for (let i = 0; i < 32; i++) {
+    const itemID = state.inventory[i] || 0;
+    const c = i % 4;
+    const r = Math.floor(i / 4);
+    const x = rightX + c * (slotW + gap);
+    const y = startY + r * (slotH + gap);
 
-  for (let i = 0; i < 4; i++) {
-    const itemID = slots[i];
-    const y = startY + i * (slotH + gap);
-
-    const hovered = state.mouseX >= rightX && state.mouseX <= rightX + slotW && state.mouseY >= y && state.mouseY <= y + slotH;
+    const hovered = state.mouseX >= x && state.mouseX <= x + slotW && state.mouseY >= y && state.mouseY <= y + slotH;
 
     ctx.fillStyle = hovered ? "rgba(30, 41, 59, 0.75)" : "rgba(10, 15, 26, 0.75)";
     ctx.strokeStyle = itemID !== 0 ? (itemDetails[itemID]?.color || "rgba(255, 255, 255, 0.15)") : "rgba(255, 255, 255, 0.08)";
     ctx.lineWidth = itemID !== 0 && hovered ? 2.5 : 1.5;
 
     ctx.beginPath();
-    ctx.roundRect(rightX, y, slotW, slotH, 8);
+    ctx.roundRect(x, y, slotW, slotH, 6);
     ctx.fill();
     ctx.stroke();
 
@@ -302,11 +290,11 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
       const details = itemDetails[itemID];
       if (details) {
         ctx.fillStyle = details.color;
-        ctx.font = "bold 9px 'JetBrains Mono', monospace";
+        ctx.font = "bold 8px 'JetBrains Mono', monospace";
         ctx.textAlign = "center";
         const lines = details.abbrev.split("\n");
-        ctx.fillText(lines[0], rightX + slotW / 2, y + 22);
-        ctx.fillText(lines[1], rightX + slotW / 2, y + 34);
+        ctx.fillText(lines[0], x + slotW / 2, y + 18);
+        ctx.fillText(lines[1], x + slotW / 2, y + 28);
 
         if (hovered) {
           ctx.save();
@@ -314,7 +302,7 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
           ctx.strokeStyle = details.color;
           ctx.lineWidth = 1.5;
           const popW = 180;
-          const popH = 65;
+          const popH = 80;
           const popX = rightX - popW - 15;
           const popY = y - 5;
           ctx.beginPath();
@@ -334,14 +322,18 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
           if (descLines[1]) {
             ctx.fillText(descLines[1], popX + 10, popY + 46);
           }
+
+          ctx.fillStyle = "#ef4444";
+          ctx.font = "bold 9px 'JetBrains Mono', monospace";
+          ctx.fillText("[НАЖМИТЕ X ДЛЯ УДАЛЕНИЯ]", popX + 10, popY + popH - 12);
           ctx.restore();
         }
       }
     } else {
       ctx.fillStyle = "#334155";
-      ctx.font = "bold 12px 'JetBrains Mono', monospace";
+      ctx.font = "bold 10px 'JetBrains Mono', monospace";
       ctx.textAlign = "center";
-      ctx.fillText("-", rightX + slotW / 2, y + 30);
+      ctx.fillText("-", x + slotW / 2, y + 26);
     }
   }
 }
@@ -662,7 +654,7 @@ export function drawPauseUI(ctx: CanvasRenderingContext2D, canvasWidth: number, 
 }
 
 export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
-  ctx.fillStyle = "#0f172a";
+  ctx.fillStyle = "#050508";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   let px = state.arenaWidth / 2;
@@ -1183,6 +1175,19 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   drawAndUpdateParticles(ctx, px, py, canvasWidth, canvasHeight);
   ctx.restore();
 
+  const grad = ctx.createRadialGradient(
+    canvasWidth / 2,
+    canvasHeight / 2,
+    0,
+    canvasWidth / 2,
+    canvasHeight / 2,
+    Math.max(canvasWidth, canvasHeight) * 0.8
+  );
+  grad.addColorStop(0, "rgba(5, 5, 8, 0)");
+  grad.addColorStop(1, "rgba(5, 5, 8, 0.85)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
   drawHUD(ctx, canvasWidth, canvasHeight);
   drawUpgradePanel(ctx);
 
@@ -1197,7 +1202,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
     drawUpgradeCardsOverlay(ctx, canvasWidth, canvasHeight);
   }
 
-  if (state.isGamePaused) {
+  if (state.isGamePaused && state.upgradePoints === 0) {
     drawPauseUI(ctx, canvasWidth, canvasHeight);
   }
 }

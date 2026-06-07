@@ -23,9 +23,10 @@ type EntityState struct {
 }
 
 type ClientInput struct {
-	Keys          uint8
-	MouseAngle    float32
-	UpgradeSelect uint8
+	Keys             uint8
+	MouseAngle       float32
+	UpgradeSelect    uint8
+	DeleteSlotSelect uint8
 }
 
 func EncodeWelcome(playerID uint16, arenaWidth, arenaHeight float32) []byte {
@@ -37,9 +38,9 @@ func EncodeWelcome(playerID uint16, arenaWidth, arenaHeight float32) []byte {
 	return buf
 }
 
-func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32, health, maxHealth uint16, upgradePoints uint8, statsPack1, statsPack2 uint32, waveNumber uint16, card1, card2, card3, slot1, slot2, slot3, slot4 uint8, entities []EntityState) []byte {
+func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32, health, maxHealth uint16, upgradePoints uint8, statsPack1, statsPack2 uint32, waveNumber uint16, card1, card2, card3 uint8, inventory []uint8, entities []EntityState) []byte {
 	count := len(entities)
-	bufSize := 43 + count*26
+	bufSize := 71 + count*26
 	buf := make([]byte, bufSize)
 	buf[0] = 2
 	binary.LittleEndian.PutUint32(buf[1:5], tick)
@@ -57,12 +58,15 @@ func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32,
 	buf[36] = card1
 	buf[37] = card2
 	buf[38] = card3
-	buf[39] = slot1
-	buf[40] = slot2
-	buf[41] = slot3
-	buf[42] = slot4
+	for i := 0; i < 32; i++ {
+		if i < len(inventory) {
+			buf[39+i] = inventory[i]
+		} else {
+			buf[39+i] = 0
+		}
+	}
 
-	offset := 43
+	offset := 71
 	for i := 0; i < count; i++ {
 		ent := &entities[i]
 		binary.LittleEndian.PutUint16(buf[offset:offset+2], ent.ID)
@@ -107,13 +111,14 @@ func DecodeJoin(buf []byte) (string, error) {
 }
 
 func DecodeInput(buf []byte) (ClientInput, error) {
-	if len(buf) < 7 {
+	if len(buf) < 8 {
 		return ClientInput{}, errors.New("invalid input size")
 	}
 	var input ClientInput
 	input.Keys = buf[1]
 	input.MouseAngle = math.Float32frombits(binary.LittleEndian.Uint32(buf[2:6]))
 	input.UpgradeSelect = buf[6]
+	input.DeleteSlotSelect = buf[7]
 	return input, nil
 }
 

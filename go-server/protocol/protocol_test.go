@@ -77,7 +77,7 @@ func TestJoin(t *testing.T) {
 }
 
 func TestInput(t *testing.T) {
-	payload := make([]byte, 7)
+	payload := make([]byte, 8)
 	payload[0] = 2
 	payload[1] = 0x05
 	bits := math.Float32bits(1.57)
@@ -86,6 +86,7 @@ func TestInput(t *testing.T) {
 	payload[4] = byte(bits >> 16)
 	payload[5] = byte(bits >> 24)
 	payload[6] = 3
+	payload[7] = 4
 
 	input, err := DecodeInput(payload)
 	if err != nil {
@@ -99,6 +100,9 @@ func TestInput(t *testing.T) {
 	}
 	if input.UpgradeSelect != 3 {
 		t.Errorf("upgrade mismatch")
+	}
+	if input.DeleteSlotSelect != 4 {
+		t.Errorf("delete slot mismatch")
 	}
 }
 
@@ -117,12 +121,12 @@ func TestWorldState(t *testing.T) {
 		},
 	}
 
-	buf := EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, entities)
+	buf := EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, 0, 0, 1, 0, 0, 0, make([]byte, 32), entities)
 	if buf[0] != 2 {
 		t.Errorf("expected opcode 2")
 	}
-	if len(buf) != 43+26 {
-		t.Errorf("expected len %d, got %d", 43+26, len(buf))
+	if len(buf) != 71+26 {
+		t.Errorf("expected len %d, got %d", 71+26, len(buf))
 	}
 }
 
