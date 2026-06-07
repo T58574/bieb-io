@@ -61,8 +61,19 @@ func (w *GameWorld) updateMinions(dt float64) {
 		diff := targetPos.Sub(m.Pos)
 		m.Vel = diff.Mul(mCfg.FollowSpeed * speedMul)
 		m.Pos = m.Pos.Add(m.Vel)
-		m.Damage = mCfg.BaseDamage + float64(owner.StatMinionDmg)*mCfg.DamagePerLevel
-		m.MaxHealth = mCfg.BaseHP + float64(owner.StatMinionHP)*mCfg.HPPerLevel
+
+		var itemMinionDmg, itemMinionHP float64
+		for itemID, count := range owner.Inventory {
+			if count > 0 {
+				if mod, ok := GetItemModifier(itemID); ok {
+					itemMinionDmg += mod.StatModifiers.MinionDamage * float64(count)
+					itemMinionHP += mod.StatModifiers.MinionHP * float64(count)
+				}
+			}
+		}
+
+		m.Damage = (mCfg.BaseDamage + float64(owner.StatMinionDmg)*mCfg.DamagePerLevel) * (1.0 + itemMinionDmg)
+		m.MaxHealth = (mCfg.BaseHP + float64(owner.StatMinionHP)*mCfg.HPPerLevel) * (1.0 + itemMinionHP)
 		m.ShootCooldown -= dt
 		if m.ShootCooldown <= 0 {
 			m.ShootCooldown = mCfg.ShootCooldown

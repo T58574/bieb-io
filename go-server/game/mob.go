@@ -366,7 +366,20 @@ func (w *GameWorld) spawnDrone(ownerID uint16, pos physics.Vector2D) {
 	}
 	mCfg := GetMinionConfig()
 	mID := w.GenerateID()
-	minionMaxHP := mCfg.BaseHP + float64(owner.StatMinionHP)*mCfg.HPPerLevel
+
+	var itemMinionDmg, itemMinionHP float64
+	for itemID, count := range owner.Inventory {
+		if count > 0 {
+			if mod, ok := GetItemModifier(itemID); ok {
+				itemMinionDmg += mod.StatModifiers.MinionDamage * float64(count)
+				itemMinionHP += mod.StatModifiers.MinionHP * float64(count)
+			}
+		}
+	}
+
+	minionMaxHP := (mCfg.BaseHP + float64(owner.StatMinionHP)*mCfg.HPPerLevel) * (1.0 + itemMinionHP)
+	minionDamage := (mCfg.BaseDamage + float64(owner.StatMinionDmg)*mCfg.DamagePerLevel) * (1.0 + itemMinionDmg)
+
 	minion := &Minion{
 		ID:          mID,
 		OwnerID:     ownerID,
@@ -374,7 +387,7 @@ func (w *GameWorld) spawnDrone(ownerID uint16, pos physics.Vector2D) {
 		Radius:      mCfg.Radius,
 		Health:      minionMaxHP,
 		MaxHealth:   minionMaxHP,
-		Damage:      mCfg.BaseDamage + float64(owner.StatMinionDmg)*mCfg.DamagePerLevel,
+		Damage:      minionDamage,
 		OrbitIndex:  len(owner.MinionIDs),
 		Lifetime:    mCfg.DroneLifetime,
 		HasLifetime: mCfg.DroneHasLifetime,

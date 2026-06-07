@@ -5,11 +5,5 @@
   "cellSize": 100.0,
   "tickRate": 60,
   "inputBufferSize": 4096,
-  "nextIDStart": 100,
-  "singularitySpawnInterval": 60.0,
-  "singularityDuration": 15.0,
-  "singularityRadius": 800.0,
-  "singularityCoreRadius": 150.0,
-  "singularityForce": 120.0,
-  "singularityDamage": 10.0
+  "nextIDStart": 100
 }

@@ -117,11 +117,53 @@
       "rarity": "Legendary"
     },
     "15": {
-      "name": "КВАНТОВЫЙ ЯДРО",
+      "name": "КВАНТОВАЯ БРОНЯ",
+      "color": "#f97316",
+      "desc": "+100 ХП\n+20 Броня\n+0.5 СкорСнар",
+      "abbrev": "Quant\nPlat",
+      "rarity": "Legendary"
+    },
+    "15": {
+      "name": "КВАНТОВЫЙ ЯDRO",
       "color": "#f97316",
       "desc": "+1 Снаряд\n+20% Урон\n+10% Скор\n+1 СкорСнар",
       "abbrev": "Quant\nCore",
       "rarity": "Legendary"
+    },
+    "16": {
+      "name": "КАТАЛИЗАТОР",
+      "color": "#d946ef",
+      "desc": "+5 Реген\n+25% Скор",
+      "abbrev": "Aura\nCat",
+      "rarity": "Unique"
+    },
+    "17": {
+      "name": "ЦЕПНАЯ МОЛНИЯ",
+      "color": "#f97316",
+      "desc": "Молния при\nубийстве",
+      "abbrev": "Chain\nLight",
+      "rarity": "Legendary"
+    },
+    "18": {
+      "name": "ОПТИКА КРИТА",
+      "color": "#d946ef",
+      "desc": "+15% Шанс Крита\n+50% Крит Урон",
+      "abbrev": "Crit\nEye",
+      "rarity": "Unique"
+    },
+    "19": {
+      "name": "ЯДРО ДРОНОВ",
+      "color": "#d946ef",
+      "desc": "+30% Урон Дронов\n+50% ХП Дронов",
+      "abbrev": "Drone\nCore",
+      "rarity": "Unique"
+    },
+    "20": {
+      "name": "МАГНИТ ОПЫТА",
+      "color": "#fbbf24",
+      "desc": "+25% Опыта\n+Радиус Сбора",
+      "abbrev": "Exp\nMag",
+      "rarity": "Rare"
     }
   },
   "classes": []
