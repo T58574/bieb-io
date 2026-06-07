@@ -1,10 +1,198 @@
 import { state, renderEntities } from "./state";
 import { drawAndUpdateParticles } from "./particles";
-import { sendClassUpgrade } from "./network";
 import localizationData from "./items_localization.json";
 import { TextRenderer } from "./text";
 
 export const shapeCache = new Map<string, HTMLCanvasElement>();
+
+interface UpgradeCardDetail {
+  title: string;
+  color: string;
+  desc: string;
+  rarity: string;
+  abbrev: string;
+}
+
+const UPGRADE_DETAILS: Record<number, UpgradeCardDetail> = {
+  1: { title: "ОПТИМИЗАЦИЯ СКОРОСТИ", color: "#3b82f6", desc: "Увеличение скорости на +10%", rarity: "Common", abbrev: "Move\nSpd" },
+  2: { title: "СОПРОЦЕССОР", color: "#fbbf24", desc: "Увеличение мощности и +5% вампиризм", rarity: "Rare", abbrev: "Vamp" },
+  3: { title: "СТАБИЛИЗАТОР ЯДРА", color: "#22c55e", desc: "Увеличение макс здоровья на +25", rarity: "Common", abbrev: "Max\nHP" },
+  4: { title: "РЕГЕНЕРАЦИЯ", color: "#10b981", desc: "Увеличение регенерации здоровья", rarity: "Common", abbrev: "HP\nReg" },
+  5: { title: "ДРОНЫ: ВЫЧИСЛЕНИЯ", color: "#ef4444", desc: "Увеличение урона дронов на +15%", rarity: "Common", abbrev: "Drn\nDmg" },
+  6: { title: "ДРОНЫ: ЧАСТОТА", color: "#f97316", desc: "Увеличение скорости дронов на +15%", rarity: "Common", abbrev: "Drn\nSpd" },
+  7: { title: "ДРОНЫ: СТАБИЛЬНОСТЬ", color: "#06b6d4", desc: "Увеличение макс. ХП дронов на +15%", rarity: "Common", abbrev: "Drn\nHP" },
+  8: { title: "ДРОНЫ: ПРОБИТИЕ", color: "#8b5cf6", desc: "Дроны пробивают на +1 цель больше", rarity: "Common", abbrev: "Drn\nPrc" },
+  9: { title: "ДРОНЫ: РЕГЕНЕРАЦИЯ", color: "#a3e635", desc: "Увеличение регенерации дронов на +15%", rarity: "Common", abbrev: "Drn\nReg" },
+  10: { title: "МИКРО-ЩИТЫ", color: "#00f0ff", desc: "Запуск защитного орбитального щита (макс 4)", rarity: "Rare", abbrev: "Shld" },
+  11: { title: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Все ваши снаряды взрывают убитые вирусы", rarity: "Unique", abbrev: "Necr\nCore" },
+  12: { title: "УСИЛИТЕЛЬ УРОНА", color: "#ef4444", desc: "Увеличение урона снарядов на +5%", rarity: "Common", abbrev: "Dmg" },
+  13: { title: "РАЗГОН ОРУЖИЯ", color: "#f97316", desc: "Снижение задержки выстрела на 1%", rarity: "Common", abbrev: "Fire\nRate" },
+  14: { title: "ВЕРОЯТНОСТЬ КРИТА", color: "#f59e0b", desc: "Шанс крит. урона +5%", rarity: "Common", abbrev: "Crit\nChn" },
+  15: { title: "СИЛА КРИТА", color: "#eab308", desc: "Множитель крит. урона +5%", rarity: "Common", abbrev: "Crit\nDmg" },
+  16: { title: "КИНЕТИЧЕСКИЙ БАРЬЕР", color: "#84cc16", desc: "Снижение получаемого урона на 5%", rarity: "Common", abbrev: "Def" },
+  17: { title: "МНОЖИТЕЛЬ СНАРЯДОВ", color: "#22c55e", desc: "+1 доп. снаряд", rarity: "Rare", abbrev: "Proj" },
+  18: { title: "БРОНЕБОЙНОСТЬ", color: "#10b981", desc: "+1 пробитие снарядов", rarity: "Rare", abbrev: "Prc" },
+  19: { title: "УГОЛ АТАКИ", color: "#14b8a6", desc: "Увеличение разброса на +5%", rarity: "Common", abbrev: "Sprd" },
+  20: { title: "ОБУЧЕНИЕ НЕЙРОСЕТИ", color: "#0ea5e9", desc: "Получаемый опыт +1%", rarity: "Common", abbrev: "XP\nMod" },
+  21: { title: "КВАНТОВЫЙ АНАЛИЗАТОР", color: "#6366f1", desc: "Шанс дропа предметов +5%", rarity: "Common", abbrev: "Loot\nQty" }
+};
+
+const UPGRADE_STATE_KEYS: Record<number, keyof typeof state> = {
+  1: "statSpeed",
+  2: "statVampirism",
+  3: "statMaxHP",
+  4: "statRegen",
+  5: "statMinionDmg",
+  6: "statMinionSpeed",
+  7: "statMinionHP",
+  8: "statMinionPierce",
+  9: "statMinionRegen",
+  10: "statOrbitShield",
+  11: "statFlagUnlock",
+  12: "statDamageMod",
+  13: "statCooldownMod",
+  14: "statCritChance",
+  15: "statCritDamage",
+  16: "statCritDefiance",
+  17: "statAddProjectiles",
+  18: "statPierceCount",
+  19: "statSpread",
+  20: "statExpMod",
+  21: "statLootQuantity",
+};
+
+const GRID_CONFIG = {
+  size: 40,
+  majorStep: 200,
+  minorColor: "rgba(15, 23, 42, 0.15)",
+  majorColor: "rgba(30, 41, 59, 0.35)",
+  minorWidth: 1,
+  majorWidth: 1.5,
+};
+
+const CARD_LAYOUT = {
+  overlayBg: "rgba(5, 5, 8, 0.85)",
+  titleColor: "#00f0ff",
+  cardWidth: 200,
+  cardHeight: 280,
+  gap: 30,
+  startXOffset: -330,
+  startYOffset: -140,
+  bgHovered: "rgba(30, 41, 59, 0.65)",
+  bgDefault: "rgba(15, 23, 42, 0.45)",
+  borderDefault: "rgba(255, 255, 255, 0.15)",
+  textMuted: "#94a3b8",
+  interactiveColor: "#00f0ff",
+  nonInteractiveColor: "#64748b",
+};
+
+const UPGRADE_PANEL_LAYOUT = {
+  startY: 120,
+  slotWidth: 44,
+  slotHeight: 44,
+  gap: 6,
+  leftX: 22,
+  width: 214,
+  bg: "rgba(5, 5, 8, 0.65)",
+  border: "rgba(255, 255, 255, 0.12)",
+  titleColor: "#64748b",
+  slotBgHovered: "rgba(30, 41, 59, 0.75)",
+  slotBgDefault: "rgba(10, 15, 26, 0.75)",
+  tooltipBg: "rgba(5, 5, 8, 0.95)",
+  textWhite: "#ffffff",
+  textMuted: "#94a3b8",
+};
+
+const INVENTORY_HUD_LAYOUT = {
+  startY: 120,
+  slotWidth: 44,
+  slotHeight: 44,
+  gap: 6,
+  rightXOffset: -210,
+  bg: "rgba(5, 5, 8, 0.65)",
+  border: "rgba(255, 255, 255, 0.12)",
+  titleColor: "#64748b",
+  slotBgHovered: "rgba(30, 41, 59, 0.75)",
+  slotBgDefault: "rgba(10, 15, 26, 0.75)",
+  tooltipBg: "rgba(5, 5, 8, 0.95)",
+  textWhite: "#ffffff",
+  textMuted: "#94a3b8",
+  deleteTextColors: "#ef4444",
+};
+
+const ITEM_RARITY_BORDER_COLORS: Record<string, string> = {
+  "Common": "#10b981",
+  "Rare": "#3b82f6",
+  "Unique": "#f97316",
+  "Legendary": "#f97316",
+};
+
+const HUD_LAYOUT = {
+  barWidth: 350,
+  barHeight: 16,
+  bottomYOffset: -30,
+  bg: "rgba(5, 5, 8, 0.85)",
+  border: "rgba(255, 255, 255, 0.12)",
+  hpGradColors: ["#00f0ff", "#6366f1"],
+  xpGradColors: ["#fbbf24", "#f59e0b"],
+  textWhite: "#ffffff",
+  textMuted: "#94a3b8",
+  textMuted2: "#64748b",
+};
+
+const MENU_LAYOUT = {
+  bgColor: "#050508",
+  titleColor: "#00f0ff",
+  subtitleColor: "#64748b",
+  inputBg: "rgba(5, 5, 8, 0.75)",
+  inputBorder: "rgba(255, 255, 255, 0.12)",
+  inputTextActive: "#ffffff",
+  inputTextPlaceholder: "#64748b",
+  btnBgHovered: "rgba(0, 240, 255, 0.15)",
+  btnBgDefault: "rgba(0, 240, 255, 0.05)",
+  btnBorderHovered: "#00f0ff",
+  btnBorderDefault: "rgba(0, 240, 255, 0.4)",
+  btnTextHovered: "#00f0ff",
+  btnTextDefault: "#ffffff",
+  footerColor: "#475569",
+};
+
+const GAMEOVER_LAYOUT = {
+  bgColor: "rgba(5, 5, 8, 0.95)",
+  titleColor: "#ff2a5f",
+  subtitleColor: "#64748b",
+  metricsColor: "#ffffff",
+  metricsMuted: "#94a3b8",
+  btnBgHovered: "rgba(0, 240, 255, 0.15)",
+  btnBgDefault: "rgba(0, 240, 255, 0.05)",
+  btnBorderHovered: "#00f0ff",
+  btnBorderDefault: "rgba(0, 240, 255, 0.4)",
+  btnTextHovered: "#00f0ff",
+  btnTextDefault: "#ffffff",
+  footerColor: "#475569",
+};
+
+const PAUSE_LAYOUT = {
+  bgColor: "rgba(5, 5, 8, 0.65)",
+  titleColor: "#00f0ff",
+  subtitleColor: "#94a3b8",
+};
+
+const RARITY_COLORS: Record<number, { fill: string; stroke: string }> = {
+  0: { fill: "#990022", stroke: "#ff2a5f" },
+  1: { fill: "#1e3a8a", stroke: "#3b82f6" },
+  2: { fill: "#78350f", stroke: "#fbbf24" },
+  3: { fill: "#581c87", stroke: "#d946ef" },
+};
+
+function drawRegularPolygonPath(ctx: CanvasRenderingContext2D, radius: number, sides: number, startAngle: number) {
+  ctx.beginPath();
+  for (let i = 0; i < sides; i++) {
+    const a = (i * 2 * Math.PI) / sides + startAngle;
+    ctx.lineTo(Math.cos(a) * radius, Math.sin(a) * radius);
+  }
+  ctx.closePath();
+}
 
 export function getShapeCanvas(key: string, radius: number, drawFn: (ctx: CanvasRenderingContext2D, r: number) => void): HTMLCanvasElement {
   if (shapeCache.has(key)) return shapeCache.get(key)!;
@@ -33,38 +221,37 @@ export function lerpAngle(a: number, b: number, t: number): number {
 }
 
 export function drawGrid(ctx: CanvasRenderingContext2D, cx: number, cy: number, canvasWidth: number, canvasHeight: number) {
-  const gridSize = 40;
-  const startX = Math.floor((cx - canvasWidth / 2) / gridSize) * gridSize;
+  const startX = Math.floor((cx - canvasWidth / 2) / GRID_CONFIG.size) * GRID_CONFIG.size;
   const endX = cx + canvasWidth / 2;
-  const startY = Math.floor((cy - canvasHeight / 2) / gridSize) * gridSize;
+  const startY = Math.floor((cy - canvasHeight / 2) / GRID_CONFIG.size) * GRID_CONFIG.size;
   const endY = cy + canvasHeight / 2;
 
-  ctx.strokeStyle = "rgba(15, 23, 42, 0.15)";
-  ctx.lineWidth = 1;
-  for (let x = startX; x < endX; x += gridSize) {
-    if (x % 200 === 0) continue;
+  ctx.strokeStyle = GRID_CONFIG.minorColor;
+  ctx.lineWidth = GRID_CONFIG.minorWidth;
+  for (let x = startX; x < endX; x += GRID_CONFIG.size) {
+    if (x % GRID_CONFIG.majorStep === 0) continue;
     ctx.beginPath();
     ctx.moveTo(x - cx + canvasWidth / 2, 0);
     ctx.lineTo(x - cx + canvasWidth / 2, canvasHeight);
     ctx.stroke();
   }
-  for (let y = startY; y < endY; y += gridSize) {
-    if (y % 200 === 0) continue;
+  for (let y = startY; y < endY; y += GRID_CONFIG.size) {
+    if (y % GRID_CONFIG.majorStep === 0) continue;
     ctx.beginPath();
     ctx.moveTo(0, y - cy + canvasHeight / 2);
     ctx.lineTo(canvasWidth, y - cy + canvasHeight / 2);
     ctx.stroke();
   }
 
-  ctx.strokeStyle = "rgba(30, 41, 59, 0.35)";
-  ctx.lineWidth = 1.5;
-  for (let x = Math.floor(startX / 200) * 200; x < endX; x += 200) {
+  ctx.strokeStyle = GRID_CONFIG.majorColor;
+  ctx.lineWidth = GRID_CONFIG.majorWidth;
+  for (let x = Math.floor(startX / GRID_CONFIG.majorStep) * GRID_CONFIG.majorStep; x < endX; x += GRID_CONFIG.majorStep) {
     ctx.beginPath();
     ctx.moveTo(x - cx + canvasWidth / 2, 0);
     ctx.lineTo(x - cx + canvasWidth / 2, canvasHeight);
     ctx.stroke();
   }
-  for (let y = Math.floor(startY / 200) * 200; y < endY; y += 200) {
+  for (let y = Math.floor(startY / GRID_CONFIG.majorStep) * GRID_CONFIG.majorStep; y < endY; y += GRID_CONFIG.majorStep) {
     ctx.beginPath();
     ctx.moveTo(0, y - cy + canvasHeight / 2);
     ctx.lineTo(canvasWidth, y - cy + canvasHeight / 2);
@@ -72,59 +259,33 @@ export function drawGrid(ctx: CanvasRenderingContext2D, cx: number, cy: number, 
   }
 }
 
-
-
 export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
-  ctx.fillStyle = "rgba(5, 5, 8, 0.85)";
+  ctx.fillStyle = CARD_LAYOUT.overlayBg;
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   const cx = canvasWidth / 2;
   const cy = canvasHeight / 2;
 
-  TextRenderer.draw(ctx, "ДОСТУПНО ОБНОВЛЕНИЕ ПО", cx, cy - 200 * uiScale, "#00f0ff", { fontSize: 24, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, "ДОСТУПНО ОБНОВЛЕНИЕ ПО", cx, cy - 200 * uiScale, CARD_LAYOUT.titleColor, { fontSize: 24, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  const cardW = 200 * uiScale;
-  const cardH = 280 * uiScale;
-  const gap = 30 * uiScale;
-  const startX = cx - 330 * uiScale;
-  const startY = cy - 140 * uiScale;
-
-  const cardDetails: Record<number, { title: string; color: string; desc: string; rarity: string }> = {
-    1: { title: "ОПТИМИЗАЦИЯ СКОРОСТИ", color: "#10b981", desc: "Увеличение скорости на +10%", rarity: "Common" },
-    2: { title: "СОПРОЦЕССОР", color: "#fbbf24", desc: "Увеличение мощности и +5% вампиризм", rarity: "Rare" },
-    3: { title: "СТАБИЛИЗАТОР ЯДРА", color: "#22c55e", desc: "Увеличение макс здоровья на +25", rarity: "Common" },
-    4: { title: "РЕГЕНЕРАЦИЯ", color: "#10b981", desc: "Увеличение регенерации здоровья", rarity: "Common" },
-    5: { title: "ДРОНЫ: ВЫЧИСЛЕНИЯ", color: "#06b6d4", desc: "Увеличение урона дронов на +15%", rarity: "Common" },
-    6: { title: "ДРОНЫ: ЧАСТОТА", color: "#8b5cf6", desc: "Увеличение скорости дронов на +15%", rarity: "Common" },
-    7: { title: "ДРОНЫ: СТАБИЛЬНОСТЬ", color: "#3b82f6", desc: "Увеличение макс. ХП дронов на +15%", rarity: "Common" },
-    8: { title: "ДРОНЫ: ПРОБИТИЕ", color: "#ef4444", desc: "Дроны пробивают на +1 цель больше", rarity: "Common" },
-    9: { title: "ДРОНЫ: РЕГЕНЕРАЦИЯ", color: "#a3e635", desc: "Увеличение регенерации дронов на +15%", rarity: "Common" },
-    10: { title: "МИКРО-ЩИТЫ", color: "#00f0ff", desc: "Запуск защитного орбитального щита (макс 4)", rarity: "Rare" },
-    11: { title: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Все ваши снаряды взрывают убитые вирусы", rarity: "Unique" },
-    12: { title: "УСИЛИТЕЛЬ УРОНА", color: "#ef4444", desc: "Увеличение урона снарядов на +5%", rarity: "Common" },
-    13: { title: "РАЗГОН ОРУЖИЯ", color: "#f97316", desc: "Снижение задержки выстрела на 1%", rarity: "Common" },
-    14: { title: "ВЕРОЯТНОСТЬ КРИТА", color: "#f59e0b", desc: "Шанс крит. урона +5%", rarity: "Common" },
-    15: { title: "СИЛА КРИТА", color: "#eab308", desc: "Множитель крит. урона +5%", rarity: "Common" },
-    16: { title: "КИНЕТИЧЕСКИЙ БАРЬЕР", color: "#84cc16", desc: "Снижение получаемого урона на 5%", rarity: "Common" },
-    17: { title: "МНОЖИТЕЛЬ СНАРЯДОВ", color: "#22c55e", desc: "+1 доп. снаряд", rarity: "Rare" },
-    18: { title: "БРОНЕБОЙНОСТЬ", color: "#10b981", desc: "+1 пробитие снарядов", rarity: "Rare" },
-    19: { title: "УГОЛ АТАКИ", color: "#14b8a6", desc: "Увеличение разброса на +5%", rarity: "Common" },
-    20: { title: "ОБУЧЕНИЕ НЕЙРОСЕТИ", color: "#0ea5e9", desc: "Получаемый опыт +1%", rarity: "Common" },
-    21: { title: "КВАНТОВЫЙ АНАЛИЗАТОР", color: "#6366f1", desc: "Шанс дропа предметов +5%", rarity: "Common" }
-  };
+  const cardW = CARD_LAYOUT.cardWidth * uiScale;
+  const cardH = CARD_LAYOUT.cardHeight * uiScale;
+  const gap = CARD_LAYOUT.gap * uiScale;
+  const startX = cx + CARD_LAYOUT.startXOffset * uiScale;
+  const startY = cy + CARD_LAYOUT.startYOffset * uiScale;
 
   const cards = [state.card1, state.card2, state.card3];
 
   for (let i = 0; i < 3; i++) {
     const cardId = cards[i];
-    const details = cardDetails[cardId] || { title: "UNKNOWN", color: "#64748b", desc: "Unknown mod", rarity: "Common" };
+    const details = UPGRADE_DETAILS[cardId] || { title: "UNKNOWN", color: "#64748b", desc: "Unknown mod", rarity: "Common", abbrev: "???" };
     const x = startX + i * (cardW + gap);
     const y = startY;
 
     const hovered = state.mouseX >= x && state.mouseX <= x + cardW && state.mouseY >= y && state.mouseY <= y + cardH;
 
-    ctx.fillStyle = hovered ? "rgba(30, 41, 59, 0.65)" : "rgba(15, 23, 42, 0.45)";
-    ctx.strokeStyle = hovered ? details.color : "rgba(255, 255, 255, 0.15)";
+    ctx.fillStyle = hovered ? CARD_LAYOUT.bgHovered : CARD_LAYOUT.bgDefault;
+    ctx.strokeStyle = hovered ? details.color : CARD_LAYOUT.borderDefault;
     ctx.lineWidth = hovered ? 3 : 1.5;
 
     ctx.beginPath();
@@ -149,20 +310,20 @@ export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWid
       const testLine = descLine + descWords[n] + " ";
       const metrics = ctx.measureText(testLine);
       if (metrics.width > cardW - 24 * uiScale && n > 0) {
-        TextRenderer.draw(ctx, descLine, x + cardW / 2, descY, "#94a3b8", { fontSize: 10, align: "center" }, canvasWidth, canvasHeight);
+        TextRenderer.draw(ctx, descLine, x + cardW / 2, descY, CARD_LAYOUT.textMuted, { fontSize: 10, align: "center" }, canvasWidth, canvasHeight);
         descLine = descWords[n] + " ";
         descY += 14 * uiScale;
       } else {
         descLine = testLine;
       }
     }
-    TextRenderer.draw(ctx, descLine, x + cardW / 2, descY, "#94a3b8", { fontSize: 10, align: "center" }, canvasWidth, canvasHeight);
+    TextRenderer.draw(ctx, descLine, x + cardW / 2, descY, CARD_LAYOUT.textMuted, { fontSize: 10, align: "center" }, canvasWidth, canvasHeight);
 
-    TextRenderer.draw(ctx, `[НАЖМИТЕ ${i + 1}]`, x + cardW / 2, y + cardH - 25 * uiScale, hovered ? "#00f0ff" : "#64748b", { fontSize: 11, align: "center", bold: true }, canvasWidth, canvasHeight);
+    TextRenderer.draw(ctx, `[НАЖМИТЕ ${i + 1}]`, x + cardW / 2, y + cardH - 25 * uiScale, hovered ? CARD_LAYOUT.interactiveColor : CARD_LAYOUT.nonInteractiveColor, { fontSize: 11, align: "center", bold: true }, canvasWidth, canvasHeight);
   }
 }
 
-export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number) {
+export function drawUpgradePanel(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
   interface UpgradeDetail {
     id: string;
     name: string;
@@ -173,56 +334,12 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
   }
 
   const activeUpgrades: UpgradeDetail[] = [];
-  const cardDetails: Record<number, { title: string; color: string; desc: string; abbrev: string }> = {
-    1: { title: "ОПТИМИЗАЦИЯ СКОРОСТИ", color: "#3b82f6", desc: "Увеличение скорости на +10%", abbrev: "Move\nSpd" },
-    2: { title: "СОПРОЦЕССОР", color: "#fbbf24", desc: "Увеличение мощности и +5% вампиризм", abbrev: "Vamp" },
-    3: { title: "СТАБИЛИЗАТОР ЯДРА", color: "#22c55e", desc: "Увеличение макс здоровья на +25", abbrev: "Max\nHP" },
-    4: { title: "РЕГЕНЕРАЦИЯ", color: "#10b981", desc: "Увеличение регенерации здоровья", abbrev: "HP\nReg" },
-    5: { title: "ДРОНЫ: ВЫЧИСЛЕНИЯ", color: "#ef4444", desc: "Увеличение урона дронов на +15%", abbrev: "Drn\nDmg" },
-    6: { title: "ДРОНЫ: ЧАСТОТА", color: "#f97316", desc: "Увеличение скорости дронов на +15%", abbrev: "Drn\nSpd" },
-    7: { title: "ДРОНЫ: СТАБИЛЬНОСТЬ", color: "#06b6d4", desc: "Увеличение макс. ХП дронов на +15%", abbrev: "Drn\nHP" },
-    8: { title: "ДРОНЫ: ПРОБИТИЕ", color: "#8b5cf6", desc: "Дроны пробивают на +1 цель больше", abbrev: "Drn\nPrc" },
-    9: { title: "ДРОНЫ: РЕГЕНЕРАЦИЯ", color: "#a3e635", desc: "Увеличение регенерации дронов на +15%", abbrev: "Drn\nReg" },
-    10: { title: "МИКРО-ЩИТЫ", color: "#00f0ff", desc: "Запуск защитного орбитального щита (макс 4)", abbrev: "Shld" },
-    11: { title: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Все ваши снаряды взрывают убитые вирусы", abbrev: "Necr\nCore" },
-    12: { title: "УСИЛИТЕЛЬ УРОНА", color: "#ef4444", desc: "Увеличение урона снарядов на +5%", abbrev: "Dmg" },
-    13: { title: "РАЗГОН ОРУЖИЯ", color: "#f97316", desc: "Снижение задержки выстрела на 1%", abbrev: "Fire\nRate" },
-    14: { title: "ВЕРОЯТНОСТЬ КРИТА", color: "#f59e0b", desc: "Шанс крит. урона +5%", abbrev: "Crit\nChn" },
-    15: { title: "СИЛА КРИТА", color: "#eab308", desc: "Множитель крит. урона +5%", abbrev: "Crit\nDmg" },
-    16: { title: "КИНЕТИЧЕСКИЙ БАРЬЕР", color: "#84cc16", desc: "Снижение получаемого урона на 5%", abbrev: "Def" },
-    17: { title: "МНОЖИТЕЛЬ СНАРЯДОВ", color: "#22c55e", desc: "+1 доп. снаряд", abbrev: "Proj" },
-    18: { title: "БРОНЕБОЙНОСТЬ", color: "#10b981", desc: "+1 пробитие снарядов", abbrev: "Prc" },
-    19: { title: "УГОЛ АТАКИ", color: "#14b8a6", desc: "Увеличение разброса на +5%", abbrev: "Sprd" },
-    20: { title: "ОБУЧЕНИЕ НЕЙРОСЕТИ", color: "#0ea5e9", desc: "Получаемый опыт +1%", abbrev: "XP\nMod" },
-    21: { title: "КВАНТОВЫЙ АНАЛИЗАТОР", color: "#6366f1", desc: "Шанс дропа предметов +5%", abbrev: "Loot\nQty" }
-  };
 
-  for (let id = 1; id <= 21; id++) {
-    const details = cardDetails[id];
+  for (const [idStr, stateKey] of Object.entries(UPGRADE_STATE_KEYS)) {
+    const id = Number(idStr);
+    const details = UPGRADE_DETAILS[id];
     if (details) {
-      let count = 0;
-      if (id === 1) count = state.statSpeed;
-      else if (id === 2) count = state.statVampirism;
-      else if (id === 3) count = state.statMaxHP;
-      else if (id === 4) count = state.statRegen;
-      else if (id === 5) count = state.statMinionDmg;
-      else if (id === 6) count = state.statMinionSpeed;
-      else if (id === 7) count = state.statMinionHP;
-      else if (id === 8) count = state.statMinionPierce;
-      else if (id === 9) count = state.statMinionRegen;
-      else if (id === 10) count = state.statOrbitShield;
-      else if (id === 11) count = state.statFlagUnlock;
-      else if (id === 12) count = state.statDamageMod;
-      else if (id === 13) count = state.statCooldownMod;
-      else if (id === 14) count = state.statCritChance;
-      else if (id === 15) count = state.statCritDamage;
-      else if (id === 16) count = state.statCritDefiance;
-      else if (id === 17) count = state.statAddProjectiles;
-      else if (id === 18) count = state.statPierceCount;
-      else if (id === 19) count = state.statSpread;
-      else if (id === 20) count = state.statExpMod;
-      else if (id === 21) count = state.statLootQuantity;
-
+      const count = state[stateKey] as number;
       activeUpgrades.push({
         id: String(id),
         name: details.title,
@@ -238,24 +355,24 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
     return;
   }
 
-  const startY = 120 * uiScale;
-  const slotW = 44 * uiScale;
-  const slotH = 44 * uiScale;
-  const gap = 6 * uiScale;
-  const leftX = 22 * uiScale;
+  const startY = UPGRADE_PANEL_LAYOUT.startY * uiScale;
+  const slotW = UPGRADE_PANEL_LAYOUT.slotWidth * uiScale;
+  const slotH = UPGRADE_PANEL_LAYOUT.slotHeight * uiScale;
+  const gap = UPGRADE_PANEL_LAYOUT.gap * uiScale;
+  const leftX = UPGRADE_PANEL_LAYOUT.leftX * uiScale;
 
   const rows = Math.max(1, Math.ceil(activeUpgrades.length / 4));
   const height = rows * (slotH + gap) + 50 * uiScale;
 
-  ctx.fillStyle = "rgba(5, 5, 8, 0.65)";
+  ctx.fillStyle = UPGRADE_PANEL_LAYOUT.bg;
   ctx.beginPath();
-  ctx.roundRect(leftX - 10 * uiScale, startY - 30 * uiScale, 214 * uiScale, height, 10 * uiScale);
+  ctx.roundRect(leftX - 10 * uiScale, startY - 30 * uiScale, UPGRADE_PANEL_LAYOUT.width * uiScale, height, 10 * uiScale);
   ctx.fill();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.strokeStyle = UPGRADE_PANEL_LAYOUT.border;
   ctx.lineWidth = 1.5 * uiScale;
   ctx.stroke();
 
-  TextRenderer.draw(ctx, "УСИЛЕНИЯ ПЕРСОНАЖА", leftX + 97 * uiScale, startY - 10 * uiScale, "#64748b", { fontSize: 10, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, "УСИЛЕНИЯ ПЕРСОНАЖА", leftX + 97 * uiScale, startY - 10 * uiScale, UPGRADE_PANEL_LAYOUT.titleColor, { fontSize: 10, align: "center", bold: true }, canvasWidth, canvasHeight);
 
   for (let i = 0; i < activeUpgrades.length; i++) {
     const upg = activeUpgrades[i];
@@ -266,7 +383,7 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
 
     const hovered = state.mouseX >= x && state.mouseX <= x + slotW && state.mouseY >= y && state.mouseY <= y + slotH;
 
-    ctx.fillStyle = hovered ? "rgba(30, 41, 59, 0.75)" : "rgba(10, 15, 26, 0.75)";
+    ctx.fillStyle = hovered ? UPGRADE_PANEL_LAYOUT.slotBgHovered : UPGRADE_PANEL_LAYOUT.slotBgDefault;
     ctx.strokeStyle = upg.color;
     ctx.lineWidth = hovered ? 2.5 * uiScale : 1.5 * uiScale;
 
@@ -281,28 +398,28 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
       TextRenderer.draw(ctx, lines[1], x + slotW / 2, y + 28 * uiScale, upg.color, { fontSize: 8, align: "center", bold: true }, canvasWidth, canvasHeight);
     }
 
-    TextRenderer.draw(ctx, `v${upg.count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale, upg.count > 0 ? "#ffffff" : "#64748b", { fontSize: 11, align: "right", bold: true }, canvasWidth, canvasHeight);
+    TextRenderer.draw(ctx, `v${upg.count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale, upg.count > 0 ? UPGRADE_PANEL_LAYOUT.textWhite : UPGRADE_PANEL_LAYOUT.textMuted, { fontSize: 11, align: "right", bold: true }, canvasWidth, canvasHeight);
 
     if (hovered) {
       ctx.save();
-      ctx.fillStyle = "rgba(5, 5, 8, 0.95)";
+      ctx.fillStyle = UPGRADE_PANEL_LAYOUT.tooltipBg;
       ctx.strokeStyle = upg.color;
       ctx.lineWidth = 1.5 * uiScale;
       const popW = 180 * uiScale;
       const popH = 64 * uiScale;
-      const popX = leftX + 214 * uiScale + 10 * uiScale;
+      const popX = leftX + UPGRADE_PANEL_LAYOUT.width * uiScale + 10 * uiScale;
       const popY = y - 5 * uiScale;
       ctx.beginPath();
       ctx.roundRect(popX, popY, popW, popH, 8 * uiScale);
       ctx.fill();
       ctx.stroke();
 
-      TextRenderer.draw(ctx, upg.name, popX + 10 * uiScale, popY + 18 * uiScale, "#ffffff", { fontSize: 11, align: "left", bold: true }, canvasWidth, canvasHeight);
+      TextRenderer.draw(ctx, upg.name, popX + 10 * uiScale, popY + 18 * uiScale, UPGRADE_PANEL_LAYOUT.textWhite, { fontSize: 11, align: "left", bold: true }, canvasWidth, canvasHeight);
 
       const descLines = upg.desc.split("\n");
-      TextRenderer.draw(ctx, descLines[0], popX + 10 * uiScale, popY + 34 * uiScale, "#94a3b8", { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
+      TextRenderer.draw(ctx, descLines[0], popX + 10 * uiScale, popY + 34 * uiScale, UPGRADE_PANEL_LAYOUT.textMuted, { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
       if (descLines[1]) {
-        TextRenderer.draw(ctx, descLines[1], popX + 10 * uiScale, popY + 46 * uiScale, "#94a3b8", { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
+        TextRenderer.draw(ctx, descLines[1], popX + 10 * uiScale, popY + 46 * uiScale, UPGRADE_PANEL_LAYOUT.textMuted, { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
       }
       ctx.restore();
     }
@@ -310,11 +427,11 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
 }
 
 export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
-  const startY = 120 * uiScale;
-  const slotW = 44 * uiScale;
-  const slotH = 44 * uiScale;
-  const gap = 6 * uiScale;
-  const rightX = canvasWidth - 210 * uiScale;
+  const startY = INVENTORY_HUD_LAYOUT.startY * uiScale;
+  const slotW = INVENTORY_HUD_LAYOUT.slotWidth * uiScale;
+  const slotH = INVENTORY_HUD_LAYOUT.slotHeight * uiScale;
+  const gap = INVENTORY_HUD_LAYOUT.gap * uiScale;
+  const rightX = canvasWidth + INVENTORY_HUD_LAYOUT.rightXOffset * uiScale;
 
   const itemDetails: Record<string, { name: string; color: string; desc: string; abbrev: string; rarity: string }> = localizationData.items;
 
@@ -331,15 +448,15 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
   const rows = Math.max(1, Math.ceil(uniqueItems.length / 4));
   const height = rows * (slotH + gap) + 50 * uiScale;
 
-  ctx.fillStyle = "rgba(5, 5, 8, 0.65)";
+  ctx.fillStyle = INVENTORY_HUD_LAYOUT.bg;
   ctx.beginPath();
   ctx.roundRect(rightX - 10 * uiScale, startY - 30 * uiScale, 214 * uiScale, height, 10 * uiScale);
   ctx.fill();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.strokeStyle = INVENTORY_HUD_LAYOUT.border;
   ctx.lineWidth = 1.5 * uiScale;
   ctx.stroke();
 
-  TextRenderer.draw(ctx, localizationData.ui.module_title, rightX + 97 * uiScale, startY - 10 * uiScale, "#64748b", { fontSize: 10, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, localizationData.ui.module_title, rightX + 97 * uiScale, startY - 10 * uiScale, INVENTORY_HUD_LAYOUT.titleColor, { fontSize: 10, align: "center", bold: true }, canvasWidth, canvasHeight);
 
   for (let i = 0; i < uniqueItems.length; i++) {
     const itemID = uniqueItems[i];
@@ -354,12 +471,10 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
     let borderColor = "rgba(255, 255, 255, 0.15)";
     const details = itemDetails[itemID];
     if (details) {
-      if (details.rarity === "Common") borderColor = "#10b981";
-      else if (details.rarity === "Rare") borderColor = "#3b82f6";
-      else if (details.rarity === "Unique") borderColor = "#f97316";
+      borderColor = ITEM_RARITY_BORDER_COLORS[details.rarity] || borderColor;
     }
 
-    ctx.fillStyle = hovered ? "rgba(30, 41, 59, 0.75)" : "rgba(10, 15, 26, 0.75)";
+    ctx.fillStyle = hovered ? INVENTORY_HUD_LAYOUT.slotBgHovered : INVENTORY_HUD_LAYOUT.slotBgDefault;
     ctx.strokeStyle = borderColor;
     ctx.lineWidth = hovered ? 2.5 * uiScale : 1.5 * uiScale;
 
@@ -376,12 +491,12 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
       }
 
       if (count > 1) {
-        TextRenderer.draw(ctx, `x${count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale, "#ffffff", { fontSize: 11, align: "right", bold: true }, canvasWidth, canvasHeight);
+        TextRenderer.draw(ctx, `x${count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale, INVENTORY_HUD_LAYOUT.textWhite, { fontSize: 11, align: "right", bold: true }, canvasWidth, canvasHeight);
       }
 
       if (hovered) {
         ctx.save();
-        ctx.fillStyle = "rgba(5, 5, 8, 0.95)";
+        ctx.fillStyle = INVENTORY_HUD_LAYOUT.tooltipBg;
         ctx.strokeStyle = details.color;
         ctx.lineWidth = 1.5 * uiScale;
         const popW = 180 * uiScale;
@@ -393,15 +508,15 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
         ctx.fill();
         ctx.stroke();
 
-        TextRenderer.draw(ctx, details.name, popX + 10 * uiScale, popY + 18 * uiScale, "#ffffff", { fontSize: 11, align: "left", bold: true }, canvasWidth, canvasHeight);
+        TextRenderer.draw(ctx, details.name, popX + 10 * uiScale, popY + 18 * uiScale, INVENTORY_HUD_LAYOUT.textWhite, { fontSize: 11, align: "left", bold: true }, canvasWidth, canvasHeight);
 
         const descLines = details.desc.split("\n");
-        TextRenderer.draw(ctx, descLines[0], popX + 10 * uiScale, popY + 34 * uiScale, "#94a3b8", { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
+        TextRenderer.draw(ctx, descLines[0], popX + 10 * uiScale, popY + 34 * uiScale, INVENTORY_HUD_LAYOUT.textMuted, { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
         if (descLines[1]) {
-          TextRenderer.draw(ctx, descLines[1], popX + 10 * uiScale, popY + 46 * uiScale, "#94a3b8", { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
+          TextRenderer.draw(ctx, descLines[1], popX + 10 * uiScale, popY + 46 * uiScale, INVENTORY_HUD_LAYOUT.textMuted, { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
         }
 
-        TextRenderer.draw(ctx, "[НАЖМИТЕ X ДЛЯ УДАЛЕНИЯ]", popX + 10 * uiScale, popY + popH - 12 * uiScale, "#ef4444", { fontSize: 9, align: "left", bold: true }, canvasWidth, canvasHeight);
+        TextRenderer.draw(ctx, "[НАЖМИТЕ X ДЛЯ УДАЛЕНИЯ]", popX + 10 * uiScale, popY + popH - 12 * uiScale, INVENTORY_HUD_LAYOUT.deleteTextColors, { fontSize: 9, align: "left", bold: true }, canvasWidth, canvasHeight);
         ctx.restore();
       }
     }
@@ -409,60 +524,60 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
 }
 
 export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
-  const barWidth = 350 * uiScale;
-  const barHeight = 16 * uiScale;
+  const barWidth = HUD_LAYOUT.barWidth * uiScale;
+  const barHeight = HUD_LAYOUT.barHeight * uiScale;
   const centerX = canvasWidth / 2;
-  const bottomY = canvasHeight - 30 * uiScale;
+  const bottomY = canvasHeight + HUD_LAYOUT.bottomYOffset * uiScale;
 
-  ctx.fillStyle = "rgba(5, 5, 8, 0.85)";
+  ctx.fillStyle = HUD_LAYOUT.bg;
   ctx.beginPath();
   ctx.roundRect(centerX - barWidth / 2, bottomY - 24 * uiScale, barWidth, barHeight, 6);
   ctx.fill();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.strokeStyle = HUD_LAYOUT.border;
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
   const hpPct = Math.min(1.0, state.playerHealth / Math.max(1, state.playerMaxHealth));
   if (hpPct > 0) {
     const hpGrad = ctx.createLinearGradient(centerX - barWidth / 2, 0, centerX + barWidth / 2, 0);
-    hpGrad.addColorStop(0, "#00f0ff");
-    hpGrad.addColorStop(1, "#6366f1");
+    hpGrad.addColorStop(0, HUD_LAYOUT.hpGradColors[0]);
+    hpGrad.addColorStop(1, HUD_LAYOUT.hpGradColors[1]);
     ctx.fillStyle = hpGrad;
     ctx.beginPath();
     ctx.roundRect(centerX - barWidth / 2, bottomY - 24 * uiScale, barWidth * hpPct, barHeight, 6);
     ctx.fill();
   }
 
-  ctx.fillStyle = "rgba(5, 5, 8, 0.85)";
+  ctx.fillStyle = HUD_LAYOUT.bg;
   ctx.beginPath();
   ctx.roundRect(centerX - barWidth / 2, bottomY, barWidth, barHeight, 6);
   ctx.fill();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.strokeStyle = HUD_LAYOUT.border;
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
   const xpPct = Math.min(1.0, state.currentXP / Math.max(1, state.maxXP));
   if (xpPct > 0) {
     const xpGrad = ctx.createLinearGradient(centerX - barWidth / 2, 0, centerX + barWidth / 2, 0);
-    xpGrad.addColorStop(0, "#fbbf24");
-    xpGrad.addColorStop(1, "#f59e0b");
+    xpGrad.addColorStop(0, HUD_LAYOUT.xpGradColors[0]);
+    xpGrad.addColorStop(1, HUD_LAYOUT.xpGradColors[1]);
     ctx.fillStyle = xpGrad;
     ctx.beginPath();
     ctx.roundRect(centerX - barWidth / 2, bottomY, barWidth * xpPct, barHeight, 6);
     ctx.fill();
   }
 
-  TextRenderer.draw(ctx, `ПРОШИВКА ЯДРА: v${state.currentLevel}`, centerX, bottomY - 28 * uiScale, "#ffffff", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, `ПРОШИВКА ЯДРА: v${state.currentLevel}`, centerX, bottomY - 28 * uiScale, HUD_LAYOUT.textWhite, { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  TextRenderer.draw(ctx, `ПАКЕТОВ ДАННЫХ: ${state.currentScore}`, 20 * uiScale, canvasHeight - 25 * uiScale, "#94a3b8", { fontSize: 16, align: "left", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, `ПАКЕТОВ ДАННЫХ: ${state.currentScore}`, 20 * uiScale, canvasHeight - 25 * uiScale, HUD_LAYOUT.textMuted, { fontSize: 16, align: "left", bold: true }, canvasWidth, canvasHeight);
 
   let activeMinions = 0;
   for (const ent of renderEntities.values()) {
     if (ent.type === 4) activeMinions++;
   }
-  TextRenderer.draw(ctx, `АКТИВНЫЕ ДРОНЫ: ${activeMinions}`, canvasWidth - 20 * uiScale, 35 * uiScale, "#94a3b8", { fontSize: 16, align: "right", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, `АКТИВНЫЕ ДРОНЫ: ${activeMinions}`, canvasWidth - 20 * uiScale, 35 * uiScale, HUD_LAYOUT.textMuted, { fontSize: 16, align: "right", bold: true }, canvasWidth, canvasHeight);
 
-  TextRenderer.draw(ctx, `${localizationData.ui.sector_prefix}${state.waveNumber}`, centerX, bottomY - 54 * uiScale, "#64748b", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, `${localizationData.ui.sector_prefix}${state.waveNumber}`, centerX, bottomY - 54 * uiScale, HUD_LAYOUT.textMuted2, { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
   drawInventoryHUD(ctx, canvasWidth, canvasHeight, uiScale);
 }
@@ -474,12 +589,7 @@ export function drawMenuShape(ctx: CanvasRenderingContext2D, x: number, y: numbe
   ctx.fillStyle = color;
   ctx.strokeStyle = "#0f172a";
   ctx.lineWidth = 3;
-  ctx.beginPath();
-  for (let i = 0; i < sides; i++) {
-    const a = (i * 2 * Math.PI) / sides - Math.PI / 2;
-    ctx.lineTo(Math.cos(a) * radius, Math.sin(a) * radius);
-  }
-  ctx.closePath();
+  drawRegularPolygonPath(ctx, radius, sides, -Math.PI / 2);
   ctx.fill();
   ctx.stroke();
   ctx.restore();
@@ -487,7 +597,7 @@ export function drawMenuShape(ctx: CanvasRenderingContext2D, x: number, y: numbe
 
 export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
   const uiScale = Math.min(canvasWidth / 1920, canvasHeight / 1080);
-  ctx.fillStyle = "#050508";
+  ctx.fillStyle = MENU_LAYOUT.bgColor;
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   state.menuAnimAngle += 0.008;
@@ -511,26 +621,26 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.lineTo(cx + 250, cy - 260);
   ctx.stroke();
 
-  TextRenderer.draw(ctx, "NECRO-GEOMETRY", cx, cy - 220 * uiScale, "#00f0ff", { fontSize: 44, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, "NECRO-GEOMETRY", cx, cy - 220 * uiScale, MENU_LAYOUT.titleColor, { fontSize: 44, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  TextRenderer.draw(ctx, "[СИНХРОНИЗАЦИЯ КОГНИТИВНОГО ЯДРА // АКТИВНО]", cx, cy - 185 * uiScale, "#64748b", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, "[СИНХРОНИЗАЦИЯ КОГНИТИВНОГО ЯДРА // АКТИВНО]", cx, cy - 185 * uiScale, MENU_LAYOUT.subtitleColor, { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
   const inputW = 320;
   const inputH = 44;
   const inputX = cx - inputW / 2;
   const inputY = cy - 30 * uiScale;
 
-  ctx.fillStyle = "rgba(5, 5, 8, 0.75)";
+  ctx.fillStyle = MENU_LAYOUT.inputBg;
   ctx.beginPath();
   ctx.roundRect(inputX, inputY, inputW, inputH, 8);
   ctx.fill();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.strokeStyle = MENU_LAYOUT.inputBorder;
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
   const displayText = state.usernameInput.length > 0 ? `>> ID: ${state.usernameInput}` : ">> ВВЕДИТЕ ИДЕНТИФИКАТОР...";
   const blink = Math.floor(Date.now() / 500) % 2 === 0 && state.usernameInput.length > 0 ? "|" : "";
-  TextRenderer.draw(ctx, displayText + blink, cx, inputY + 27, state.usernameInput.length > 0 ? "#ffffff" : "#64748b", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, displayText + blink, cx, inputY + 27, state.usernameInput.length > 0 ? MENU_LAYOUT.inputTextActive : MENU_LAYOUT.inputTextPlaceholder, { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
   const btnW = 260;
   const btnH = 52;
@@ -539,34 +649,34 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
 
   const hovered = state.mouseX >= btnX && state.mouseX <= btnX + btnW && state.mouseY >= btnY && state.mouseY <= btnY + btnH;
 
-  ctx.fillStyle = hovered ? "rgba(0, 240, 255, 0.15)" : "rgba(0, 240, 255, 0.05)";
+  ctx.fillStyle = hovered ? MENU_LAYOUT.btnBgHovered : MENU_LAYOUT.btnBgDefault;
   ctx.beginPath();
   ctx.roundRect(btnX, btnY, btnW, btnH, 10);
   ctx.fill();
-  ctx.strokeStyle = hovered ? "#00f0ff" : "rgba(0, 240, 255, 0.4)";
+  ctx.strokeStyle = hovered ? MENU_LAYOUT.btnBorderHovered : MENU_LAYOUT.btnBorderDefault;
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  TextRenderer.draw(ctx, "[ЗАПУСТИТЬ ЯДРО]", cx, btnY + 32, hovered ? "#00f0ff" : "#ffffff", { fontSize: 15, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, "[ЗАПУСТИТЬ ЯДРО]", cx, btnY + 32, hovered ? MENU_LAYOUT.btnTextHovered : MENU_LAYOUT.btnTextDefault, { fontSize: 15, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  TextRenderer.draw(ctx, "WASD/ДВИЖЕНИЕ | МЫШЬ/ПРИЦЕЛ | ЛКМ/СТРЕЛЬБА | ПРОБЕЛ/ПРИЗЫВ", cx, canvasHeight - 40 * uiScale, "#475569", { fontSize: 11, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, "WASD/ДВИЖЕНИЕ | МЫШЬ/ПРИЦЕЛ | ЛКМ/СТРЕЛЬБА | ПРОБЕЛ/ПРИЗЫВ", cx, canvasHeight - 40 * uiScale, MENU_LAYOUT.footerColor, { fontSize: 11, align: "center", bold: true }, canvasWidth, canvasHeight);
 }
 
 export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
   const uiScale = Math.min(canvasWidth / 1920, canvasHeight / 1080);
-  ctx.fillStyle = "rgba(5, 5, 8, 0.95)";
+  ctx.fillStyle = GAMEOVER_LAYOUT.bgColor;
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   const cx = canvasWidth / 2;
   const cy = canvasHeight / 2;
 
-  TextRenderer.draw(ctx, "КРИТИЧЕСКИЙ СБОЙ ЯДРА", cx, cy - 100 * uiScale, "#ff2a5f", { fontSize: 40, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, "КРИТИЧЕСКИЙ СБОЙ ЯДРА", cx, cy - 100 * uiScale, GAMEOVER_LAYOUT.titleColor, { fontSize: 40, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  TextRenderer.draw(ctx, "ОТЧЕТ МЕТРИК СЕКТОРА // АВАРИЙНЫЙ КОЛЛАПС", cx, cy - 65 * uiScale, "#64748b", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, "ОТЧЕТ МЕТРИК СЕКТОРА // АВАРИЙНЫЙ КОЛЛАПС", cx, cy - 65 * uiScale, GAMEOVER_LAYOUT.subtitleColor, { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  TextRenderer.draw(ctx, `СОБРАНО ДАННЫХ: ${state.gameOverScore}`, cx, cy - 10 * uiScale, "#ffffff", { fontSize: 18, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, `СОБРАНО ДАННЫХ: ${state.gameOverScore}`, cx, cy - 10 * uiScale, GAMEOVER_LAYOUT.metricsColor, { fontSize: 18, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  TextRenderer.draw(ctx, `СТАБИЛЬНЫХ ЦИКЛОВ: ${state.gameOverWave}`, cx, cy + 25 * uiScale, "#94a3b8", { fontSize: 16, align: "center" }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, `СТАБИЛЬНЫХ ЦИКЛОВ: ${state.gameOverWave}`, cx, cy + 25 * uiScale, GAMEOVER_LAYOUT.metricsMuted, { fontSize: 16, align: "center" }, canvasWidth, canvasHeight);
 
   const btnW = 260;
   const btnH = 52;
@@ -575,31 +685,29 @@ export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: numbe
 
   const hovered = state.mouseX >= btnX && state.mouseX <= btnX + btnW && state.mouseY >= btnY && state.mouseY <= btnY + btnH;
 
-  ctx.fillStyle = hovered ? "rgba(0, 240, 255, 0.15)" : "rgba(0, 240, 255, 0.05)";
+  ctx.fillStyle = hovered ? GAMEOVER_LAYOUT.btnBgHovered : GAMEOVER_LAYOUT.btnBgDefault;
   ctx.beginPath();
   ctx.roundRect(btnX, btnY, btnW, btnH, 10);
   ctx.fill();
-  ctx.strokeStyle = hovered ? "#00f0ff" : "rgba(0, 240, 255, 0.4)";
+  ctx.strokeStyle = hovered ? GAMEOVER_LAYOUT.btnBorderHovered : GAMEOVER_LAYOUT.btnBorderDefault;
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  TextRenderer.draw(ctx, "[ПЕРЕЗАПУСК ЯДРА]", cx, btnY + 32, hovered ? "#00f0ff" : "#ffffff", { fontSize: 15, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, "[ПЕРЕЗАПУСК ЯДРА]", cx, btnY + 32, hovered ? GAMEOVER_LAYOUT.btnTextHovered : GAMEOVER_LAYOUT.btnTextDefault, { fontSize: 15, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  TextRenderer.draw(ctx, localizationData.ui.restart_prompt, cx, canvasHeight - 40 * uiScale, "#475569", { fontSize: 11, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, localizationData.ui.restart_prompt, cx, canvasHeight - 40 * uiScale, GAMEOVER_LAYOUT.footerColor, { fontSize: 11, align: "center", bold: true }, canvasWidth, canvasHeight);
 }
 
-
-
 export function drawPauseUI(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
-  ctx.fillStyle = "rgba(5, 5, 8, 0.65)";
+  ctx.fillStyle = PAUSE_LAYOUT.bgColor;
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   const cx = canvasWidth / 2;
   const cy = canvasHeight / 2;
 
-  TextRenderer.draw(ctx, "СИСТЕМА НА ПАУЗЕ", cx, cy - 20 * uiScale, "#00f0ff", { fontSize: 28, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, "СИСТЕМА НА ПАУЗЕ", cx, cy - 20 * uiScale, PAUSE_LAYOUT.titleColor, { fontSize: 28, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  TextRenderer.draw(ctx, "[НАЖМИТЕ ESC ДЛЯ ПРОДОЛЖЕНИЯ]", cx, cy + 20 * uiScale, "#94a3b8", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
+  TextRenderer.draw(ctx, "[НАЖМИТЕ ESC ДЛЯ ПРОДОЛЖЕНИЯ]", cx, cy + 20 * uiScale, PAUSE_LAYOUT.subtitleColor, { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 }
 
 export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
@@ -673,12 +781,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.fillStyle = isFlashing ? "rgba(255, 255, 255, 0.95)" : "#0a1e2b";
           c.strokeStyle = isFlashing ? "#ffffff" : "#00f0ff";
           c.lineWidth = 3;
-          c.beginPath();
-          for (let i = 0; i < 6; i++) {
-            const a = (i * Math.PI) / 3;
-            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-          }
-          c.closePath();
+          drawRegularPolygonPath(c, r, 6, 0);
           c.fill();
           c.stroke();
           c.fillStyle = isFlashing ? "#ffffff" : "#00f0ff";
@@ -693,12 +796,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.fillStyle = isFlashing ? "rgba(255, 255, 255, 0.95)" : "#1e1e0a";
           c.strokeStyle = isFlashing ? "#ffffff" : "#fbbf24";
           c.lineWidth = 3;
-          c.beginPath();
-          for (let i = 0; i < 5; i++) {
-            const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-          }
-          c.closePath();
+          drawRegularPolygonPath(c, r, 5, -Math.PI / 2);
           c.fill();
           c.stroke();
         });
@@ -709,12 +807,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.fillStyle = isFlashing ? "rgba(255, 255, 255, 0.95)" : "#1e0a2b";
           c.strokeStyle = isFlashing ? "#ffffff" : "#a855f7";
           c.lineWidth = 3;
-          c.beginPath();
-          for (let i = 0; i < 8; i++) {
-            const a = (i * Math.PI) / 4;
-            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-          }
-          c.closePath();
+          drawRegularPolygonPath(c, r, 8, 0);
           c.fill();
           c.stroke();
         });
@@ -772,18 +865,10 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
     } else if (ent.type === 1) {
       const rarity = ent.stateFlags & 0xFF;
       const modifiers = (ent.stateFlags >> 8) & 0xFF;
-      let fillColor = "#990022";
-      let strokeColor = "#ff2a5f";
-      if (rarity === 1) {
-        fillColor = "#1e3a8a";
-        strokeColor = "#3b82f6";
-      } else if (rarity === 2) {
-        fillColor = "#78350f";
-        strokeColor = "#fbbf24";
-      } else if (rarity === 3) {
-        fillColor = "#581c87";
-        strokeColor = "#d946ef";
-      }
+      
+      const rColors = RARITY_COLORS[rarity] || RARITY_COLORS[0];
+      const fillColor = rColors.fill;
+      const strokeColor = rColors.stroke;
 
       if ((modifiers & 4) !== 0) {
         ctx.beginPath();
@@ -811,12 +896,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.fillStyle = fillColor;
           c.strokeStyle = strokeColor;
           c.lineWidth = 3;
-          c.beginPath();
-          for (let i = 0; i < 5; i++) {
-            const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
-            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-          }
-          c.closePath();
+          drawRegularPolygonPath(c, r, 5, -Math.PI / 2);
           c.fill();
           c.stroke();
         });
@@ -827,12 +907,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.fillStyle = fillColor;
           c.strokeStyle = strokeColor;
           c.lineWidth = 3;
-          c.beginPath();
-          for (let i = 0; i < 6; i++) {
-            const a = (i * 2 * Math.PI) / 6;
-            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-          }
-          c.closePath();
+          drawRegularPolygonPath(c, r, 6, 0);
           c.fill();
           c.stroke();
         });
@@ -843,12 +918,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.fillStyle = fillColor;
           c.strokeStyle = strokeColor;
           c.lineWidth = 3;
-          c.beginPath();
-          for (let i = 0; i < 3; i++) {
-            const a = (i * 2 * Math.PI) / 3 - Math.PI / 2;
-            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-          }
-          c.closePath();
+          drawRegularPolygonPath(c, r, 3, -Math.PI / 2);
           c.fill();
           c.stroke();
         });
@@ -859,12 +929,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.fillStyle = fillColor;
           c.strokeStyle = strokeColor;
           c.lineWidth = 4;
-          c.beginPath();
-          for (let i = 0; i < 10; i++) {
-            const a = (i * 2 * Math.PI) / 10;
-            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-          }
-          c.closePath();
+          drawRegularPolygonPath(c, r, 10, 0);
           c.fill();
           c.stroke();
           c.strokeStyle = "#ffffff";
@@ -897,22 +962,12 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.fillStyle = fillColor;
           c.strokeStyle = strokeColor;
           c.lineWidth = 4;
-          c.beginPath();
-          for (let i = 0; i < 8; i++) {
-            const a = (i * 2 * Math.PI) / 8;
-            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-          }
-          c.closePath();
+          drawRegularPolygonPath(c, r, 8, 0);
           c.fill();
           c.stroke();
           c.strokeStyle = "#ffffff";
           c.lineWidth = 2;
-          c.beginPath();
-          for (let i = 0; i < 8; i++) {
-            const a = (i * 2 * Math.PI) / 8 + Math.PI / 8;
-            c.lineTo(Math.cos(a) * r * 0.6, Math.sin(a) * r * 0.6);
-          }
-          c.closePath();
+          drawRegularPolygonPath(c, r * 0.6, 8, Math.PI / 8);
           c.stroke();
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
@@ -1110,9 +1165,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
 
   const uiScale = Math.min(canvasWidth / 1920, canvasHeight / 1080);
   drawHUD(ctx, canvasWidth, canvasHeight, uiScale);
-  drawUpgradePanel(ctx, uiScale);
-
-
+  drawUpgradePanel(ctx, canvasWidth, canvasHeight, uiScale);
 
   if (state.upgradePoints > 0) {
     drawUpgradeCardsOverlay(ctx, canvasWidth, canvasHeight, uiScale);
