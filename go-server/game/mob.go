@@ -412,62 +412,56 @@ func (w *GameWorld) spawnDrone(ownerID uint16, pos physics.Vector2D) {
 }
 
 func (w *GameWorld) dropLoot(pos physics.Vector2D, rarity uint8, mobType uint8, killerID uint16) {
-	roll := w.rand.Float64()
-
-	if killer, ok := w.Players[killerID]; ok && killer.Alive {
-		roll += roll * float64(killer.StatLootQuantity) * 0.05
-	}
-
-	var itemID uint8
-
-	commonItems := []uint8{1, 5, 6}
-	rareItems := []uint8{2, 7, 8}
-	uniqueItems := []uint8{3, 4, 9, 10, 11}
-	legendaryItems := []uint8{12, 13, 14}
-
+	tableKey := "normal_rarity_0"
 	if mobType == 10 || mobType == 11 || mobType == 12 {
-		// Bosses drop rare, unique, or legendary
-		if roll < 0.2 {
-			itemID = rareItems[w.rand.Intn(len(rareItems))]
-		} else if roll < 0.8 {
-			itemID = uniqueItems[w.rand.Intn(len(uniqueItems))]
-		} else {
-			itemID = legendaryItems[w.rand.Intn(len(legendaryItems))]
-		}
-	} else {
-		// Normal mobs
-		if rarity == 3 {
-			if roll < 0.5 {
-				itemID = uniqueItems[w.rand.Intn(len(uniqueItems))]
-			} else if roll < 0.95 {
-				itemID = rareItems[w.rand.Intn(len(rareItems))]
-			} else {
-				itemID = legendaryItems[w.rand.Intn(len(legendaryItems))]
-			}
-		} else if rarity == 2 {
-			if roll < 0.1 {
-				itemID = uniqueItems[w.rand.Intn(len(uniqueItems))]
-			} else if roll < 0.4 {
-				itemID = rareItems[w.rand.Intn(len(rareItems))]
-			} else if roll < 0.8 {
-				itemID = commonItems[w.rand.Intn(len(commonItems))]
-			}
-		} else if rarity == 1 {
-			if roll < 0.05 {
-				itemID = rareItems[w.rand.Intn(len(rareItems))]
-			} else if roll < 0.25 {
-				itemID = commonItems[w.rand.Intn(len(commonItems))]
-			}
-		} else {
-			if roll < 0.08 {
-				itemID = commonItems[w.rand.Intn(len(commonItems))]
-			} else if roll < 0.09 {
-				itemID = rareItems[w.rand.Intn(len(rareItems))]
-			} else if roll < 0.095 {
-				itemID = uniqueItems[w.rand.Intn(len(uniqueItems))]
-			}
+		tableKey = "boss"
+	} else if rarity == 3 {
+		tableKey = "normal_rarity_3"
+	} else if rarity == 2 {
+		tableKey = "normal_rarity_2"
+	} else if rarity == 1 {
+		tableKey = "normal_rarity_1"
+	}
+
+	table, ok := GetLootTable(tableKey)
+	if !ok {
+		return
+	}
+
+	chanceLimit := table.LootChance
+	if killer, okK := w.Players[killerID]; okK && killer.Alive {
+		chanceLimit += chanceLimit * float64(killer.StatLootQuantity) * 0.05
+	}
+
+	roll := w.rand.Float64()
+	if roll >= chanceLimit {
+		return
+	}
+
+	totalWeight := 0
+	for _, g := range table.Groups {
+		totalWeight += g.Weight
+	}
+	if totalWeight <= 0 {
+		return
+	}
+
+	weightRoll := w.rand.Intn(totalWeight)
+	currentWeight := 0
+	var selectedGroup *LootGroup
+	for _, g := range table.Groups {
+		currentWeight += g.Weight
+		if weightRoll < currentWeight {
+			selectedGroup = &g
+			break
 		}
 	}
+
+	if selectedGroup == nil || len(selectedGroup.Items) == 0 {
+		return
+	}
+
+	itemID := selectedGroup.Items[w.rand.Intn(len(selectedGroup.Items))]
 
 	if itemID != 0 {
 		id := w.GenerateID()

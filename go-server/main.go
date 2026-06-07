@@ -237,6 +237,10 @@ func main() {
 		log.Fatalf("Failed to load wave config: %v", err)
 	}
 
+	if err := game.LoadLootConfig("config/loot_tables.json"); err != nil {
+		log.Fatalf("Failed to load loot config: %v", err)
+	}
+
 	server := NewGameServer()
 	go server.startLoop()
 	http.HandleFunc("/ws", server.handleConnection)
