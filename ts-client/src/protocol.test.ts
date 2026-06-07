@@ -101,7 +101,7 @@ describe('protocol serialization', () => {
 
     describe('WorldStateMessage (Opcode 2)', () => {
       it('should deserialize a valid world state message with zero entities', () => {
-        const buffer = new ArrayBuffer(36);
+        const buffer = new ArrayBuffer(43);
         const view = new DataView(buffer);
         view.setUint8(0, 2); // Opcode
         view.setUint32(1, 100, true); // tick
@@ -113,16 +113,21 @@ describe('protocol serialization', () => {
         view.setUint16(21, 100, true); // maxHealth
         view.setUint8(23, 2); // upgradePoints
 
-        // statsPack1: statRegen (1), statMaxHP (2), statSpeed (3), statMinionDmg (4)
         const statsPack1 = 1 | (2 << 8) | (3 << 16) | (4 << 24);
         view.setUint32(24, statsPack1, true);
 
-        // statsPack2: statMinionSpeed (5), statMinionHP (6), statMinionPierce (7), statMinionRegen (8)
         const statsPack2 = 5 | (6 << 8) | (7 << 16) | (8 << 24);
         view.setUint32(28, statsPack2, true);
 
         view.setUint16(32, 3, true); // waveNumber
         view.setUint16(34, 0, true); // entitiesCount
+        view.setUint8(36, 11); // card1
+        view.setUint8(37, 12); // card2
+        view.setUint8(38, 13); // card3
+        view.setUint8(39, 1);  // slot1
+        view.setUint8(40, 2);  // slot2
+        view.setUint8(41, 3);  // slot3
+        view.setUint8(42, 4);  // slot4
 
         const msg = deserializeMessage(buffer);
         expect(msg).toEqual({
@@ -144,18 +149,31 @@ describe('protocol serialization', () => {
           statMinionPierce: 7,
           statMinionRegen: 8,
           waveNumber: 3,
+          card1: 11,
+          card2: 12,
+          card3: 13,
+          slot1: 1,
+          slot2: 2,
+          slot3: 3,
+          slot4: 4,
           entities: []
         });
       });
 
       it('should deserialize a valid world state message with entities', () => {
-        const buffer = new ArrayBuffer(36 + 26);
+        const buffer = new ArrayBuffer(43 + 26);
         const view = new DataView(buffer);
         view.setUint8(0, 2); // Opcode
         view.setUint16(34, 1, true); // entitiesCount
+        view.setUint8(36, 0); // card1
+        view.setUint8(37, 0); // card2
+        view.setUint8(38, 0); // card3
+        view.setUint8(39, 0); // slot1
+        view.setUint8(40, 0); // slot2
+        view.setUint8(41, 0); // slot3
+        view.setUint8(42, 0); // slot4
 
-        // Entity 1
-        const offset = 36;
+        const offset = 43;
         view.setUint16(offset, 101, true); // id
         view.setUint8(offset + 2, 1); // type
         view.setUint8(offset + 3, 2); // subtype
@@ -182,26 +200,32 @@ describe('protocol serialization', () => {
                 maxHealth: 100,
                 radius: 15,
                 stateFlags: 255,
-            });
+             });
         }
       });
 
       it('should stop reading entities if buffer is truncated', () => {
-        // Provide count of 2 but only enough bytes for 1
-        const buffer = new ArrayBuffer(36 + 26);
+        const buffer = new ArrayBuffer(43 + 26);
         const view = new DataView(buffer);
         view.setUint8(0, 2); // Opcode
         view.setUint16(34, 2, true); // entitiesCount = 2, but buffer length is only enough for 1
+        view.setUint8(36, 0);
+        view.setUint8(37, 0);
+        view.setUint8(38, 0);
+        view.setUint8(39, 0);
+        view.setUint8(40, 0);
+        view.setUint8(41, 0);
+        view.setUint8(42, 0);
 
         const msg = deserializeMessage(buffer);
         expect(msg?.type).toBe('worldState');
         if (msg?.type === 'worldState') {
-            expect(msg.entities.length).toBe(1); // Should only have parsed 1 due to bounds check
+            expect(msg.entities.length).toBe(1);
         }
       });
 
       it('should return null if buffer is too short for base world state', () => {
-        const buffer = new ArrayBuffer(35);
+        const buffer = new ArrayBuffer(42);
         const view = new DataView(buffer);
         view.setUint8(0, 2);
         expect(deserializeMessage(buffer)).toBeNull();

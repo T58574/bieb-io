@@ -1,6 +1,8 @@
 package game
 
 import (
+	"math"
+
 	"go-server/physics"
 )
 
@@ -37,6 +39,9 @@ func (w *GameWorld) rebuildSpatialGrid() {
 	}
 	for _, minion := range w.Minions {
 		w.insertToGrid(HashItem{ID: minion.ID, Type: 4, Pos: minion.Pos, Radius: minion.Radius, Damage: minion.Damage})
+	}
+	for _, ld := range w.LootDrops {
+		w.insertToGrid(HashItem{ID: ld.ID, Type: 6, Pos: ld.Pos, Radius: ld.Radius})
 	}
 }
 
@@ -106,22 +111,25 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		if ok1 && ok2 && p.Alive {
 			relVelStart := p.Vel.Sub(m.Vel).Length()
 			if physics.ResolveCircleCircle(&p.Pos, &m.Pos, p.Radius, m.Radius, &p.Vel, &m.Vel, p.Mass, 1.0, 0.3) {
-				kineticEnergy := 0.5 * p.Mass * (relVelStart * relVelStart)
-				dmgKinetic := kineticEnergy * 0.005
+				dmgKinetic := 0.5 * p.Mass * (relVelStart * relVelStart) * 0.005
 				dmgMelee := p.Radius * 0.25
 				if m.Modifiers&8 != 0 {
 					dmgKinetic *= 0.7
 					dmgMelee *= 0.7
 				}
-				if p.ClassID == 1 && relVelStart > 100.0 {
-					m.Health -= dmgKinetic
-				}
-				p.Health -= m.Damage * 0.12
 				m.Health -= dmgMelee
 				if m.Type == 2 {
-					p.Health -= m.Damage * 0.5
 					m.Health = 0
 				}
+				dmgToPlayer := m.Damage * 0.12
+				if len(p.MinionIDs) > 0 {
+					droneID := p.MinionIDs[0]
+					if drone, okD := w.Minions[droneID]; okD {
+						drone.Health -= dmgToPlayer
+						dmgToPlayer = 0
+					}
+				}
+				p.Health -= dmgToPlayer
 			}
 		}
 		return
@@ -135,14 +143,67 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 				if m.Modifiers&8 != 0 {
 					dmg *= 0.7
 				}
+				isCrit := false
+				if bullet.Subtype == 2 && w.rand.Float64() < 0.20 {
+					isCrit = true
+					dmg *= 2.0
+				}
 				m.Health -= dmg
 				m.Vel = m.Vel.Add(bullet.Vel.Normalize().Mul(1.8))
+				if bullet.OwnerType == 0 {
+					p, okP := w.Players[bullet.OwnerID]
+					if okP && p.Alive {
+						vampPercent := p.Vampirism
+						for _, mID := range p.Inventory {
+							if mID == 2 {
+								vampPercent += 0.05
+							}
+						}
+						if vampPercent > 0 {
+							p.Health = math.Min(p.MaxHealth, p.Health+dmg*vampPercent)
+						}
+						if bullet.Subtype == 1 {
+							p.LaserHitsCount[m.ID]++
+							if p.LaserHitsCount[m.ID] >= 3 {
+								p.LaserHitsCount[m.ID] = 0
+								for _, otherMob := range w.Mobs {
+									distSq := otherMob.Pos.Sub(m.Pos).LengthSq()
+									if distSq < 120.0*120.0 {
+										otherMob.Health -= 25.0
+									}
+								}
+							}
+						}
+						if isCrit {
+							var targets []*Mob
+							for _, otherMob := range w.Mobs {
+								if otherMob.ID == m.ID {
+									continue
+								}
+								distSq := otherMob.Pos.Sub(m.Pos).LengthSq()
+								if distSq < 300.0*300.0 {
+									targets = append(targets, otherMob)
+								}
+							}
+							w.rand.Shuffle(len(targets), func(i, j int) {
+								targets[i], targets[j] = targets[j], targets[i]
+							})
+							limit := 3
+							if len(targets) < limit {
+								limit = len(targets)
+							}
+							for k := 0; k < limit; k++ {
+								targets[k].Health -= 15.0
+							}
+						}
+						if bullet.Subtype == 3 {
+							m.Modifiers |= 16
+						}
+					}
+				}
 				bullet.Pierce--
 				if bullet.Pierce <= 0 {
 					bullet.Lifetime = 0
-				}
-				if m.Health <= 0 {
-					w.spawnMinion(bullet.OwnerID, m.Pos)
 				}
 			}
 		}
@@ -153,7 +214,15 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		p, ok2 := w.Players[b.ID]
 		if ok1 && ok2 && p.Alive {
 			if bullet.OwnerType == 1 {
-				p.Health -= bullet.Damage
+				dmgToPlayer := bullet.Damage
+				if len(p.MinionIDs) > 0 {
+					droneID := p.MinionIDs[0]
+					if drone, okD := w.Minions[droneID]; okD {
+						drone.Health -= dmgToPlayer
+						dmgToPlayer = 0
+					}
+				}
+				p.Health -= dmgToPlayer
 				p.Vel = p.Vel.Add(bullet.Vel.Normalize().Mul(0.8))
 				bullet.Lifetime = 0
 			}
@@ -207,9 +276,22 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 			}
 			p.FlashTimer = 0.12
 			p.StateFlags |= 2
-
 			w.orbPool.Put(o)
 			delete(w.Orbs, b.ID)
+		}
+		return
+	}
+	if a.Type == 0 && b.Type == 6 {
+		p, ok1 := w.Players[a.ID]
+		ld, ok2 := w.LootDrops[b.ID]
+		if ok1 && ok2 && p.Alive {
+			for idx, mID := range p.Inventory {
+				if mID == 0 {
+					p.Inventory[idx] = ld.ItemID
+					delete(w.LootDrops, b.ID)
+					break
+				}
+			}
 		}
 		return
 	}

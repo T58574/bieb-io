@@ -8,6 +8,7 @@ type Bullet struct {
 	ID        uint16
 	OwnerID   uint16
 	OwnerType uint8
+	Subtype   uint8
 	Pos       physics.Vector2D
 	Vel       physics.Vector2D
 	Radius    float64

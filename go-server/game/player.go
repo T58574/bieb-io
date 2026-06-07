@@ -39,27 +39,32 @@ type Player struct {
 	ChargeLevel      float64
 	ShootCooldown    float64
 	FlashTimer       float64
+	CardChoices      [3]uint8
+	Inventory        [4]uint8
+	Vampirism        float64
+	LaserHitsCount   map[uint16]uint8
 }
 
 func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	p := &Player{
-		ID:          id,
-		Username:    username,
-		Pos:         physics.Vector2D{X: w.Width / 2, Y: w.Height / 2},
-		Radius:      24,
-		Health:      100,
-		MaxHealth:   100,
-		XP:          0,
-		MaxXP:       60,
-		Level:       1,
-		Score:       0,
-		Alive:       true,
-		ClassID:     0,
-		Mass:        1.0,
-		StateFlags:  0,
-		ChargeLevel: 0.0,
+		ID:             id,
+		Username:       username,
+		Pos:            physics.Vector2D{X: w.Width / 2, Y: w.Height / 2},
+		Radius:         24,
+		Health:         100,
+		MaxHealth:      100,
+		XP:             0,
+		MaxXP:          60,
+		Level:          1,
+		Score:          0,
+		Alive:          true,
+		ClassID:        0,
+		Mass:           1.0,
+		StateFlags:     0,
+		ChargeLevel:    0.0,
+		LaserHitsCount: make(map[uint16]uint8),
 	}
 	if p.ClassID == 1 {
 		p.Mass = 2.5
@@ -89,64 +94,72 @@ func (w *GameWorld) UpdateInput(id uint16, keys uint8, angle float32, upgradeSel
 	}
 }
 
-func (w *GameWorld) applyStatUpgrade(p *Player, statID uint8) {
-	if p.UpgradePoints == 0 {
+func (w *GameWorld) rollUpgradeCards(p *Player) {
+	available := []uint8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+	w.rand.Shuffle(len(available), func(i, j int) {
+		available[i], available[j] = available[j], available[i]
+	})
+	p.CardChoices[0] = available[0]
+	p.CardChoices[1] = available[1]
+	p.CardChoices[2] = available[2]
+}
+
+func (w *GameWorld) applyCardUpgrade(p *Player, choiceIndex uint8) {
+	if p.UpgradePoints == 0 || choiceIndex < 1 || choiceIndex > 3 {
 		return
 	}
-	switch statID {
+	cardID := p.CardChoices[choiceIndex-1]
+	switch cardID {
 	case 1:
-		if p.StatRegen < 7 {
-			p.StatRegen++
-			p.UpgradePoints--
-		}
-	case 2:
-		if p.StatMaxHP < 7 {
-			p.StatMaxHP++
-			p.UpgradePoints--
-			p.MaxHealth = 100 + float64(p.StatMaxHP)*25
-			if p.Health > p.MaxHealth {
-				p.Health = p.MaxHealth
-			}
-		}
-	case 3:
 		if p.StatSpeed < 7 {
 			p.StatSpeed++
-			p.UpgradePoints--
+		}
+	case 2:
+		p.Vampirism += 0.05
+	case 3:
+		if p.StatMaxHP < 7 {
+			p.StatMaxHP++
+			p.MaxHealth = 100 + float64(p.StatMaxHP)*25
+			p.Health = math.Min(p.MaxHealth, p.Health+25)
 		}
 	case 4:
-		if p.StatMinionDmg < 7 {
-			p.StatMinionDmg++
-			p.UpgradePoints--
+		if p.StatRegen < 7 {
+			p.StatRegen++
 		}
 	case 5:
-		if p.StatMinionSpeed < 7 {
-			p.StatMinionSpeed++
-			p.UpgradePoints--
+		if p.StatMinionDmg < 7 {
+			p.StatMinionDmg++
 		}
 	case 6:
-		if p.StatMinionHP < 7 {
-			p.StatMinionHP++
-			p.UpgradePoints--
-			for _, mID := range p.MinionIDs {
-				if m, ok := w.Minions[mID]; ok {
-					newMax := 35.0 + float64(p.StatMinionHP)*10.0
-					m.MaxHealth = newMax
-					if m.Health > m.MaxHealth {
-						m.Health = m.MaxHealth
-					}
-				}
-			}
+		if p.StatMinionSpeed < 7 {
+			p.StatMinionSpeed++
 		}
 	case 7:
-		if p.StatMinionPierce < 7 {
-			p.StatMinionPierce++
-			p.UpgradePoints--
+		if p.StatMinionHP < 7 {
+			p.StatMinionHP++
 		}
 	case 8:
+		if p.StatMinionPierce < 7 {
+			p.StatMinionPierce++
+		}
+	case 9:
 		if p.StatMinionRegen < 7 {
 			p.StatMinionRegen++
-			p.UpgradePoints--
 		}
+	case 10:
+		shields := (p.StateFlags >> 4) & 0xF
+		if shields < 4 {
+			shields++
+		}
+		p.StateFlags = (p.StateFlags & 0xFFFFFF0F) | (shields << 4)
+	case 11:
+		p.StateFlags |= 1 << 8
+	}
+	p.UpgradePoints--
+	if p.UpgradePoints > 0 {
+		w.rollUpgradeCards(p)
+	} else {
+		p.CardChoices = [3]uint8{0, 0, 0}
 	}
 }
 
@@ -159,7 +172,7 @@ func (w *GameWorld) processInputs() {
 				p.Keys = ev.Keys
 				p.MouseAngle = float64(ev.Angle)
 				if ev.Upgrade != 0 && p.UpgradePoints > 0 {
-					w.applyStatUpgrade(p, ev.Upgrade)
+					w.applyCardUpgrade(p, ev.Upgrade)
 				}
 			}
 		default:
@@ -191,7 +204,18 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		} else {
 			p.StateFlags &^= 2
 		}
+		if p.UpgradePoints > 0 && p.CardChoices[0] == 0 {
+			w.rollUpgradeCards(p)
+		}
 		speedMul := 1.0 + float64(p.StatSpeed)*0.08
+		itemSpeedMul := 1.0
+		for _, mID := range p.Inventory {
+			if mID == 1 {
+				itemSpeedMul += 0.10
+			}
+		}
+		speedMul *= itemSpeedMul
+
 		var ax, ay float64
 		if p.Keys&0x01 != 0 {
 			ay -= 0.6 * speedMul
@@ -207,85 +231,93 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		}
 		p.Vel = p.Vel.Add(physics.Vector2D{X: ax, Y: ay})
 		p.Vel = p.Vel.Mul(0.88)
-		if p.ChargeLevel > 0 {
-			p.ChargeLevel -= dt
-		}
-		if p.ClassID == 1 && p.Keys&0x10 != 0 && p.ChargeLevel <= 0 {
-			dashDir := physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
-			p.Vel = p.Vel.Add(dashDir.Mul(150.0))
-			p.ChargeLevel = 2.0
-		} else if p.ClassID == 2 {
-			if p.Keys&0x20 != 0 {
-				p.ChargeLevel += dt
-				if p.ChargeLevel > 2.0 {
-					p.ChargeLevel = 2.0
+
+		numShields := (p.StateFlags >> 4) & 0xF
+		if numShields > 0 {
+			for i := uint32(0); i < numShields; i++ {
+				orbitAngle := w.ElapsedTime*3.0 + (float64(i)/float64(numShields))*2.0*math.Pi
+				shieldPos := p.Pos.Add(physics.Vector2D{X: math.Cos(orbitAngle) * 55.0, Y: math.Sin(orbitAngle) * 55.0})
+				for _, mob := range w.Mobs {
+					distSq := mob.Pos.Sub(shieldPos).LengthSq()
+					radSum := mob.Radius + 8.0
+					if distSq < radSum*radSum {
+						dmg := 30.0 * dt
+						mob.Health -= dmg
+						if p.Vampirism > 0 {
+							p.Health = math.Min(p.MaxHealth, p.Health+dmg*p.Vampirism)
+						}
+					}
 				}
-				chargePct := math.Min(1.0, p.ChargeLevel/2.0)
-				p.StateFlags = (p.StateFlags & 0xFF) | (uint32(chargePct*100) << 8)
-			} else if p.ChargeLevel > 0 {
-				chargePct := math.Min(1.0, p.ChargeLevel/2.0)
-				bID := w.GenerateID()
-				b := w.bulletPool.Get().(*Bullet)
-				*b = Bullet{}
-				b.ID = bID
-				b.OwnerID = p.ID
-				b.OwnerType = 0
-				dir := physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
-				b.Pos = p.Pos.Add(dir.Mul(p.Radius + 5))
-				b.Vel = dir.Mul(6.0 + 8.0*chargePct)
-				b.Radius = 6
-				b.Damage = 10.0 + 30.0*chargePct
-				b.Lifetime = 2.0
-				b.Pierce = 1 + int(4.0*chargePct)
-				w.Bullets[bID] = b
-				p.ChargeLevel = 0
-				p.StateFlags &= 0xFF
 			}
-		} else if p.ClassID == 3 {
-			if p.ShootCooldown > 0 {
-				p.ShootCooldown -= dt
-			}
-			if p.Keys&0x10 != 0 && p.ChargeLevel <= 0 {
-				p.StateFlags |= 1
-				p.ChargeLevel = 5.0
-			}
-			if p.Keys&0x20 != 0 && p.ShootCooldown <= 0 {
+		}
+
+		if p.ShootCooldown > 0 {
+			p.ShootCooldown -= dt
+		}
+		if p.Keys&0x20 != 0 && p.ShootCooldown <= 0 {
+			var bSpeed, bRadius, bDamage, bLifetime float64
+			var bPierce int
+			var bSubtype uint8
+			switch p.ClassID {
+			case 1:
+				p.ShootCooldown = 0.08
+				bSpeed = 22.0
+				bRadius = 3.0
+				bDamage = 5.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
+				bLifetime = 0.8
+				bPierce = 1
+				bSubtype = 1
+			case 2:
+				p.ShootCooldown = 0.7
+				bSpeed = 5.0
+				bRadius = 12.0
+				bDamage = 25.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
+				bLifetime = 2.0
+				bPierce = 99
+				bSubtype = 2
+			case 3:
 				p.ShootCooldown = 0.4
-				dmg := 15.0
-				if p.StateFlags&1 != 0 {
-					dmg *= 3.0
-					p.StateFlags &^= 1
-				}
-				bID := w.GenerateID()
-				b := w.bulletPool.Get().(*Bullet)
-				*b = Bullet{}
-				b.ID = bID
-				b.OwnerID = p.ID
-				b.OwnerType = 0
-				dir := physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
-				b.Pos = p.Pos.Add(dir.Mul(p.Radius + 5))
-				b.Vel = dir.Mul(12.0)
-				b.Radius = 5
-				b.Damage = dmg
-				b.Lifetime = 1.5
-				b.Pierce = 1
-				w.Bullets[bID] = b
+				bSpeed = 14.0
+				bRadius = 6.0
+				bDamage = 18.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
+				bLifetime = 0.5
+				bPierce = 2
+				bSubtype = 3
+			default:
+				p.ShootCooldown = 0.3
+				bSpeed = 10.0
+				bRadius = 5.0
+				bDamage = 10.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
+				bLifetime = 1.5
+				bPierce = 1
+				bSubtype = 0
 			}
-		} else if p.ClassID == 4 && p.Keys&0x10 != 0 && p.ChargeLevel <= 0 {
-			fID := w.GenerateID()
-			f := w.fieldPool.Get().(*ChronoField)
-			*f = ChronoField{}
-			f.ID = fID
-			f.OwnerID = p.ID
-			f.Pos = p.Pos
-			f.Radius = 120.0
-			f.Duration = 5.0
-			w.Fields[fID] = f
-			p.ChargeLevel = 8.0
+
+			dmgMul := 1.0
+			for _, mID := range p.Inventory {
+				if mID == 2 {
+					dmgMul += 0.15
+				}
+			}
+			bDamage *= dmgMul
+
+			bID := w.GenerateID()
+			b := w.bulletPool.Get().(*Bullet)
+			*b = Bullet{}
+			b.ID = bID
+			b.OwnerID = p.ID
+			b.OwnerType = 0
+			b.Subtype = bSubtype
+			dir := physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
+			b.Pos = p.Pos.Add(dir.Mul(p.Radius + 5))
+			b.Vel = dir.Mul(bSpeed)
+			b.Radius = bRadius
+			b.Damage = bDamage
+			b.Lifetime = bLifetime
+			b.Pierce = bPierce
+			w.Bullets[bID] = b
 		}
-		if p.StateFlags&1 != 0 && p.ChargeLevel <= 2.0 {
-			p.StateFlags &^= 1
-		}
+
 		p.Pos = p.Pos.Add(p.Vel)
 		physics.ResolveCircleBox(&p.Pos, p.Radius, &p.Vel, 0, 0, w.Width, w.Height, 0.2)
 		if p.StatRegen > 0 && p.Health < p.MaxHealth {
@@ -307,10 +339,7 @@ func (w *GameWorld) UpgradePlayerClass(id uint16, classID uint8) {
 	if !exists || !p.Alive {
 		return
 	}
-	if p.Level >= 10 && p.ClassID == 0 && classID >= 1 && classID <= 4 {
+	if p.Level >= 10 && p.ClassID == 0 && classID >= 1 && classID <= 3 {
 		p.ClassID = classID
-		if classID == 1 {
-			p.Mass = 2.5
-		}
 	}
 }

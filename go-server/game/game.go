@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"go-server/physics"
 	"go-server/protocol"
 )
 
@@ -16,6 +17,13 @@ type InputEvent struct {
 	Upgrade  uint8
 }
 
+type LootDrop struct {
+	ID     uint16
+	ItemID uint8
+	Pos    physics.Vector2D
+	Radius float64
+}
+
 type GameWorld struct {
 	Players        map[uint16]*Player
 	Mobs           map[uint16]*Mob
@@ -23,6 +31,7 @@ type GameWorld struct {
 	Orbs           map[uint16]*ExpOrb
 	Minions        map[uint16]*Minion
 	Fields         map[uint16]*ChronoField
+	LootDrops      map[uint16]*LootDrop
 	nextID         uint16
 	Width          float64
 	Height         float64
@@ -51,6 +60,7 @@ func NewGameWorld() *GameWorld {
 		Orbs:           make(map[uint16]*ExpOrb),
 		Minions:        make(map[uint16]*Minion),
 		Fields:         make(map[uint16]*ChronoField),
+		LootDrops:      make(map[uint16]*LootDrop),
 		nextID:         100,
 		Width:          6000.0,
 		Height:         6000.0,
@@ -154,10 +164,10 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 		states = append(states, protocol.EntityState{
 			ID:        b.ID,
 			Type:      2,
-			Subtype:   b.OwnerType,
+			Subtype:   b.Subtype,
 			X:         float32(b.Pos.X),
 			Y:         float32(b.Pos.Y),
-			Angle:     0,
+			Angle:     float32(math.Atan2(b.Vel.Y, b.Vel.X)),
 			Health:    1,
 			MaxHealth: 1,
 			Radius:    uint16(b.Radius),
@@ -200,6 +210,19 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 			Health:    1,
 			MaxHealth: 1,
 			Radius:    uint16(f.Radius),
+		})
+	}
+	for _, ld := range w.LootDrops {
+		states = append(states, protocol.EntityState{
+			ID:        ld.ID,
+			Type:      6,
+			Subtype:   ld.ItemID,
+			X:         float32(ld.Pos.X),
+			Y:         float32(ld.Pos.Y),
+			Angle:     0,
+			Health:    1,
+			MaxHealth: 1,
+			Radius:    uint16(ld.Radius),
 		})
 	}
 	return states

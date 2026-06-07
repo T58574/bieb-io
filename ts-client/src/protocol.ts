@@ -37,6 +37,13 @@ export interface WorldStateMessage {
   statMinionPierce: number;
   statMinionRegen: number;
   waveNumber: number;
+  card1: number;
+  card2: number;
+  card3: number;
+  slot1: number;
+  slot2: number;
+  slot3: number;
+  slot4: number;
   entities: EntityState[];
 }
 
@@ -83,7 +90,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       arenaHeight: view.getFloat32(7, true),
     };
   } else if (opcode === 2) {
-    if (view.byteLength < 36) return null;
+    if (view.byteLength < 43) return null;
     const tick = view.getUint32(1, true);
     const xp = view.getUint32(5, true);
     const maxXp = view.getUint32(9, true);
@@ -96,6 +103,13 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
     const statsPack2 = view.getUint32(28, true);
     const waveNumber = view.getUint16(32, true);
     const entitiesCount = view.getUint16(34, true);
+    const card1 = view.getUint8(36);
+    const card2 = view.getUint8(37);
+    const card3 = view.getUint8(38);
+    const slot1 = view.getUint8(39);
+    const slot2 = view.getUint8(40);
+    const slot3 = view.getUint8(41);
+    const slot4 = view.getUint8(42);
 
     const statRegen = statsPack1 & 0xFF;
     const statMaxHP = (statsPack1 >> 8) & 0xFF;
@@ -107,7 +121,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
     const statMinionRegen = (statsPack2 >> 24) & 0xFF;
 
     const entities: EntityState[] = [];
-    let offset = 36;
+    let offset = 43;
     for (let i = 0; i < entitiesCount; i++) {
       if (offset + 26 > view.byteLength) break;
       entities.push({
@@ -143,6 +157,13 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       statMinionPierce,
       statMinionRegen,
       waveNumber,
+      card1,
+      card2,
+      card3,
+      slot1,
+      slot2,
+      slot3,
+      slot4,
       entities,
     };
   } else if (opcode === 4) {

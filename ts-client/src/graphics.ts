@@ -130,7 +130,99 @@ export function drawStatBar(ctx: CanvasRenderingContext2D, label: string, level:
   }
 }
 
+export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
+  ctx.fillStyle = "rgba(5, 5, 8, 0.85)";
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+  const cx = canvasWidth / 2;
+  const cy = canvasHeight / 2;
+
+  ctx.fillStyle = "#00f0ff";
+  ctx.font = "bold 24px 'JetBrains Mono', monospace";
+  ctx.textAlign = "center";
+  ctx.fillText("ДОСТУПНО ОБНОВЛЕНИЕ ПО", cx, cy - 200);
+
+  const cardW = 200;
+  const cardH = 280;
+  const gap = 30;
+  const startX = cx - 330;
+  const startY = cy - 140;
+
+  const cardDetails: Record<number, { title: string; color: string; desc: string; rarity: string }> = {
+    1: { title: "ОПТИМИЗАЦИЯ СКОРОСТИ", color: "#10b981", desc: "Увеличение тактовой частоты на +10%", rarity: "Common" },
+    2: { title: "СОПРОЦЕССОР", color: "#fbbf24", desc: "Увеличение мощности и +5% вампиризм", rarity: "Rare" },
+    3: { title: "СТАБИЛИЗАТОР ЯДРА", color: "#22c55e", desc: "Увеличение стабильности ядра на +25", rarity: "Common" },
+    4: { title: "РЕГЕНЕРАЦИЯ", color: "#10b981", desc: "Увеличение регенерации ядра", rarity: "Common" },
+    5: { title: "ДРОНЫ: ВЫЧИСЛЕНИЯ", color: "#06b6d4", desc: "Увеличение урона дронов на +15%", rarity: "Common" },
+    6: { title: "ДРОНЫ: ЧАСТОТА", color: "#8b5cf6", desc: "Увеличение скорости дронов на +15%", rarity: "Common" },
+    7: { title: "ДРОНЫ: СТАБИЛЬНОСТЬ", color: "#3b82f6", desc: "Увеличение макс. ХП дронов на +15%", rarity: "Common" },
+    8: { title: "ДРОНЫ: ПРОБИТИЕ", color: "#ef4444", desc: "Дроны пробивают на +1 цель больше", rarity: "Common" },
+    9: { title: "ДРОНЫ: РЕГЕНЕРАЦИЯ", color: "#a3e635", desc: "Увеличение регенерации дронов на +15%", rarity: "Common" },
+    10: { title: "МИКРО-ЩИТЫ", color: "#00f0ff", desc: "Запуск защитного орбитального щита (макс 4)", rarity: "Rare" },
+    11: { title: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Все ваши снаряды взрывают убитые вирусы", rarity: "Unique" }
+  };
+
+  const cards = [state.card1, state.card2, state.card3];
+
+  for (let i = 0; i < 3; i++) {
+    const cardId = cards[i];
+    const details = cardDetails[cardId] || { title: "UNKNOWN", color: "#64748b", desc: "Unknown mod", rarity: "Common" };
+    const x = startX + i * (cardW + gap);
+    const y = startY;
+
+    const hovered = state.mouseX >= x && state.mouseX <= x + cardW && state.mouseY >= y && state.mouseY <= y + cardH;
+
+    ctx.fillStyle = hovered ? "rgba(30, 41, 59, 0.65)" : "rgba(15, 23, 42, 0.45)";
+    ctx.strokeStyle = hovered ? details.color : "rgba(255, 255, 255, 0.15)";
+    ctx.lineWidth = hovered ? 3 : 1.5;
+
+    ctx.beginPath();
+    ctx.roundRect(x, y, cardW, cardH, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = details.color;
+    ctx.font = "bold 10px 'JetBrains Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(details.rarity.toUpperCase(), x + cardW / 2, y + 30);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 12px 'JetBrains Mono', monospace";
+    const titleWords = details.title.split(" ");
+    let titleY = y + 70;
+    for (const w of titleWords) {
+      ctx.fillText(w, x + cardW / 2, titleY);
+      titleY += 16;
+    }
+
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "10px 'JetBrains Mono', monospace";
+    const descWords = details.desc.split(" ");
+    let descLine = "";
+    let descY = y + 170;
+    for (let n = 0; n < descWords.length; n++) {
+      const testLine = descLine + descWords[n] + " ";
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > cardW - 24 && n > 0) {
+        ctx.fillText(descLine, x + cardW / 2, descY);
+        descLine = descWords[n] + " ";
+        descY += 14;
+      } else {
+        descLine = testLine;
+      }
+    }
+    ctx.fillText(descLine, x + cardW / 2, descY);
+
+    ctx.fillStyle = hovered ? "#00f0ff" : "#64748b";
+    ctx.font = "bold 11px 'JetBrains Mono', monospace";
+    ctx.fillText(`[НАЖМИТЕ ${i + 1}]`, x + cardW / 2, y + cardH - 25);
+  }
+}
+
 export function drawUpgradePanel(ctx: CanvasRenderingContext2D) {
+  if (state.upgradePoints > 0) {
+    return;
+  }
   const panelX = 12;
   const panelY = 100;
   const rowH = 24;
@@ -146,28 +238,112 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D) {
   ctx.roundRect(panelX - 6, panelY - 34, labelW + 160, rowH * 8 + 50, 10);
   ctx.stroke();
 
-  if (state.upgradePoints > 0) {
-    ctx.fillStyle = "#fbbf24";
-    ctx.font = "bold 12px 'JetBrains Mono', monospace";
-    ctx.textAlign = "left";
-    ctx.fillText(`ОЧКИ УЛУЧШЕНИЙ: ${state.upgradePoints}`, panelX, panelY - 14);
-  } else {
-    ctx.fillStyle = "#64748b";
-    ctx.font = "bold 11px 'JetBrains Mono', monospace";
-    ctx.textAlign = "left";
-    ctx.fillText("МЕТРИКИ ЯДРА СИСТЕМЫ", panelX, panelY - 14);
-  }
+  ctx.fillStyle = "#64748b";
+  ctx.font = "bold 11px 'JetBrains Mono', monospace";
+  ctx.textAlign = "left";
+  ctx.fillText("МЕТРИКИ ЯДРА СИСТЕМЫ", panelX, panelY - 14);
 
   const barX = panelX + labelW;
 
-  drawStatBar(ctx, "РЕГЕНЕРАЦИЯ", state.statRegen, barX, panelY, "#10b981", "1");
-  drawStatBar(ctx, "ХП ЯДРА", state.statMaxHP, barX, panelY + rowH, "#22c55e", "2");
-  drawStatBar(ctx, "СКОРОСТЬ", state.statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3");
+  drawStatBar(ctx, "РЕГЕН. ЯДРА", state.statRegen, barX, panelY, "#10b981", "1");
+  drawStatBar(ctx, "СТАБИЛЬНОСТЬ", state.statMaxHP, barX, panelY + rowH, "#22c55e", "2");
+  drawStatBar(ctx, "ЧАСТОТА", state.statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3");
   drawStatBar(ctx, "УРОН ДРОНОВ", state.statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4");
   drawStatBar(ctx, "СКОР. ДРОНОВ", state.statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5");
   drawStatBar(ctx, "ХП ДРОНОВ", state.statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6");
   drawStatBar(ctx, "ПРОБИВ. ДР.", state.statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7");
   drawStatBar(ctx, "РЕГЕН. ДР.", state.statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8");
+}
+
+export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
+  const startY = 100;
+  const slotW = 52;
+  const slotH = 52;
+  const gap = 12;
+  const rightX = canvasWidth - 70;
+
+  const itemDetails: Record<number, { name: string; color: string; desc: string; abbrev: string }> = {
+    1: { name: "КОНДЕНСАТОР", color: "#10b981", desc: "+10% Частота", abbrev: "Opt\nCap" },
+    2: { name: "СОПРОЦЕССОР", color: "#fbbf24", desc: "+15% Вычисления\n+5% Вамп", abbrev: "Over\nProc" },
+    3: { name: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Взрывы на\nубийстве", abbrev: "Necr\nCore" }
+  };
+
+  ctx.fillStyle = "rgba(5, 5, 8, 0.65)";
+  ctx.beginPath();
+  ctx.roundRect(rightX - 10, startY - 30, slotW + 20, slotH * 4 + gap * 3 + 45, 10);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.fillStyle = "#64748b";
+  ctx.font = "bold 10px 'JetBrains Mono', monospace";
+  ctx.textAlign = "center";
+  ctx.fillText("МОДУЛИ", rightX + slotW / 2, startY - 10);
+
+  const slots = [state.slot1, state.slot2, state.slot3, state.slot4];
+
+  for (let i = 0; i < 4; i++) {
+    const itemID = slots[i];
+    const y = startY + i * (slotH + gap);
+
+    const hovered = state.mouseX >= rightX && state.mouseX <= rightX + slotW && state.mouseY >= y && state.mouseY <= y + slotH;
+
+    ctx.fillStyle = hovered ? "rgba(30, 41, 59, 0.75)" : "rgba(10, 15, 26, 0.75)";
+    ctx.strokeStyle = itemID !== 0 ? (itemDetails[itemID]?.color || "rgba(255, 255, 255, 0.15)") : "rgba(255, 255, 255, 0.08)";
+    ctx.lineWidth = itemID !== 0 && hovered ? 2.5 : 1.5;
+
+    ctx.beginPath();
+    ctx.roundRect(rightX, y, slotW, slotH, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    if (itemID !== 0) {
+      const details = itemDetails[itemID];
+      if (details) {
+        ctx.fillStyle = details.color;
+        ctx.font = "bold 9px 'JetBrains Mono', monospace";
+        ctx.textAlign = "center";
+        const lines = details.abbrev.split("\n");
+        ctx.fillText(lines[0], rightX + slotW / 2, y + 22);
+        ctx.fillText(lines[1], rightX + slotW / 2, y + 34);
+
+        if (hovered) {
+          ctx.save();
+          ctx.fillStyle = "rgba(5, 5, 8, 0.95)";
+          ctx.strokeStyle = details.color;
+          ctx.lineWidth = 1.5;
+          const popW = 180;
+          const popH = 65;
+          const popX = rightX - popW - 15;
+          const popY = y - 5;
+          ctx.beginPath();
+          ctx.roundRect(popX, popY, popW, popH, 8);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 11px 'JetBrains Mono', monospace";
+          ctx.textAlign = "left";
+          ctx.fillText(details.name, popX + 10, popY + 18);
+
+          ctx.fillStyle = "#94a3b8";
+          ctx.font = "9px 'JetBrains Mono', monospace";
+          const descLines = details.desc.split("\n");
+          ctx.fillText(descLines[0], popX + 10, popY + 34);
+          if (descLines[1]) {
+            ctx.fillText(descLines[1], popX + 10, popY + 46);
+          }
+          ctx.restore();
+        }
+      }
+    } else {
+      ctx.fillStyle = "#334155";
+      ctx.font = "bold 12px 'JetBrains Mono', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("-", rightX + slotW / 2, y + 30);
+    }
+  }
 }
 
 export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
@@ -217,12 +393,12 @@ export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canv
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 13px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  ctx.fillText(`ВЕРСИЯ ЯДРА: ${state.currentLevel}`, centerX, bottomY - 28);
+  ctx.fillText(`ПРОШИВКА ЯДРА: v${state.currentLevel}`, centerX, bottomY - 28);
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = "bold 16px 'JetBrains Mono', monospace";
   ctx.textAlign = "left";
-  ctx.fillText(`СОБРАНО ДАННЫХ: ${state.currentScore}`, 20, canvasHeight - 25);
+  ctx.fillText(`ПАКЕТОВ ДАННЫХ: ${state.currentScore}`, 20, canvasHeight - 25);
 
   let activeMinions = 0;
   for (const ent of renderEntities.values()) {
@@ -230,12 +406,14 @@ export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canv
   }
   ctx.textAlign = "right";
   ctx.font = "bold 16px 'JetBrains Mono', monospace";
-  ctx.fillText(`ПОТОКИ ДРОНОВ: ${activeMinions}`, canvasWidth - 20, 35);
+  ctx.fillText(`АКТИВНЫЕ ДРОНЫ: ${activeMinions}`, canvasWidth - 20, 35);
 
   ctx.fillStyle = "#64748b";
   ctx.font = "bold 13px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  ctx.fillText(`СЕКТОР: ${state.waveNumber}`, centerX, bottomY - 54);
+  ctx.fillText(`СЕКТОР ЧИПА: ${state.waveNumber}`, centerX, bottomY - 54);
+
+  drawInventoryHUD(ctx, canvasWidth, canvasHeight);
 }
 
 export function drawMenuShape(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, sides: number, angle: number, color: string) {
@@ -393,22 +571,21 @@ export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth:
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 24px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  ctx.fillText("ВЫБЕРИТЕ ЭВОЛЮЦИЮ", cx, cy - 180);
+  ctx.fillText("ВЫБЕРИТЕ СПЕЦИФИКАЦИЮ АРХИТЕКТУРЫ", cx, cy - 180);
 
-  const cardW = 180;
-  const cardH = 240;
-  const gap = 20;
-  const startX = cx - 390;
+  const cardW = 200;
+  const cardH = 260;
+  const gap = 24;
+  const startX = cx - 312;
   const startY = cy - 120;
 
   const classes = [
-    { name: "ВОИН", color: "#00f0ff", desc: "Кинетический щит и рывок", shape: 6 },
-    { name: "ЛУЧНИК", color: "#fbbf24", desc: "Заряженный снайперский выстрел", shape: 3 },
-    { name: "РАЗБОЙНИК", color: "#ff2a5f", desc: "Невидимость и крит. атаки", shape: 4 },
-    { name: "МАГ", color: "#a855f7", desc: "Временные зоны замедления", shape: 8 }
+    { name: "РЕЙНДЖЕР", color: "#00f0ff", desc: "Направленный Лазерный Импульс линейный высокий DPS. Пассивка: Разгон Кэша - взрыв на каждый 3-й хит.", shape: 6 },
+    { name: "ТЕХНОМАГ", color: "#fbbf24", desc: "Плазменный Сгусток АоЕ сфера насквозь. Пассивка: Цепной Разряд - молния на критический хит.", shape: 5 },
+    { name: "НЕКРОМАНТ", color: "#a855f7", desc: "Энергетический Хлыст маркирует цель. Пассивка: Протокол Реанимации - перепрошивка вирусов в дроны.", shape: 8 }
   ];
 
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 3; i++) {
     const cls = classes[i];
     const x = startX + i * (cardW + gap);
     const y = startY;
@@ -447,7 +624,7 @@ export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth:
     ctx.fillText(cls.name, x + cardW / 2, y + 130);
 
     ctx.fillStyle = "#94a3b8";
-    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.font = "10px 'JetBrains Mono', monospace";
 
     const words = cls.desc.split(" ");
     let line = "";
@@ -458,7 +635,7 @@ export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth:
       if (metrics.width > cardW - 24 && n > 0) {
         ctx.fillText(line, x + cardW / 2, lineY);
         line = words[n] + " ";
-        lineY += 16;
+        lineY += 15;
       } else {
         line = testLine;
       }
@@ -501,6 +678,11 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
       py = me.y;
     }
   }
+
+  ctx.save();
+  ctx.translate(canvasWidth / 2, canvasHeight / 2);
+  ctx.scale(state.cameraZoom, state.cameraZoom);
+  ctx.translate(-canvasWidth / 2, -canvasHeight / 2);
 
   drawGrid(ctx, px, py, canvasWidth, canvasHeight);
 
@@ -547,9 +729,9 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
       ctx.lineWidth = 3;
 
       if (ent.subtype === 1) {
-        const cacheKey = `p_warrior_${ent.radius}`;
+        const cacheKey = `p_ranger_${ent.radius}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#0088cc";
+          c.fillStyle = "#0a1e2b";
           c.strokeStyle = "#00f0ff";
           c.lineWidth = 3;
           c.beginPath();
@@ -567,14 +749,14 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else if (ent.subtype === 2) {
-        const cacheKey = `p_archer_${ent.radius}`;
+        const cacheKey = `p_technomage_${ent.radius}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#0088cc";
-          c.strokeStyle = "#00f0ff";
+          c.fillStyle = "#1e1e0a";
+          c.strokeStyle = "#fbbf24";
           c.lineWidth = 3;
           c.beginPath();
-          for (let i = 0; i < 3; i++) {
-            const a = (i * 2 * Math.PI) / 3;
+          for (let i = 0; i < 5; i++) {
+            const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
             c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
           }
           c.closePath();
@@ -582,36 +764,11 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.stroke();
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
-
-        const chargePct = (ent.stateFlags >> 8) / 100.0;
-        if (chargePct > 0) {
-          ctx.beginPath();
-          ctx.arc(0, 0, ent.radius + 4 + chargePct * 8, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(0, 240, 255, 0.7)";
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        }
       } else if (ent.subtype === 3) {
-        const cacheKey = `p_rogue_${ent.radius}`;
+        const cacheKey = `p_necromancer_${ent.radius}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#0088cc";
-          c.strokeStyle = "#00f0ff";
-          c.lineWidth = 3;
-          c.beginPath();
-          for (let i = 0; i < 4; i++) {
-            const a = (i * Math.PI) / 2;
-            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-          }
-          c.closePath();
-          c.fill();
-          c.stroke();
-        });
-        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
-      } else if (ent.subtype === 4) {
-        const cacheKey = `p_mage_${ent.radius}`;
-        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#0088cc";
-          c.strokeStyle = "#00f0ff";
+          c.fillStyle = "#1e0a2b";
+          c.strokeStyle = "#a855f7";
           c.lineWidth = 3;
           c.beginPath();
           for (let i = 0; i < 8; i++) {
@@ -626,7 +783,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
       } else {
         const cacheKey = `p_default_${ent.radius}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#0088cc";
+          c.fillStyle = "#0a1e2b";
           c.strokeStyle = "#00f0ff";
           c.lineWidth = 3;
           c.beginPath();
@@ -635,6 +792,22 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.stroke();
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
+      }
+
+      const numShields = (ent.stateFlags >> 4) & 0xF;
+      if (numShields > 0) {
+        for (let i = 0; i < numShields; i++) {
+          const orbitAngle = (Date.now() / 350) + (i / numShields) * Math.PI * 2;
+          const sx = Math.cos(orbitAngle) * 55;
+          const sy = Math.sin(orbitAngle) * 55;
+          ctx.fillStyle = "#00f0ff";
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
       }
 
       if ((ent.stateFlags & 2) !== 0) {
@@ -697,7 +870,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
       }
 
       ctx.save();
-      if (ent.subtype === 10 || ent.subtype === 11) {
+      if (ent.subtype === 10 || ent.subtype === 11 || ent.subtype === 12) {
         ctx.rotate(Date.now() / 600);
       }
 
@@ -787,6 +960,31 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.stroke();
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
+      } else if (ent.subtype === 12) {
+        const cacheKey = `m_boss_12_${ent.radius}_${rarity}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = fillColor;
+          c.strokeStyle = strokeColor;
+          c.lineWidth = 4;
+          c.beginPath();
+          for (let i = 0; i < 8; i++) {
+            const a = (i * 2 * Math.PI) / 8;
+            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          c.closePath();
+          c.fill();
+          c.stroke();
+          c.strokeStyle = "#ffffff";
+          c.lineWidth = 2;
+          c.beginPath();
+          for (let i = 0; i < 8; i++) {
+            const a = (i * 2 * Math.PI) / 8 + Math.PI / 8;
+            c.lineTo(Math.cos(a) * r * 0.6, Math.sin(a) * r * 0.6);
+          }
+          c.closePath();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else {
         const cacheKey = `m_0_${ent.radius}_${rarity}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
@@ -822,18 +1020,60 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
       }
     } else if (ent.type === 2) {
       if (ent.subtype === 1) {
-        ctx.fillStyle = "#ff2a5f";
+        ctx.save();
+        ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+        ctx.lineWidth = ent.radius * 2.5;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(-ent.radius * 3, 0);
+        ctx.lineTo(ent.radius * 2, 0);
+        ctx.stroke();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = ent.radius * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(-ent.radius * 3, 0);
+        ctx.lineTo(ent.radius * 2, 0);
+        ctx.stroke();
+        ctx.restore();
       } else if (ent.subtype === 2) {
-        ctx.fillStyle = "#a855f7";
+        ctx.save();
+        const grad = ctx.createRadialGradient(-ent.radius * 0.2, -ent.radius * 0.2, ent.radius * 0.1, 0, 0, ent.radius);
+        grad.addColorStop(0, "#ffffff");
+        grad.addColorStop(0.3, "#00f0ff");
+        grad.addColorStop(0.8, "rgba(0, 240, 255, 0.3)");
+        grad.addColorStop(1, "rgba(0, 240, 255, 0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, ent.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.beginPath();
+        ctx.arc(-ent.radius * 0.1, -ent.radius * 0.1, ent.radius * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (ent.subtype === 3) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(168, 85, 247, 0.45)";
+        ctx.lineWidth = 6;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.arc(-ent.radius, 0, ent.radius * 2, -Math.PI / 3, Math.PI / 3);
+        ctx.stroke();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(-ent.radius, 0, ent.radius * 2, -Math.PI / 3, Math.PI / 3);
+        ctx.stroke();
+        ctx.restore();
       } else {
         ctx.fillStyle = "#00f0ff";
+        ctx.beginPath();
+        ctx.arc(0, 0, ent.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
       }
-      ctx.beginPath();
-      ctx.arc(0, 0, ent.radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = "#050508";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
     } else if (ent.type === 3) {
       ctx.save();
       ctx.rotate(Date.now() / 350);
@@ -850,15 +1090,36 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
       ctx.stroke();
       ctx.restore();
     } else if (ent.type === 4) {
-      ctx.fillStyle = "#6366f1";
+      ctx.save();
+      ctx.fillStyle = "#1e0a2b";
       ctx.strokeStyle = "#a855f7";
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(0, 0, ent.radius, 0, Math.PI * 2);
+      ctx.arc(0, 0, ent.radius * 0.7, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-
+      const numTriangles = 3;
+      const orbitRadius = ent.radius * 1.4;
+      const orbitAngle = Date.now() / 400;
+      ctx.fillStyle = "#c084fc";
+      for (let j = 0; j < numTriangles; j++) {
+        const a = orbitAngle + (j * Math.PI * 2) / numTriangles;
+        const tx = Math.cos(a) * orbitRadius;
+        const ty = Math.sin(a) * orbitRadius;
+        ctx.save();
+        ctx.translate(tx, ty);
+        ctx.rotate(a + Math.PI / 2);
+        ctx.beginPath();
+        ctx.moveTo(0, -4);
+        ctx.lineTo(3.5, 3);
+        ctx.lineTo(-3.5, 3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
       if (ent.health < ent.maxHealth) {
+        ctx.save();
         ctx.rotate(-ent.angle);
         const barW = ent.radius * 2;
         const barH = 4;
@@ -867,7 +1128,6 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
         ctx.beginPath();
         ctx.roundRect(-ent.radius, barY, barW, barH, 2);
         ctx.fill();
-
         const pct = Math.min(1, Math.max(0, ent.health / ent.maxHealth));
         if (pct > 0) {
           ctx.fillStyle = "#a855f7";
@@ -875,6 +1135,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           ctx.roundRect(-ent.radius, barY, barW * pct, barH, 2);
           ctx.fill();
         }
+        ctx.restore();
       }
     } else if (ent.type === 5) {
       ctx.fillStyle = "rgba(139, 92, 246, 0.15)";
@@ -884,11 +1145,43 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
       ctx.strokeStyle = "rgba(139, 92, 246, 0.45)";
       ctx.lineWidth = 2;
       ctx.stroke();
+    } else if (ent.type === 6) {
+      ctx.save();
+      const floatY = Math.sin(Date.now() / 300) * 4;
+      ctx.translate(0, floatY);
+      ctx.rotate(Date.now() / 1000);
+      let color = "#10b981";
+      if (ent.subtype === 2) {
+        color = "#fbbf24";
+      } else if (ent.subtype === 3) {
+        color = "#d946ef";
+      }
+      ctx.fillStyle = "rgba(15, 23, 42, 0.65)";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-ent.radius, -ent.radius, ent.radius * 2, ent.radius * 2, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-ent.radius + 2, -ent.radius + 2);
+      ctx.lineTo(ent.radius - 2, -ent.radius + 2);
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(0, 0, ent.radius * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
     ctx.restore();
   }
 
   drawAndUpdateParticles(ctx, px, py, canvasWidth, canvasHeight);
+  ctx.restore();
 
   drawHUD(ctx, canvasWidth, canvasHeight);
   drawUpgradePanel(ctx);
@@ -898,6 +1191,10 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
     if (me && me.subtype === 0 && state.currentLevel >= 10) {
       drawClassSelectionUI(ctx, canvasWidth, canvasHeight);
     }
+  }
+
+  if (state.upgradePoints > 0) {
+    drawUpgradeCardsOverlay(ctx, canvasWidth, canvasHeight);
   }
 
   if (state.isGamePaused) {

@@ -19,6 +19,8 @@ type Minion struct {
 	ShootCooldown float64
 	RegenAccum    float64
 	OrbitIndex    int
+	Lifetime      float64
+	HasLifetime   bool
 }
 
 func (w *GameWorld) updateMinions(dt float64) {
@@ -31,6 +33,14 @@ func (w *GameWorld) updateMinions(dt float64) {
 		if !ok || !owner.Alive {
 			delete(w.Minions, id)
 			continue
+		}
+		if m.HasLifetime {
+			m.Lifetime -= dt
+			if m.Lifetime <= 0 {
+				w.removeMinionFromPlayer(owner, id)
+				delete(w.Minions, id)
+				continue
+			}
 		}
 		m.Angle += dt * 2.5
 		totalMinions := playerMinionCounts[m.OwnerID]
@@ -89,6 +99,7 @@ func (w *GameWorld) minionShoot(m *Minion, owner *Player) {
 		b.ID = bID
 		b.OwnerID = m.OwnerID
 		b.OwnerType = 2
+		b.Subtype = 4
 		b.Pos = m.Pos.Add(dir.Mul(m.Radius + 3))
 		b.Vel = dir.Mul(12.0)
 		b.Radius = 6

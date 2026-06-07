@@ -282,6 +282,7 @@ func (w *GameWorld) updateMobs(dt float64) {
 					b.ID = bID
 					b.OwnerID = m.ID
 					b.OwnerType = 1
+					b.Subtype = 5
 					b.Pos = m.Pos.Add(dir.Mul(m.Radius + 5))
 					b.Vel = dir.Mul(7.0)
 					b.Radius = 7
@@ -308,6 +309,7 @@ func (w *GameWorld) updateMobs(dt float64) {
 						b.ID = bID
 						b.OwnerID = m.ID
 						b.OwnerType = 1
+						b.Subtype = 5
 						b.Pos = m.Pos.Add(bDir.Mul(m.Radius + 5))
 						b.Vel = bDir.Mul(5.0)
 						b.Radius = 9
@@ -346,9 +348,102 @@ func (w *GameWorld) updateMobs(dt float64) {
 		m.Pos = m.Pos.Add(m.Vel)
 		physics.ResolveCircleBox(&m.Pos, m.Radius, &m.Vel, 0, 0, w.Width, w.Height, 0.2)
 		if m.Health <= 0 {
+			var hasNecrosis bool
+			var owner *Player
+			for _, p := range w.Players {
+				if p.Alive {
+					owner = p
+					if (p.StateFlags & (1 << 8)) != 0 {
+						hasNecrosis = true
+					}
+					for _, mID := range p.Inventory {
+						if mID == 3 {
+							hasNecrosis = true
+						}
+					}
+					break
+				}
+			}
+			if hasNecrosis && owner != nil {
+				for _, otherMob := range w.Mobs {
+					if otherMob.ID == m.ID {
+						continue
+					}
+					distSq := otherMob.Pos.Sub(m.Pos).LengthSq()
+					if distSq < 140.0*140.0 {
+						otherMob.Health -= 35.0
+					}
+				}
+			}
+			if m.Modifiers&16 != 0 && w.rand.Float64() < 0.30 && owner != nil {
+				w.spawnDrone(owner.ID, m.Pos)
+			}
+			if m.Type == 12 {
+				for _, p := range w.Players {
+					p.Alive = false
+					p.StateFlags |= 0x10000
+				}
+			}
+			w.dropLoot(m.Pos, m.Rarity, m.Type)
 			w.spawnOrb(m.Pos, m.XPValue)
 			w.mobPool.Put(m)
 			delete(w.Mobs, id)
+		}
+	}
+}
+
+func (w *GameWorld) spawnDrone(ownerID uint16, pos physics.Vector2D) {
+	owner, ok := w.Players[ownerID]
+	if !ok {
+		return
+	}
+	mID := w.GenerateID()
+	minionMaxHP := 35.0 + float64(owner.StatMinionHP)*10.0
+	minion := &Minion{
+		ID:          mID,
+		OwnerID:     ownerID,
+		Pos:         pos,
+		Radius:      12,
+		Health:      minionMaxHP,
+		MaxHealth:   minionMaxHP,
+		Damage:      10.0 + float64(owner.StatMinionDmg)*3.0,
+		OrbitIndex:  len(owner.MinionIDs),
+		Lifetime:    15.0,
+		HasLifetime: true,
+	}
+	w.Minions[mID] = minion
+	owner.MinionIDs = append(owner.MinionIDs, mID)
+}
+
+func (w *GameWorld) dropLoot(pos physics.Vector2D, rarity uint8, mobType uint8) {
+	roll := w.rand.Float64()
+	var itemID uint8
+	if mobType == 10 || mobType == 11 || mobType == 12 {
+		if roll < 0.5 {
+			itemID = 2
+		} else {
+			itemID = 3
+		}
+	} else if rarity > 0 {
+		if roll < 0.10 {
+			if roll < 0.07 {
+				itemID = 1
+			} else {
+				itemID = 2
+			}
+		}
+	} else {
+		if roll < 0.01 {
+			itemID = 1
+		}
+	}
+	if itemID != 0 {
+		id := w.GenerateID()
+		w.LootDrops[id] = &LootDrop{
+			ID:     id,
+			ItemID: itemID,
+			Pos:    pos,
+			Radius: 12.0,
 		}
 	}
 }
@@ -382,11 +477,16 @@ func (w *GameWorld) spawnBoss(bossType uint8) {
 		rad = 48
 		dmg = 18 * (1.0 + 0.15*waveScale)
 		xpVal = 500
-	} else {
+	} else if bossType == 11 {
 		hp = 900 * (1.0 + 0.25*waveScale)
 		rad = 56
 		dmg = 28 * (1.0 + 0.15*waveScale)
 		xpVal = 800
+	} else {
+		hp = 2500 * (1.0 + 0.25*waveScale)
+		rad = 72
+		dmg = 45 * (1.0 + 0.15*waveScale)
+		xpVal = 2000
 	}
 
 	m := w.mobPool.Get().(*Mob)
@@ -405,11 +505,13 @@ func (w *GameWorld) spawnBoss(bossType uint8) {
 }
 
 func (w *GameWorld) spawnBossesForWave() {
-	if w.WaveNumber == 5 {
+	if w.WaveNumber == 50 {
+		w.spawnBoss(12)
+	} else if w.WaveNumber == 5 {
 		w.spawnBoss(10)
 	} else if w.WaveNumber == 10 {
 		w.spawnBoss(11)
-	} else if w.WaveNumber%5 == 0 {
+	} else if w.WaveNumber%5 == 0 && w.WaveNumber < 50 {
 		w.spawnBoss(10)
 		w.spawnBoss(11)
 	}

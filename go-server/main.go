@@ -194,6 +194,13 @@ func (s *GameServer) broadcastState(tick uint32) {
 				}
 				return wv
 			}(),
+			p.CardChoices[0],
+			p.CardChoices[1],
+			p.CardChoices[2],
+			p.Inventory[0],
+			p.Inventory[1],
+			p.Inventory[2],
+			p.Inventory[3],
 			states,
 		)
 		_ = client.send(stateBuf)

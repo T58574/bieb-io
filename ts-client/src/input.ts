@@ -42,7 +42,7 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
 
     if (state.upgradePoints > 0) {
       const num = parseInt(e.key);
-      if (num >= 1 && num <= 8) {
+      if (num >= 1 && num <= 3) {
         state.selectedUpgradeChoice = num;
       }
     }
@@ -103,9 +103,9 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
           const cardW = 180;
           const cardH = 240;
           const gap = 20;
-          const startX = cx - 390;
+          const startX = cx - 290;
           const startY = cy - 120;
-          for (let i = 0; i < 4; i++) {
+          for (let i = 0; i < 3; i++) {
             const x = startX + i * (cardW + gap);
             if (e.clientX >= x && e.clientX <= x + cardW && e.clientY >= startY && e.clientY <= startY + cardH) {
               sendClassUpgrade(i + 1);
@@ -113,6 +113,23 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
             }
           }
           return;
+        }
+
+        if (state.upgradePoints > 0) {
+          const cx = canvas.width / 2;
+          const cy = canvas.height / 2;
+          const cardW = 200;
+          const cardH = 280;
+          const gap = 30;
+          const startX = cx - 330;
+          const startY = cy - 140;
+          for (let i = 0; i < 3; i++) {
+            const x = startX + i * (cardW + gap);
+            if (e.clientX >= x && e.clientX <= x + cardW && e.clientY >= startY && e.clientY <= startY + cardH) {
+              state.selectedUpgradeChoice = i + 1;
+              return;
+            }
+          }
         }
       }
       if (e.button === 0) keys.mouseLeft = true;

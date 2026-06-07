@@ -49,6 +49,14 @@ export const state = {
   mouseX: 0,
   mouseY: 0,
   mouseAngle: 0,
+  card1: 0,
+  card2: 0,
+  card3: 0,
+  slot1: 0,
+  slot2: 0,
+  slot3: 0,
+  slot4: 0,
+  cameraZoom: 1.0,
 };
 
 export const renderEntities = new Map<number, RenderEntity>();
