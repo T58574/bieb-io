@@ -1,0 +1,29 @@
+[
+  {
+    "ID": 1,
+    "Rarity": 1,
+    "StatModifiers": {
+      "PercentSpeed": 0.10
+    }
+  },
+  {
+    "ID": 2,
+    "Rarity": 2,
+    "StatModifiers": {
+      "PercentDamage": 0.15,
+      "Vampirism": 0.05
+    }
+  },
+  {
+    "ID": 3,
+    "Rarity": 3,
+    "OnKillEffectTrigger": 1
+  },
+  {
+    "ID": 4,
+    "Rarity": 3,
+    "StatModifiers": {
+      "AddProjectiles": 1
+    }
+  }
+]
