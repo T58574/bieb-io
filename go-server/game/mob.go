@@ -113,29 +113,28 @@ func (w *GameWorld) spawnSingleMob() {
 	}
 
 	id := w.GenerateID()
-	waveScale := float64(w.WaveNumber - 1)
 	var hp, rad, dmg float64
 	var xpVal uint32
 	switch mobType {
 	case 0:
-		hp = 20 * (1.0 + 0.15*waveScale)
+		hp = 20 * w.WaveDifficulty
 		rad = 16
-		dmg = 5 * (1.0 + 0.1*waveScale)
+		dmg = 5 * w.WaveDifficulty
 		xpVal = 15
 	case 1:
-		hp = 40 * (1.0 + 0.15*waveScale)
+		hp = 40 * w.WaveDifficulty
 		rad = 22
-		dmg = 8 * (1.0 + 0.1*waveScale)
+		dmg = 8 * w.WaveDifficulty
 		xpVal = 35
 	case 2:
-		hp = 15 * (1.0 + 0.15*waveScale)
+		hp = 15 * w.WaveDifficulty
 		rad = 12
-		dmg = 10 * (1.0 + 0.1*waveScale)
+		dmg = 10 * w.WaveDifficulty
 		xpVal = 25
 	case 3:
-		hp = 5 * (1.0 + 0.15*waveScale)
+		hp = 5 * w.WaveDifficulty
 		rad = 10
-		dmg = 2.5 * (1.0 + 0.1*waveScale)
+		dmg = 2.5 * w.WaveDifficulty
 		xpVal = 10
 	}
 
@@ -263,7 +262,7 @@ func (w *GameWorld) updateMobs(dt float64) {
 				speedMul *= 1.5
 			}
 			if m.Type < 10 {
-				speedMul *= 1.0 + 0.015*float64(w.WaveNumber-1)
+				speedMul *= w.WaveDifficulty
 			}
 
 			if m.Type == 0 {
@@ -454,24 +453,23 @@ func (w *GameWorld) spawnBoss(bossType uint8) {
 	}
 
 	id := w.GenerateID()
-	waveScale := float64(w.WaveNumber - 1)
 	var hp, rad, dmg float64
 	var xpVal uint32
 
 	if bossType == 10 {
-		hp = 600 * (1.0 + 0.25*waveScale)
+		hp = 600 * w.WaveDifficulty
 		rad = 48
-		dmg = 18 * (1.0 + 0.15*waveScale)
+		dmg = 18 * w.WaveDifficulty
 		xpVal = 500
 	} else if bossType == 11 {
-		hp = 900 * (1.0 + 0.25*waveScale)
+		hp = 900 * w.WaveDifficulty
 		rad = 56
-		dmg = 28 * (1.0 + 0.15*waveScale)
+		dmg = 28 * w.WaveDifficulty
 		xpVal = 800
 	} else {
-		hp = 2500 * (1.0 + 0.25*waveScale)
+		hp = 2500 * w.WaveDifficulty
 		rad = 72
-		dmg = 45 * (1.0 + 0.15*waveScale)
+		dmg = 45 * w.WaveDifficulty
 		xpVal = 2000
 	}
 
