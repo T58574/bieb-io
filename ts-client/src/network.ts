@@ -51,7 +51,7 @@ export function connectToServer() {
   socket.binaryType = "arraybuffer";
 
   socket.onopen = () => {
-    socket!.send(serializeJoin(state.playerUsername));
+    socket!.send(serializeJoin(state.playerUsername, state.selectedClass));
     state.gameState = "playing";
   };
 

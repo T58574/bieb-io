@@ -36,7 +36,7 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   const inputW = 320;
   const inputH = 44;
   const inputX = cx - inputW / 2;
-  const inputY = cy - 30 * uiScale;
+  const inputY = cy - 80 * uiScale;
 
   ctx.fillStyle = MENU_LAYOUT.inputBg;
   ctx.beginPath();
@@ -50,10 +50,35 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   const blink = Math.floor(Date.now() / 500) % 2 === 0 && state.usernameInput.length > 0 ? "|" : "";
   TextRenderer.draw(ctx, displayText + blink, cx, inputY + 27, state.usernameInput.length > 0 ? MENU_LAYOUT.inputTextActive : MENU_LAYOUT.inputTextPlaceholder, { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
+  // Draw Class Selection
+  const classNames = ["BASE", "RANGER", "TECHNOMAGE", "NECROMANCER", "BIO-TANK"];
+  const classW = 80;
+  const classH = 40;
+  const classGap = 10;
+  const totalClassesW = 5 * classW + 4 * classGap;
+  const startX = cx - totalClassesW / 2;
+  const classY = cy - 10 * uiScale;
+
+  for (let i = 0; i < 5; i++) {
+    const clsX = startX + i * (classW + classGap);
+    const isSelected = state.selectedClass === i;
+    const isHovered = state.mouseX >= clsX && state.mouseX <= clsX + classW && state.mouseY >= classY && state.mouseY <= classY + classH;
+
+    ctx.fillStyle = isSelected ? "rgba(0, 240, 255, 0.3)" : (isHovered ? "rgba(255, 255, 255, 0.1)" : "rgba(10, 30, 43, 0.8)");
+    ctx.beginPath();
+    ctx.roundRect(clsX, classY, classW, classH, 5);
+    ctx.fill();
+    ctx.strokeStyle = isSelected ? "#00f0ff" : "rgba(0, 240, 255, 0.4)";
+    ctx.lineWidth = isSelected ? 2 : 1;
+    ctx.stroke();
+
+    TextRenderer.draw(ctx, classNames[i], clsX + classW / 2, classY + 25, isSelected ? "#ffffff" : "#00f0ff", { fontSize: 10, align: "center", bold: true }, canvasWidth, canvasHeight);
+  }
+
   const btnW = 260;
   const btnH = 52;
   const btnX = cx - btnW / 2;
-  const btnY = cy + 50 * uiScale;
+  const btnY = cy + 60 * uiScale;
 
   const hovered = state.mouseX >= btnX && state.mouseX <= btnX + btnW && state.mouseY >= btnY && state.mouseY <= btnY + btnH;
 

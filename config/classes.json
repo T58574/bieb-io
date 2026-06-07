@@ -9,5 +9,49 @@
     "BulletPierce": 1,
     "BulletSubtype": 0,
     "Mass": 1.0
+  },
+  {
+    "ID": 1,
+    "ShootCooldown": 0.8,
+    "BulletSpeed": 25.0,
+    "BulletRadius": 4.0,
+    "BulletDamage": 30.0,
+    "BulletLifetime": 1.0,
+    "BulletPierce": 3,
+    "BulletSubtype": 1,
+    "Mass": 0.8
+  },
+  {
+    "ID": 2,
+    "ShootCooldown": 0.1,
+    "BulletSpeed": 8.0,
+    "BulletRadius": 3.0,
+    "BulletDamage": 3.0,
+    "BulletLifetime": 0.8,
+    "BulletPierce": 0,
+    "BulletSubtype": 2,
+    "Mass": 0.9
+  },
+  {
+    "ID": 3,
+    "ShootCooldown": 0.4,
+    "BulletSpeed": 12.0,
+    "BulletRadius": 6.0,
+    "BulletDamage": 12.0,
+    "BulletLifetime": 2.0,
+    "BulletPierce": 1,
+    "BulletSubtype": 3,
+    "Mass": 1.1
+  },
+  {
+    "ID": 4,
+    "ShootCooldown": 1.5,
+    "BulletSpeed": 6.0,
+    "BulletRadius": 15.0,
+    "BulletDamage": 50.0,
+    "BulletLifetime": 3.0,
+    "BulletPierce": 5,
+    "BulletSubtype": 4,
+    "Mass": 3.0
   }
 ]

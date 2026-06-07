@@ -173,6 +173,17 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.stroke();
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
+      } else if (ent.subtype === 4) {
+        const cacheKey = `p_biotank_${ent.radius}${isFlashing ? "_flash" : ""}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = isFlashing ? "rgba(255, 255, 255, 0.95)" : "#0a2b0a";
+          c.strokeStyle = isFlashing ? "#ffffff" : "#22c55e";
+          c.lineWidth = 4;
+          drawRegularPolygonPath(c, r, 4, 0);
+          c.fill();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else {
         const cacheKey = `p_default_${ent.radius}${isFlashing ? "_flash" : ""}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {

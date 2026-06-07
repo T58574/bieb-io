@@ -5,16 +5,18 @@ describe('protocol serialization', () => {
   describe('serializeJoin', () => {
     it('should correctly serialize a username', () => {
       const username = 'testuser';
-      const buffer = serializeJoin(username);
+      const classId = 4;
+      const buffer = serializeJoin(username, classId);
       const view = new DataView(buffer);
 
-      expect(buffer.byteLength).toBe(2 + username.length);
+      expect(buffer.byteLength).toBe(3 + username.length);
       expect(view.getUint8(0)).toBe(1); // Opcode
       expect(view.getUint8(1)).toBe(username.length); // Length
 
       const textDecoder = new TextDecoder();
-      const decodedName = textDecoder.decode(new Uint8Array(buffer, 2));
+      const decodedName = textDecoder.decode(new Uint8Array(buffer, 2, username.length));
       expect(decodedName).toBe(username);
+      expect(view.getUint8(2 + username.length)).toBe(classId); // ClassId
     });
   });
 
