@@ -1,0 +1,29 @@
+{
+  "ui": {
+    "module_title": "МОДУЛИ",
+    "sector_prefix": "СЕКТОР ЧИПА: ",
+    "class_selection_title": "ВЫБЕРИТЕ СПЕЦИФИКАЦИЮ АРХИТЕКТУРЫ",
+    "stats": {
+      "hp": "ИНТЕГРИТИ",
+      "speed": "ТАКТОВАЯ ЧАСТОТА",
+      "damage": "МНОЖИТЕЛЬ УРОНА",
+      "regen": "ВОССТАНОВЛЕНИЕ",
+      "minion_dmg": "УРОН ДРОНОВ",
+      "minion_hp": "ХП ДРОНОВ",
+      "minion_pierce": "ПРОБИВ. ДР.",
+      "minion_regen": "РЕГЕН. ДР."
+    }
+  },
+  "items": {
+    "1": { "name": "КОНДЕНСАТОР", "color": "#10b981", "desc": "+10% Частота", "abbrev": "Opt\nCap", "rarity": "Common" },
+    "2": { "name": "СОПРОЦЕССОР", "color": "#fbbf24", "desc": "+15% Вычисления\n+5% Вамп", "abbrev": "Over\nProc", "rarity": "Rare" },
+    "3": { "name": "ЯДРО НЕКРОЗА", "color": "#d946ef", "desc": "Взрывы на\nубийстве", "abbrev": "Necr\nCore", "rarity": "Unique" },
+    "4": { "name": "МУЛЬТИСПЛИТ", "color": "#ef4444", "desc": "+1 снаряд при стрельбе", "abbrev": "Multi\nSplit", "rarity": "Unique" }
+  },
+  "classes": [
+    { "id": 1, "name": "ВОИН", "color": "#ef4444", "desc": "Увеличенная масса и кинетический урон.", "shape": 6 },
+    { "id": 2, "name": "СТРЕЛОК", "color": "#00f0ff", "desc": "Заряжаемый выстрел и повышенная дальность.", "shape": 3 },
+    { "id": 3, "name": "РАЗБОЙНИК", "color": "#10b981", "desc": "Невидимость при рывке и низкий кулдаун.", "shape": 4 },
+    { "id": 4, "name": "МАГ", "color": "#a855f7", "desc": "Контроль дронов и АоЕ поля при ударе.", "shape": 8 }
+  ]
+}
