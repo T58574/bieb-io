@@ -103,8 +103,8 @@ func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 		Inventory:      make(map[uint16]int),
 		invDirty:       true,
 	}
-	if p.ClassID == 1 {
-		p.Mass = 2.5
+	if classCfg, ok := GetClassConfig(p.ClassID); ok {
+		p.Mass = classCfg.Mass
 	}
 	w.Players[id] = p
 	w.spawnMinion(id, p.Pos.Add(physics.Vector2D{X: 40, Y: 0}))
@@ -326,40 +326,19 @@ func (w *GameWorld) updatePlayers(dt float64) {
 			var bSpeed, bRadius, bDamage, bLifetime float64
 			var bPierce int
 			var bSubtype uint8
-			switch p.ClassID {
-			case 1:
-				p.ShootCooldown = 0.08
-				bSpeed = 22.0
-				bRadius = 3.0
-				bDamage = 5.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
-				bLifetime = 0.8
-				bPierce = 1
-				bSubtype = 1
-			case 2:
-				p.ShootCooldown = 0.7
-				bSpeed = 5.0
-				bRadius = 12.0
-				bDamage = 25.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
-				bLifetime = 2.0
-				bPierce = 99
-				bSubtype = 2
-			case 3:
-				p.ShootCooldown = 0.4
-				bSpeed = 14.0
-				bRadius = 6.0
-				bDamage = 18.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
-				bLifetime = 0.5
-				bPierce = 2
-				bSubtype = 3
-			default:
-				p.ShootCooldown = 0.3
-				bSpeed = 10.0
-				bRadius = 5.0
-				bDamage = 10.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
-				bLifetime = 1.5
-				bPierce = 1
-				bSubtype = 0
+
+			classCfg, ok := GetClassConfig(p.ClassID)
+			if !ok {
+				classCfg, _ = GetClassConfig(0)
 			}
+
+			p.ShootCooldown = classCfg.ShootCooldown
+			bSpeed = classCfg.BulletSpeed
+			bRadius = classCfg.BulletRadius
+			bDamage = classCfg.BulletDamage * (1.0 + float64(p.StatMinionDmg)*0.15)
+			bLifetime = classCfg.BulletLifetime
+			bPierce = classCfg.BulletPierce
+			bSubtype = classCfg.BulletSubtype
 
 			dmgMul := 1.0
 			if count, ok := p.Inventory[2]; ok {
@@ -423,8 +402,8 @@ func (w *GameWorld) UpgradePlayerClass(id uint16, classID uint8) {
 	}
 	if (p.Level >= 10 || p.Level == 1) && p.ClassID == 0 && classID >= 1 && classID <= 3 {
 		p.ClassID = classID
-		if classID == 1 {
-			p.Mass = 2.5
+		if classCfg, ok := GetClassConfig(classID); ok {
+			p.Mass = classCfg.Mass
 		}
 	}
 }
