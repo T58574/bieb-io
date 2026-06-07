@@ -163,3 +163,78 @@ func TestEncodeGameOver(t *testing.T) {
 		t.Errorf("expected wave %d, got %d", wave, decodedWave)
 	}
 }
+
+func BenchmarkEncodeWorldState(b *testing.B) {
+	entities := []EntityState{
+		{
+			ID:        1,
+			Type:      0,
+			Subtype:   2,
+			X:         100.5,
+			Y:         200.75,
+			Angle:     0.78,
+			Health:    100,
+			MaxHealth: 100,
+			Radius:    20,
+		},
+	}
+	removedIDs := []uint16{5, 10}
+	inventory := make([]byte, 200)
+	upgradeLevels := make([]byte, 24)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, upgradeLevels, 1, 0, 0, 0, inventory, entities, removedIDs)
+	}
+}
+
+func BenchmarkDecodeInput(b *testing.B) {
+	payload := make([]byte, 8)
+	payload[0] = 2
+	payload[1] = 0x05
+	bits := math.Float32bits(1.57)
+	payload[2] = byte(bits)
+	payload[3] = byte(bits >> 8)
+	payload[4] = byte(bits >> 16)
+	payload[5] = byte(bits >> 24)
+	payload[6] = 3
+	payload[7] = 4
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = DecodeInput(payload)
+	}
+}
+
+func BenchmarkTableDrivenEncodeWorldState(b *testing.B) {
+	benchmarks := []struct {
+		name          string
+		entitiesCount int
+		removedCount  int
+	}{
+		{"Empty", 0, 0},
+		{"Small", 10, 2},
+		{"Medium", 100, 10},
+		{"Large", 1000, 50},
+	}
+
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			entities := make([]EntityState, bm.entitiesCount)
+			for i := 0; i < bm.entitiesCount; i++ {
+				entities[i] = EntityState{ID: uint16(i), Type: 1}
+			}
+			removedIDs := make([]uint16, bm.removedCount)
+			for i := 0; i < bm.removedCount; i++ {
+				removedIDs[i] = uint16(i)
+			}
+			inventory := make([]byte, 200)
+			upgradeLevels := make([]byte, 24)
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, upgradeLevels, 1, 0, 0, 0, inventory, entities, removedIDs)
+			}
+		})
+	}
+}
