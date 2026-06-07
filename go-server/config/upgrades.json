@@ -1,0 +1,70 @@
+{
+  "Cards": [
+    {
+      "ID": 1,
+      "MaxLevel": 7,
+      "Type": "StatSpeed"
+    },
+    {
+      "ID": 2,
+      "MaxLevel": 99,
+      "Type": "Vampirism",
+      "Value": 0.05
+    },
+    {
+      "ID": 3,
+      "MaxLevel": 7,
+      "Type": "StatMaxHP",
+      "Value": 25.0
+    },
+    {
+      "ID": 4,
+      "MaxLevel": 7,
+      "Type": "StatRegen"
+    },
+    {
+      "ID": 5,
+      "MaxLevel": 7,
+      "Type": "StatMinionDmg"
+    },
+    {
+      "ID": 6,
+      "MaxLevel": 7,
+      "Type": "StatMinionSpeed"
+    },
+    {
+      "ID": 7,
+      "MaxLevel": 7,
+      "Type": "StatMinionHP"
+    },
+    {
+      "ID": 8,
+      "MaxLevel": 7,
+      "Type": "StatMinionPierce"
+    },
+    {
+      "ID": 9,
+      "MaxLevel": 7,
+      "Type": "StatMinionRegen"
+    },
+    {
+      "ID": 10,
+      "MaxLevel": 4,
+      "Type": "OrbitShield"
+    },
+    {
+      "ID": 11,
+      "MaxLevel": 1,
+      "Type": "FlagUnlock",
+      "Value": 256
+    }
+  ],
+  "GlobalMultipliers": {
+    "BaseMaxHP": 100.0,
+    "HPPerLevel": 25.0,
+    "SpeedPerLevel": 0.08,
+    "RegenPerLevel": 0.8,
+    "ShieldDamagePerSecond": 30.0,
+    "MinionDamagePerLevel": 0.15
+  }
+}

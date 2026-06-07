@@ -756,7 +756,7 @@ export function drawPauseUI(ctx: CanvasRenderingContext2D, canvasWidth: number, 
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.fillText("[НАЖМИТЕ P ДЛЯ ПРОДОЛЖЕНИЯ]", cx, cy + 20 * uiScale);
+  ctx.fillText("[НАЖМИТЕ ESC ДЛЯ ПРОДОЛЖЕНИЯ]", cx, cy + 20 * uiScale);
 }
 
 export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
