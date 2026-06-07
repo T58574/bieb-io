@@ -212,13 +212,19 @@ type SpawnConfig struct {
 }
 
 type WorldConfig struct {
-	ArenaWidth      float64 `json:"arenaWidth"`
-	ArenaHeight     float64 `json:"arenaHeight"`
-	GridSize        int     `json:"gridSize"`
-	CellSize        float64 `json:"cellSize"`
-	TickRate        int     `json:"tickRate"`
-	InputBufferSize int     `json:"inputBufferSize"`
-	NextIDStart     uint16  `json:"nextIDStart"`
+	ArenaWidth               float64 `json:"arenaWidth"`
+	ArenaHeight              float64 `json:"arenaHeight"`
+	GridSize                 int     `json:"gridSize"`
+	CellSize                 float64 `json:"cellSize"`
+	TickRate                 int     `json:"tickRate"`
+	InputBufferSize          int     `json:"inputBufferSize"`
+	NextIDStart              uint16  `json:"nextIDStart"`
+	SingularitySpawnInterval float64 `json:"singularitySpawnInterval"`
+	SingularityDuration      float64 `json:"singularityDuration"`
+	SingularityRadius        float64 `json:"singularityRadius"`
+	SingularityCoreRadius    float64 `json:"singularityCoreRadius"`
+	SingularityForce         float64 `json:"singularityForce"`
+	SingularityDamage        float64 `json:"singularityDamage"`
 }
 
 var (
@@ -281,13 +287,19 @@ func init() {
 		InitialMinionOffset: 40,
 	}
 	currentWorldConfig = WorldConfig{
-		ArenaWidth:      6000.0,
-		ArenaHeight:     6000.0,
-		GridSize:        60,
-		CellSize:        100.0,
-		TickRate:        60,
-		InputBufferSize: 4096,
-		NextIDStart:     100,
+		ArenaWidth:               6000.0,
+		ArenaHeight:              6000.0,
+		GridSize:                 60,
+		CellSize:                 100.0,
+		TickRate:                 60,
+		InputBufferSize:          4096,
+		NextIDStart:              100,
+		SingularitySpawnInterval: 60.0,
+		SingularityDuration:      15.0,
+		SingularityRadius:        800.0,
+		SingularityCoreRadius:    150.0,
+		SingularityForce:         120.0,
+		SingularityDamage:        10.0,
 	}
 }
 
