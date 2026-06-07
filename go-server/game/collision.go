@@ -191,9 +191,6 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		p, ok1 := w.Players[a.ID]
 		m, ok2 := w.Mobs[b.ID]
 		if ok1 && ok2 && p.Alive {
-			if p.DashTimer > 0 {
-				return
-			}
 			relVelStart := p.Vel.Sub(m.Vel).Length()
 			if physics.ResolveCircleCircle(&p.Pos, &m.Pos, p.Radius, m.Radius, &p.Vel, &m.Vel, p.Mass, 1.0, 0.3) {
 				dmgKinetic := 0.5 * p.Mass * (relVelStart * relVelStart) * combatCfg.KineticDamageFactor
@@ -262,6 +259,14 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 				if p, okP := w.Players[bullet.OwnerID]; okP && p.Alive {
 					critChance += float64(p.StatCritChance) * combatCfg.CritChancePerLevel
 					critMultiplier += float64(p.StatCritDamage) * combatCfg.CritDamagePerLevel
+					for itemID, count := range p.Inventory {
+						if count > 0 {
+							if mod, ok := GetItemModifier(itemID); ok {
+								critChance += mod.StatModifiers.CritChance * float64(count)
+								critMultiplier += mod.StatModifiers.CritDamage * float64(count)
+							}
+						}
+					}
 				}
 
 				if bullet.Subtype == 2 && w.rand.Float64() < critChance {
@@ -337,9 +342,6 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		bullet, ok1 := w.Bullets[a.ID]
 		p, ok2 := w.Players[b.ID]
 		if ok1 && ok2 && p.Alive {
-			if p.DashTimer > 0 {
-				return
-			}
 			if bullet.Lifetime <= 0 || bullet.Pierce <= 0 {
 				return
 			}
