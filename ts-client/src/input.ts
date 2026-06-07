@@ -58,18 +58,27 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "x" || e.key === "X") {
+      const itemCounts = new Map<number, number>();
+      for (let i = 0; i < 16; i++) {
+        const itemID = state.inventory[2 * i];
+        const count = state.inventory[2 * i + 1];
+        if (itemID && itemID !== 0 && count > 0) {
+          itemCounts.set(itemID, count);
+        }
+      }
+      const uniqueItems = Array.from(itemCounts.keys());
       const rightX = canvas.width - 210;
       const startY = 120;
       const slotW = 44;
       const slotH = 44;
       const gap = 6;
-      for (let i = 0; i < 32; i++) {
+      for (let i = 0; i < uniqueItems.length; i++) {
         const c = i % 4;
         const r = Math.floor(i / 4);
         const sx = rightX + c * (slotW + gap);
         const sy = startY + r * (slotH + gap);
         if (state.mouseX >= sx && state.mouseX <= sx + slotW && state.mouseY >= sy && state.mouseY <= sy + slotH) {
-          state.selectedDeleteChoice = i + 1;
+          state.selectedDeleteChoice = uniqueItems[i];
           break;
         }
       }

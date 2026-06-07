@@ -252,14 +252,16 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
   const itemDetails: Record<number, { name: string; color: string; desc: string; abbrev: string; rarity: string }> = {
     1: { name: "КОНДЕНСАТОР", color: "#10b981", desc: "+10% Частота", abbrev: "Opt\nCap", rarity: "Common" },
     2: { name: "СОПРОЦЕССОР", color: "#fbbf24", desc: "+15% Вычисления\n+5% Вамп", abbrev: "Over\nProc", rarity: "Rare" },
-    3: { name: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Взрывы на\nубийстве", abbrev: "Necr\nCore", rarity: "Unique" }
+    3: { name: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Взрывы на\nубийстве", abbrev: "Necr\nCore", rarity: "Unique" },
+    4: { name: "МУЛЬТИСПЛИТ", color: "#ef4444", desc: "+1 снаряд при стрельбе", abbrev: "Multi\nSplit", rarity: "Unique" }
   };
 
   const itemCounts = new Map<number, number>();
-  for (let i = 0; i < 32; i++) {
-    const itemID = state.inventory[i];
-    if (itemID && itemID !== 0) {
-      itemCounts.set(itemID, (itemCounts.get(itemID) || 0) + 1);
+  for (let i = 0; i < 16; i++) {
+    const itemID = state.inventory[2 * i];
+    const count = state.inventory[2 * i + 1];
+    if (itemID && itemID !== 0 && count > 0) {
+      itemCounts.set(itemID, count);
     }
   }
 
@@ -820,15 +822,13 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
         ctx.globalAlpha = 0.3;
       }
 
-      ctx.fillStyle = "#0088cc";
-      ctx.strokeStyle = "#00f0ff";
-      ctx.lineWidth = 3;
+      const isFlashing = (ent.stateFlags & 2) !== 0;
 
       if (ent.subtype === 1) {
-        const cacheKey = `p_ranger_${ent.radius}`;
+        const cacheKey = `p_ranger_${ent.radius}${isFlashing ? "_flash" : ""}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#0a1e2b";
-          c.strokeStyle = "#00f0ff";
+          c.fillStyle = isFlashing ? "rgba(255, 255, 255, 0.95)" : "#0a1e2b";
+          c.strokeStyle = isFlashing ? "#ffffff" : "#00f0ff";
           c.lineWidth = 3;
           c.beginPath();
           for (let i = 0; i < 6; i++) {
@@ -838,17 +838,17 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           c.closePath();
           c.fill();
           c.stroke();
-          c.fillStyle = "#00f0ff";
+          c.fillStyle = isFlashing ? "#ffffff" : "#00f0ff";
           c.beginPath();
           c.arc(0, 0, 4, 0, Math.PI * 2);
           c.fill();
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else if (ent.subtype === 2) {
-        const cacheKey = `p_technomage_${ent.radius}`;
+        const cacheKey = `p_technomage_${ent.radius}${isFlashing ? "_flash" : ""}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#1e1e0a";
-          c.strokeStyle = "#fbbf24";
+          c.fillStyle = isFlashing ? "rgba(255, 255, 255, 0.95)" : "#1e1e0a";
+          c.strokeStyle = isFlashing ? "#ffffff" : "#fbbf24";
           c.lineWidth = 3;
           c.beginPath();
           for (let i = 0; i < 5; i++) {
@@ -861,10 +861,10 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else if (ent.subtype === 3) {
-        const cacheKey = `p_necromancer_${ent.radius}`;
+        const cacheKey = `p_necromancer_${ent.radius}${isFlashing ? "_flash" : ""}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#1e0a2b";
-          c.strokeStyle = "#a855f7";
+          c.fillStyle = isFlashing ? "rgba(255, 255, 255, 0.95)" : "#1e0a2b";
+          c.strokeStyle = isFlashing ? "#ffffff" : "#a855f7";
           c.lineWidth = 3;
           c.beginPath();
           for (let i = 0; i < 8; i++) {
@@ -877,10 +877,10 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else {
-        const cacheKey = `p_default_${ent.radius}`;
+        const cacheKey = `p_default_${ent.radius}${isFlashing ? "_flash" : ""}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#0a1e2b";
-          c.strokeStyle = "#00f0ff";
+          c.fillStyle = isFlashing ? "rgba(255, 255, 255, 0.95)" : "#0a1e2b";
+          c.strokeStyle = isFlashing ? "#ffffff" : "#00f0ff";
           c.lineWidth = 3;
           c.beginPath();
           c.arc(0, 0, r, 0, Math.PI * 2);
@@ -904,14 +904,6 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
           ctx.fill();
           ctx.stroke();
         }
-      }
-
-      if ((ent.stateFlags & 2) !== 0) {
-        ctx.save();
-        ctx.globalCompositeOperation = "source-atop";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
-        ctx.fillRect(-ent.radius - 8, -ent.radius - 8, (ent.radius + 8) * 2, (ent.radius + 8) * 2);
-        ctx.restore();
       }
 
       ctx.globalAlpha = 1.0;
@@ -1173,8 +1165,20 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
     } else if (ent.type === 3) {
       ctx.save();
       ctx.rotate(Date.now() / 350);
-      ctx.fillStyle = "#eab308";
-      ctx.strokeStyle = "#fbbf24";
+      let color = "#eab308";
+      let strokeColor = "#fbbf24";
+      if (ent.subtype === 2) {
+        color = "#10b981";
+        strokeColor = "#34d399";
+      } else if (ent.subtype === 3) {
+        color = "#3b82f6";
+        strokeColor = "#60a5fa";
+      } else if (ent.subtype === 4) {
+        color = "#a855f7";
+        strokeColor = "#c084fc";
+      }
+      ctx.fillStyle = color;
+      ctx.strokeStyle = strokeColor;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(0, -ent.radius);
@@ -1243,8 +1247,6 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
       ctx.stroke();
     } else if (ent.type === 6) {
       ctx.save();
-      const floatY = Math.sin(Date.now() / 300) * 4;
-      ctx.translate(0, floatY);
       ctx.rotate(Date.now() / 1000);
       let color = "#10b981";
       if (ent.subtype === 2) {

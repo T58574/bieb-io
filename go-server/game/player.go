@@ -60,16 +60,20 @@ func (p *Player) GetInventoryArray() []uint8 {
 	}
 	sort.Ints(keys)
 
-	var invList []uint8
+	invList := make([]uint8, 32)
+	idx := 0
 	for _, k := range keys {
 		id := uint16(k)
 		count := p.Inventory[id]
-		for i := 0; i < count && len(invList) < 32; i++ {
-			invList = append(invList, uint8(id))
+		if count > 0 && idx < 32 {
+			invList[idx] = uint8(id)
+			cVal := count
+			if cVal > 255 {
+				cVal = 255
+			}
+			invList[idx+1] = uint8(cVal)
+			idx += 2
 		}
-	}
-	for len(invList) < 32 {
-		invList = append(invList, 0)
 	}
 	p.invCache = invList
 	p.invDirty = false
@@ -209,13 +213,12 @@ func (w *GameWorld) processInputs() {
 				if ev.Upgrade != 0 && p.UpgradePoints > 0 {
 					w.applyCardUpgrade(p, ev.Upgrade)
 				}
-				if ev.Delete != 0 && ev.Delete <= 32 {
-					arr := p.GetInventoryArray()
-					itemID := arr[ev.Delete-1]
-					if itemID != 0 {
-						p.Inventory[uint16(itemID)]--
-						if p.Inventory[uint16(itemID)] <= 0 {
-							delete(p.Inventory, uint16(itemID))
+				if ev.Delete != 0 {
+					itemID := uint16(ev.Delete)
+					if p.Inventory[itemID] > 0 {
+						p.Inventory[itemID]--
+						if p.Inventory[itemID] <= 0 {
+							delete(p.Inventory, itemID)
 						}
 						p.invDirty = true
 					}
@@ -257,13 +260,13 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		}
 		baseMaxHP := 100.0 + float64(p.StatMaxHP)*25.0
 		var totalFlatHP, totalPercentHP float64
-		for _, mID := range p.Inventory {
-			if mID == 0 {
+		for itemID, count := range p.Inventory {
+			if count <= 0 {
 				continue
 			}
-			if mod, ok := GetItemModifier(uint16(mID)); ok {
-				totalFlatHP += mod.StatModifiers.FlatHP
-				totalPercentHP += mod.StatModifiers.PercentHP
+			if mod, ok := GetItemModifier(itemID); ok {
+				totalFlatHP += mod.StatModifiers.FlatHP * float64(count)
+				totalPercentHP += mod.StatModifiers.PercentHP * float64(count)
 			}
 		}
 		p.MaxHealth = (baseMaxHP + totalFlatHP) * (1.0 + totalPercentHP)

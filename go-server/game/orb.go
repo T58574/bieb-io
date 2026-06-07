@@ -1,6 +1,8 @@
 package game
 
 import (
+	"math"
+
 	"go-server/physics"
 )
 
@@ -57,6 +59,40 @@ func (w *GameWorld) updateOrbs(dt float64) {
 			w.orbPool.Put(o)
 			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Orbs, id)
+		}
+	}
+}
+
+func (w *GameWorld) mergeOrbs() {
+	merged := make(map[uint16]bool)
+	var keys []uint16
+	for id := range w.Orbs {
+		keys = append(keys, id)
+	}
+
+	for i := 0; i < len(keys); i++ {
+		idA := keys[i]
+		oA, existsA := w.Orbs[idA]
+		if !existsA || merged[idA] {
+			continue
+		}
+
+		for j := i + 1; j < len(keys); j++ {
+			idB := keys[j]
+			oB, existsB := w.Orbs[idB]
+			if !existsB || merged[idB] {
+				continue
+			}
+
+			distSq := oA.Pos.Sub(oB.Pos).LengthSq()
+			if distSq < 80.0*80.0 {
+				oA.XPValue += oB.XPValue
+				oA.Radius = math.Min(24.0, 8.0+math.Sqrt(float64(oA.XPValue))*1.2)
+				merged[idB] = true
+				w.orbPool.Put(oB)
+				w.RemovedEntityIDs = append(w.RemovedEntityIDs, idB)
+				delete(w.Orbs, idB)
+			}
 		}
 	}
 }

@@ -26,7 +26,11 @@ func (w *GameWorld) updateWaveSystem(dt float64) {
 	}
 	if w.WaveMobsLeft <= 0 && len(w.Mobs) == 0 {
 		w.WaveActive = false
-		w.WavePauseTimer = 3.0
+		if (w.WaveNumber+1)%5 == 0 {
+			w.WavePauseTimer = 3.0
+		} else {
+			w.WavePauseTimer = 1.0
+		}
 		return
 	}
 	maxAlive := 60 + int(w.WaveNumber)*40

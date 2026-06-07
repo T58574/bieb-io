@@ -60,6 +60,14 @@ func init() {
 		Rarity: 3,
 		OnKillEffectTrigger: TRIGGER_AREA_EXPLOSION,
 	}
+
+	itemRegistry[4] = ItemModifier{
+		ID:     4,
+		Rarity: 3,
+		StatModifiers: ItemStatModifiers{
+			AddProjectiles: 1,
+		},
+	}
 }
 
 func GetItemModifier(id uint16) (ItemModifier, bool) {

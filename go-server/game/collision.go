@@ -268,8 +268,12 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		o, ok2 := w.Orbs[b.ID]
 		if ok1 && ok2 && p.Alive {
 			if !(p.Level >= 10 && p.ClassID == 0) {
-				p.XP += o.XPValue
-				p.Score += uint32(o.XPValue)
+				gainedXP := uint32(float64(o.XPValue) * 0.75)
+				if gainedXP == 0 && o.XPValue > 0 {
+					gainedXP = 1
+				}
+				p.XP += gainedXP
+				p.Score += gainedXP
 				for p.XP >= p.MaxXP {
 					p.XP -= p.MaxXP
 					p.Level++
@@ -304,11 +308,11 @@ func (w *GameWorld) triggerOnKillEffects(killerID uint16, deadMob *Mob) {
 	if !ok || !killer.Alive {
 		return
 	}
-	for _, mID := range killer.Inventory {
-		if mID == 0 {
+	for itemID, count := range killer.Inventory {
+		if count <= 0 {
 			continue
 		}
-		if mod, ok := GetItemModifier(uint16(mID)); ok {
+		if mod, ok := GetItemModifier(itemID); ok {
 			if mod.OnKillEffectTrigger == TRIGGER_AREA_EXPLOSION {
 				for _, otherMob := range w.Mobs {
 					if otherMob.ID == deadMob.ID {
@@ -316,7 +320,7 @@ func (w *GameWorld) triggerOnKillEffects(killerID uint16, deadMob *Mob) {
 					}
 					distSq := otherMob.Pos.Sub(deadMob.Pos).LengthSq()
 					if distSq < 140.0*140.0 {
-						otherMob.Health -= 35.0
+						otherMob.Health -= 35.0 * float64(count)
 					}
 				}
 			}

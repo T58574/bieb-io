@@ -34,6 +34,7 @@ type GameWorld struct {
 	Fields           map[uint16]*ChronoField
 	LootDrops        map[uint16]*LootDrop
 	nextID           uint16
+	orbMergeTimer    float64
 	Width            float64
 	Height           float64
 	mu               sync.RWMutex
@@ -114,6 +115,11 @@ func (w *GameWorld) Tick(dt float64) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.processInputs()
+	w.orbMergeTimer += dt
+	if w.orbMergeTimer >= 1.0 {
+		w.orbMergeTimer = 0.0
+		w.mergeOrbs()
+	}
 	hasUpgrades := false
 	for _, p := range w.Players {
 		if p.Alive && p.UpgradePoints > 0 {
@@ -188,10 +194,19 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 		})
 	}
 	for _, o := range w.Orbs {
+		var subtype uint8 = 1
+		if o.XPValue > 500 {
+			subtype = 4
+		} else if o.XPValue > 100 {
+			subtype = 3
+		} else if o.XPValue > 20 {
+			subtype = 2
+		}
+
 		states = append(states, protocol.EntityState{
 			ID:        o.ID,
 			Type:      3,
-			Subtype:   0,
+			Subtype:   subtype,
 			X:         float32(o.Pos.X),
 			Y:         float32(o.Pos.Y),
 			Angle:     0,
