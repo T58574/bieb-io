@@ -348,31 +348,11 @@ func (w *GameWorld) updateMobs(dt float64) {
 		m.Pos = m.Pos.Add(m.Vel)
 		physics.ResolveCircleBox(&m.Pos, m.Radius, &m.Vel, 0, 0, w.Width, w.Height, 0.2)
 		if m.Health <= 0 {
-			var hasNecrosis bool
 			var owner *Player
 			for _, p := range w.Players {
 				if p.Alive {
 					owner = p
-					if (p.StateFlags & (1 << 8)) != 0 {
-						hasNecrosis = true
-					}
-					for _, mID := range p.Inventory {
-						if mID == 3 {
-							hasNecrosis = true
-						}
-					}
 					break
-				}
-			}
-			if hasNecrosis && owner != nil {
-				for _, otherMob := range w.Mobs {
-					if otherMob.ID == m.ID {
-						continue
-					}
-					distSq := otherMob.Pos.Sub(m.Pos).LengthSq()
-					if distSq < 140.0*140.0 {
-						otherMob.Health -= 35.0
-					}
 				}
 			}
 			if m.Modifiers&16 != 0 && w.rand.Float64() < 0.30 && owner != nil {
