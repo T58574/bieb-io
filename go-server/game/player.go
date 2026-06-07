@@ -2,6 +2,7 @@ package game
 
 import (
 	"math"
+	"sort"
 
 	"go-server/physics"
 )
@@ -40,9 +41,39 @@ type Player struct {
 	ShootCooldown    float64
 	FlashTimer       float64
 	CardChoices      [3]uint8
-	Inventory        [32]uint8
+	Inventory        map[uint16]int
+	invCache         []uint8
+	invDirty         bool
 	Vampirism        float64
 	LaserHitsCount   map[uint16]uint8
+}
+
+
+func (p *Player) GetInventoryArray() []uint8 {
+	if !p.invDirty && p.invCache != nil {
+		return p.invCache
+	}
+
+	var keys []int
+	for k := range p.Inventory {
+		keys = append(keys, int(k))
+	}
+	sort.Ints(keys)
+
+	var invList []uint8
+	for _, k := range keys {
+		id := uint16(k)
+		count := p.Inventory[id]
+		for i := 0; i < count && len(invList) < 32; i++ {
+			invList = append(invList, uint8(id))
+		}
+	}
+	for len(invList) < 32 {
+		invList = append(invList, 0)
+	}
+	p.invCache = invList
+	p.invDirty = false
+	return invList
 }
 
 func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
@@ -65,6 +96,8 @@ func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 		StateFlags:     0,
 		ChargeLevel:    0.0,
 		LaserHitsCount: make(map[uint16]uint8),
+		Inventory:      make(map[uint16]int),
+		invDirty:       true,
 	}
 	if p.ClassID == 1 {
 		p.Mass = 2.5
@@ -175,7 +208,15 @@ func (w *GameWorld) processInputs() {
 					w.applyCardUpgrade(p, ev.Upgrade)
 				}
 				if ev.Delete != 0 && ev.Delete <= 32 {
-					p.Inventory[ev.Delete-1] = 0
+					arr := p.GetInventoryArray()
+					itemID := arr[ev.Delete-1]
+					if itemID != 0 {
+						p.Inventory[uint16(itemID)]--
+						if p.Inventory[uint16(itemID)] <= 0 {
+							delete(p.Inventory, uint16(itemID))
+						}
+						p.invDirty = true
+					}
 				}
 			}
 		default:
@@ -212,10 +253,8 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		}
 		speedMul := 1.0 + float64(p.StatSpeed)*0.08
 		itemSpeedMul := 1.0
-		for _, mID := range p.Inventory {
-			if mID == 1 {
-				itemSpeedMul += 0.10
-			}
+		if count, ok := p.Inventory[1]; ok {
+			itemSpeedMul += 0.05 * float64(count)
 		}
 		speedMul *= itemSpeedMul
 
@@ -297,28 +336,42 @@ func (w *GameWorld) updatePlayers(dt float64) {
 			}
 
 			dmgMul := 1.0
-			for _, mID := range p.Inventory {
-				if mID == 2 {
-					dmgMul += 0.15
-				}
+			if count, ok := p.Inventory[2]; ok {
+				dmgMul += 0.10 * float64(count)
 			}
 			bDamage *= dmgMul
 
-			bID := w.GenerateID()
-			b := w.bulletPool.Get().(*Bullet)
-			*b = Bullet{}
-			b.ID = bID
-			b.OwnerID = p.ID
-			b.OwnerType = 0
-			b.Subtype = bSubtype
-			dir := physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
-			b.Pos = p.Pos.Add(dir.Mul(p.Radius + 5))
-			b.Vel = dir.Mul(bSpeed)
-			b.Radius = bRadius
-			b.Damage = bDamage
-			b.Lifetime = bLifetime
-			b.Pierce = bPierce
-			w.Bullets[bID] = b
+			if count, ok := p.Inventory[3]; ok {
+				bPierce += count + (count * count) / 2
+			}
+
+			addProjectiles := 0
+			if count, ok := p.Inventory[4]; ok {
+				addProjectiles = count
+			}
+
+			totalProjectiles := 1 + addProjectiles
+			angleStep := 0.15
+			startAngle := p.MouseAngle - angleStep*float64(totalProjectiles-1)/2.0
+
+			for i := 0; i < totalProjectiles; i++ {
+				angle := startAngle + float64(i)*angleStep
+				bID := w.GenerateID()
+				b := w.bulletPool.Get().(*Bullet)
+				*b = Bullet{}
+				b.ID = bID
+				b.OwnerID = p.ID
+				b.OwnerType = 0
+				b.Subtype = bSubtype
+				dir := physics.Vector2D{X: math.Cos(angle), Y: math.Sin(angle)}
+				b.Pos = p.Pos.Add(dir.Mul(p.Radius + 5))
+				b.Vel = dir.Mul(bSpeed)
+				b.Radius = bRadius
+				b.Damage = bDamage
+				b.Lifetime = bLifetime
+				b.Pierce = bPierce
+				w.Bullets[bID] = b
+			}
 		}
 
 		p.Pos = p.Pos.Add(p.Vel)

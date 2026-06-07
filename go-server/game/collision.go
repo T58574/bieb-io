@@ -154,10 +154,8 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 					p, okP := w.Players[bullet.OwnerID]
 					if okP && p.Alive {
 						vampPercent := p.Vampirism
-						for _, mID := range p.Inventory {
-							if mID == 2 {
-								vampPercent += 0.05
-							}
+						if count, ok := p.Inventory[2]; ok {
+							vampPercent += 0.05 * float64(count)
 						}
 						if vampPercent > 0 {
 							p.Health = math.Min(p.MaxHealth, p.Health+dmg*vampPercent)
@@ -285,13 +283,9 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		p, ok1 := w.Players[a.ID]
 		ld, ok2 := w.LootDrops[b.ID]
 		if ok1 && ok2 && p.Alive {
-			for idx, mID := range p.Inventory {
-				if mID == 0 {
-					p.Inventory[idx] = ld.ItemID
-					delete(w.LootDrops, b.ID)
-					break
-				}
-			}
+			p.Inventory[uint16(ld.ItemID)]++
+			p.invDirty = true
+			delete(w.LootDrops, b.ID)
 		}
 		return
 	}
