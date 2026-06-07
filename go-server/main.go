@@ -174,8 +174,8 @@ func (s *GameServer) broadcastState(tick uint32) {
 			continue
 		}
 
-		statsPack1 := uint32(p.StatRegen) | uint32(p.StatMaxHP)<<8 | uint32(p.StatSpeed)<<16 | uint32(p.StatMinionDmg)<<24
-		statsPack2 := uint32(p.StatMinionSpeed) | uint32(p.StatMinionHP)<<8 | uint32(p.StatMinionPierce)<<16 | uint32(p.StatMinionRegen)<<24
+		statsPack1 := uint32(p.StatRegen&0xFF) | uint32(p.StatMaxHP&0xFF)<<8 | uint32(p.StatSpeed&0xFF)<<16 | uint32(p.StatMinionDmg&0xFF)<<24
+		statsPack2 := uint32(p.StatMinionSpeed&0xFF) | uint32(p.StatMinionHP&0xFF)<<8 | uint32(p.StatMinionPierce&0xFF)<<16 | uint32(p.StatMinionRegen&0xFF)<<24
 
 		stateBuf := protocol.EncodeWorldState(
 			tick,

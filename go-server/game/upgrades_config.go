@@ -9,7 +9,7 @@ import (
 
 type UpgradeCardConfig struct {
 	ID       uint8
-	MaxLevel uint8
+	MaxLevel uint16
 	Type     string
 	Value    float64
 }

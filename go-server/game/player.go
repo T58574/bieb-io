@@ -25,14 +25,14 @@ type Player struct {
 	MinionIDs        []uint16
 	Alive            bool
 	UpgradePoints    uint8
-	StatRegen        uint8
-	StatMaxHP        uint8
-	StatSpeed        uint8
-	StatMinionDmg    uint8
-	StatMinionSpeed  uint8
-	StatMinionHP     uint8
-	StatMinionPierce uint8
-	StatMinionRegen  uint8
+	StatRegen        uint16
+	StatMaxHP        uint16
+	StatSpeed        uint16
+	StatMinionDmg    uint16
+	StatMinionSpeed  uint16
+	StatMinionHP     uint16
+	StatMinionPierce uint16
+	StatMinionRegen  uint16
 	RegenAccum       float64
 	ClassID          uint8
 	Mass             float64
@@ -202,6 +202,30 @@ func (w *GameWorld) applyCardUpgrade(p *Player, choiceIndex uint8) {
 				shields++
 			}
 			p.StateFlags = (p.StateFlags & 0xFFFFFF0F) | (shields << 4)
+		case "StatDamageMod":
+			// Handled externally if needed, or by a new field later.
+		case "StatCooldownMod":
+			// Handled externally if needed, or by a new field later.
+		case "StatCritChance":
+			// Handled externally if needed, or by a new field later.
+		case "StatCritDamage":
+			// Handled externally if needed, or by a new field later.
+		case "StatCritDefiance":
+			// Handled externally if needed, or by a new field later.
+		case "StatAddProjectiles":
+			// Handled externally if needed, or by a new field later.
+		case "StatPierceCount":
+			// Handled externally if needed, or by a new field later.
+		case "StatSpread":
+			// Handled externally if needed, or by a new field later.
+		case "StatExpMod":
+			// Handled externally if needed, or by a new field later.
+		case "StatLootQuantity":
+			// Handled externally if needed, or by a new field later.
+		case "StatLootQuality":
+			// Handled externally if needed, or by a new field later.
+		case "PickupItemRadius":
+			// Handled externally if needed, or by a new field later.
 		case "FlagUnlock":
 			p.StateFlags |= uint32(cardCfg.Value)
 		}
