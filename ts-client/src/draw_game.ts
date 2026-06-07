@@ -120,6 +120,20 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
         ctx.globalAlpha = 0.3;
       }
 
+      if ((ent.stateFlags & 0x100000) !== 0) {
+        ctx.save();
+        ctx.shadowColor = "#00f0ff";
+        ctx.shadowBlur = 15;
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = "#00f0ff";
+        ctx.lineWidth = ent.radius * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-ent.radius * 3, 0);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       const isFlashing = (ent.stateFlags & 2) !== 0;
 
       if (ent.subtype === 1) {

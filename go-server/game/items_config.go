@@ -24,6 +24,7 @@ type ItemStatModifiers struct {
 	BulletSpeed   float64
 	AddProjectiles int
 	PierceCount   int
+	BounceCount   int
 }
 
 type ItemModifier struct {
