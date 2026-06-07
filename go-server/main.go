@@ -131,6 +131,10 @@ func (s *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 					s.world.UpgradePlayerClass(client.id, classID)
 				}
 			}
+		} else if opcode == 6 {
+			if client.joined {
+				s.world.TogglePause()
+			}
 		}
 	}
 }
@@ -183,7 +187,13 @@ func (s *GameServer) broadcastState(tick uint32) {
 			p.UpgradePoints,
 			statsPack1,
 			statsPack2,
-			uint16(s.world.WaveNumber),
+			func() uint16 {
+				wv := uint16(s.world.WaveNumber)
+				if s.world.Paused {
+					wv |= 0x8000
+				}
+				return wv
+			}(),
 			states,
 		)
 		_ = client.send(stateBuf)

@@ -160,6 +160,17 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		}
 		return
 	}
+	if a.Type == 2 && b.Type == 4 {
+		bullet, ok1 := w.Bullets[a.ID]
+		minion, ok2 := w.Minions[b.ID]
+		if ok1 && ok2 {
+			if bullet.OwnerType == 1 {
+				minion.Health -= bullet.Damage
+				bullet.Lifetime = 0
+			}
+		}
+		return
+	}
 	if a.Type == 4 && b.Type == 1 {
 		minion, ok1 := w.Minions[a.ID]
 		m, ok2 := w.Mobs[b.ID]

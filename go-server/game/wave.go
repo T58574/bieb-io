@@ -35,15 +35,15 @@ func (w *GameWorld) updateWaveSystem(dt float64) {
 	}
 	if w.WaveMobsLeft > 0 && len(w.Mobs) < maxAlive {
 		w.WaveSpawnTimer += dt
-		spawnInterval := 0.25 - float64(w.WaveNumber)*0.015
-		if spawnInterval < 0.05 {
-			spawnInterval = 0.05
+		spawnInterval := 0.6 - float64(w.WaveNumber)*0.02
+		if spawnInterval < 0.15 {
+			spawnInterval = 0.15
 		}
 		if w.WaveSpawnTimer >= spawnInterval {
 			w.WaveSpawnTimer = 0
-			spawnBatch := 1 + int(w.WaveNumber)/2
-			if spawnBatch > 5 {
-				spawnBatch = 5
+			spawnBatch := 1 + int(w.WaveNumber)/6
+			if spawnBatch > 3 {
+				spawnBatch = 3
 			}
 			for i := 0; i < spawnBatch && w.WaveMobsLeft > 0 && len(w.Mobs) < maxAlive; i++ {
 				w.spawnSingleMob()

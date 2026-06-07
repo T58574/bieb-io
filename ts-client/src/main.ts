@@ -74,6 +74,7 @@ let playerHealth = 100;
 let playerMaxHealth = 100;
 let upgradePoints = 0;
 let waveNumber = 0;
+let isGamePaused = false;
 let selectedUpgradeChoice = 0;
 
 let statRegen = 0;
@@ -133,7 +134,8 @@ function handleServerMessage(event: MessageEvent) {
     playerHealth = msg.health;
     playerMaxHealth = msg.maxHealth;
     upgradePoints = msg.upgradePoints;
-    waveNumber = msg.waveNumber;
+    isGamePaused = (msg.waveNumber & 0x8000) !== 0;
+    waveNumber = msg.waveNumber & 0x7FFF;
     statRegen = msg.statRegen;
     statMaxHP = msg.statMaxHP;
     statSpeed = msg.statSpeed;
@@ -305,6 +307,13 @@ window.addEventListener("keydown", (e) => {
   if (gameState === "gameover") {
     if (e.key === "Enter") {
       gameState = "menu";
+    }
+    return;
+  }
+
+  if (e.key === "Escape") {
+    if (gameState === "playing") {
+      sendPauseToggle();
     }
     return;
   }
@@ -1200,6 +1209,10 @@ function renderGame() {
       drawClassSelectionUI();
     }
   }
+
+  if (isGamePaused) {
+    drawPauseUI();
+  }
 }
 
 function render() {
@@ -1305,5 +1318,31 @@ function drawClassSelectionUI() {
       }
     }
     ctx.fillText(line, x + cardW / 2, lineY);
+  }
+}
+
+function drawPauseUI() {
+  ctx.fillStyle = "rgba(5, 5, 8, 0.65)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+
+  ctx.fillStyle = "#00f0ff";
+  ctx.font = "bold 28px 'JetBrains Mono', monospace";
+  ctx.textAlign = "center";
+  ctx.fillText("SYSTEM PAUSED", cx, cy - 20);
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "bold 13px 'JetBrains Mono', monospace";
+  ctx.fillText("[PRESS ESC TO RESUME]", cx, cy + 20);
+}
+
+function sendPauseToggle() {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    const buffer = new ArrayBuffer(1);
+    const view = new DataView(buffer);
+    view.setUint8(0, 6);
+    socket.send(buffer);
   }
 }

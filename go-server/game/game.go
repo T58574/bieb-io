@@ -34,6 +34,7 @@ type GameWorld struct {
 	WavePauseTimer float64
 	WaveMobsLeft   int
 	WaveSpawnTimer float64
+	Paused         bool
 	bulletPool     sync.Pool
 	mobPool        sync.Pool
 	orbPool        sync.Pool
@@ -99,6 +100,9 @@ func (w *GameWorld) Tick(dt float64) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.processInputs()
+	if w.Paused {
+		return
+	}
 	w.ElapsedTime += dt
 	w.updateWaveSystem(dt)
 	w.updatePlayers(dt)
@@ -199,4 +203,10 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 		})
 	}
 	return states
+}
+
+func (w *GameWorld) TogglePause() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.Paused = !w.Paused
 }
