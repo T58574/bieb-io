@@ -23,10 +23,11 @@ type ItemStatModifiers struct {
 	PercentSpeed  float64
 	Vampirism     float64
 	BulletSpeed   float64
-	AddProjectiles int
-	PierceCount   int
 	Regen         float64
 	Armor         float64
+	BounceCount   int
+	PierceCount   int
+	AddProjectiles int
 }
 
 type ItemModifier struct {

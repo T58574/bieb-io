@@ -16,6 +16,7 @@ type Bullet struct {
 	Damage    float64
 	Lifetime  float64
 	Pierce    int
+	Bounces   int
 }
 
 func (w *GameWorld) updateBullets(dt float64) {
@@ -23,10 +24,43 @@ func (w *GameWorld) updateBullets(dt float64) {
 		b.PrevPos = b.Pos
 		b.Pos = b.Pos.Add(b.Vel)
 		b.Lifetime -= dt
-		if b.Lifetime <= 0 || b.Pos.X < 0 || b.Pos.X > w.Width || b.Pos.Y < 0 || b.Pos.Y > w.Height {
+
+		if b.Lifetime <= 0 {
 			w.bulletPool.Put(b)
 			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Bullets, id)
+			continue
+		}
+
+		hitWall := false
+		if b.Pos.X < 0 {
+			b.Pos.X = 0
+			b.Vel.X = -b.Vel.X
+			hitWall = true
+		} else if b.Pos.X > w.Width {
+			b.Pos.X = w.Width
+			b.Vel.X = -b.Vel.X
+			hitWall = true
+		}
+
+		if b.Pos.Y < 0 {
+			b.Pos.Y = 0
+			b.Vel.Y = -b.Vel.Y
+			hitWall = true
+		} else if b.Pos.Y > w.Height {
+			b.Pos.Y = w.Height
+			b.Vel.Y = -b.Vel.Y
+			hitWall = true
+		}
+
+		if hitWall {
+			if b.Bounces > 0 {
+				b.Bounces--
+			} else {
+				w.bulletPool.Put(b)
+				w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
+				delete(w.Bullets, id)
+			}
 		}
 	}
 }
