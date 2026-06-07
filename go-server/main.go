@@ -221,6 +221,15 @@ func main() {
 		MaxAge:     28,
 		Compress:   true,
 	}))
+
+	if err := game.LoadItemsConfig("config/items.json"); err != nil {
+		log.Fatalf("Failed to load items config: %v", err)
+	}
+
+	if err := game.LoadClassesConfig("config/classes.json"); err != nil {
+		log.Fatalf("Failed to load classes config: %v", err)
+	}
+
 	server := NewGameServer()
 	go server.startLoop()
 	http.HandleFunc("/ws", server.handleConnection)
