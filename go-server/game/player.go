@@ -415,7 +415,10 @@ func (w *GameWorld) UpgradePlayerClass(id uint16, classID uint8) {
 	if !exists || !p.Alive {
 		return
 	}
-	if p.Level >= 10 && p.ClassID == 0 && classID >= 1 && classID <= 3 {
+	if (p.Level >= 10 || p.Level == 1) && p.ClassID == 0 && classID >= 1 && classID <= 3 {
 		p.ClassID = classID
+		if classID == 1 {
+			p.Mass = 2.5
+		}
 	}
 }

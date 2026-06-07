@@ -34,11 +34,11 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
       return;
     }
 
-    if (e.key === "w" || e.key === "W") keys.w = true;
-    if (e.key === "a" || e.key === "A") keys.a = true;
-    if (e.key === "s" || e.key === "S") keys.s = true;
-    if (e.key === "d" || e.key === "D") keys.d = true;
-    if (e.key === " ") keys.space = true;
+    if (e.code === "KeyW" || e.key === "w" || e.key === "W" || e.key === "ц" || e.key === "Ц") keys.w = true;
+    if (e.code === "KeyA" || e.key === "a" || e.key === "A" || e.key === "ф" || e.key === "Ф") keys.a = true;
+    if (e.code === "KeyS" || e.key === "s" || e.key === "S" || e.key === "ы" || e.key === "Ы") keys.s = true;
+    if (e.code === "KeyD" || e.key === "d" || e.key === "D" || e.key === "в" || e.key === "В") keys.d = true;
+    if (e.code === "Space" || e.key === " ") keys.space = true;
 
     if (state.upgradePoints > 0) {
       const num = parseInt(e.key);
@@ -49,11 +49,11 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
   });
 
   window.addEventListener("keyup", (e) => {
-    if (e.key === "w" || e.key === "W") keys.w = false;
-    if (e.key === "a" || e.key === "A") keys.a = false;
-    if (e.key === "s" || e.key === "S") keys.s = false;
-    if (e.key === "d" || e.key === "D") keys.d = false;
-    if (e.key === " ") keys.space = false;
+    if (e.code === "KeyW" || e.key === "w" || e.key === "W" || e.key === "ц" || e.key === "Ц") keys.w = false;
+    if (e.code === "KeyA" || e.key === "a" || e.key === "A" || e.key === "ф" || e.key === "Ф") keys.a = false;
+    if (e.code === "KeyS" || e.key === "s" || e.key === "S" || e.key === "ы" || e.key === "Ы") keys.s = false;
+    if (e.code === "KeyD" || e.key === "d" || e.key === "D" || e.key === "в" || e.key === "В") keys.d = false;
+    if (e.code === "Space" || e.key === " ") keys.space = false;
   });
 
   window.addEventListener("keydown", (e) => {
@@ -88,11 +88,27 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
 
   window.addEventListener("mousedown", (e) => {
     if (state.gameState === "menu") {
+      const uiScale = Math.min(canvas.width / 1920, canvas.height / 1080);
       const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const cardW = 180 * uiScale;
+      const cardH = 200 * uiScale;
+      const gap = 20 * uiScale;
+      const startX = cx - 290 * uiScale;
+      const startY = cy - 130 * uiScale;
+
+      for (let i = 0; i < 3; i++) {
+        const x = startX + i * (cardW + gap);
+        if (e.clientX >= x && e.clientX <= x + cardW && e.clientY >= startY && e.clientY <= startY + cardH) {
+          state.selectedClass = i + 1;
+          return;
+        }
+      }
+
       const btnW = 260;
       const btnH = 56;
       const btnX = cx - btnW / 2;
-      const btnY = canvas.height / 2 + 80;
+      const btnY = cy + 180 * uiScale;
       if (e.clientX >= btnX && e.clientX <= btnX + btnW && e.clientY >= btnY && e.clientY <= btnY + btnH) {
         if (state.usernameInput.length > 0) {
           state.playerUsername = state.usernameInput;

@@ -118,7 +118,9 @@ func (w *GameWorld) Tick(dt float64) {
 	for _, p := range w.Players {
 		if p.Alive && p.UpgradePoints > 0 {
 			hasUpgrades = true
-			break
+			if p.CardChoices[0] == 0 {
+				w.rollUpgradeCards(p)
+			}
 		}
 	}
 	if w.Paused || hasUpgrades {

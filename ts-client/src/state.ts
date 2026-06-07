@@ -55,6 +55,7 @@ export const state = {
   inventory: Array(32).fill(0) as number[],
   selectedDeleteChoice: 0,
   cameraZoom: 1.0,
+  selectedClass: 1,
 };
 
 export const renderEntities = new Map<number, RenderEntity>();

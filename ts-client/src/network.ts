@@ -73,6 +73,7 @@ function handleServerMessage(event: MessageEvent) {
     state.playerId = msg.playerId;
     state.arenaWidth = msg.arenaWidth;
     state.arenaHeight = msg.arenaHeight;
+    sendClassUpgrade(state.selectedClass);
   } else if (msg.type === "worldState") {
     state.currentXP = msg.xp;
     state.maxXP = msg.maxXp;

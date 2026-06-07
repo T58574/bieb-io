@@ -470,23 +470,103 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.strokeStyle = "rgba(0, 240, 255, 0.08)";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(cx - 250, cy - 160);
-  ctx.lineTo(cx + 250, cy - 160);
+  ctx.moveTo(cx - 250, cy - 260);
+  ctx.lineTo(cx + 250, cy - 260);
   ctx.stroke();
 
   ctx.fillStyle = "#00f0ff";
   ctx.font = "bold 44px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  ctx.fillText("NECRO-GEOMETRY", cx, cy - 120);
+  ctx.fillText("NECRO-GEOMETRY", cx, cy - 220);
 
   ctx.fillStyle = "#64748b";
   ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.fillText("[СИНХРОНИЗАЦИЯ КОГНИТИВНОГО ЯДРА // АКТИВНО]", cx, cy - 85);
+  ctx.fillText("[СИНХРОНИЗАЦИЯ КОГНИТИВНОГО ЯДРА // АКТИВНО]", cx, cy - 185);
+
+  // --- CLASS SELECTION CARDS ---
+  const cardW = 180 * uiScale;
+  const cardH = 200 * uiScale;
+  const gap = 20 * uiScale;
+  const startX = cx - 290 * uiScale;
+  const startY = cy - 130 * uiScale;
+
+  const classes = [
+    { name: "РЕЙНДЖЕР", color: "#00f0ff", desc: "Лазерный импульс. Высокий DPS. Разгон кэша.", shape: 6 },
+    { name: "ТЕХНОМАГ", color: "#fbbf24", desc: "Плазменный сгусток. AoE. Цепной разряд.", shape: 5 },
+    { name: "НЕКРОМАНТ", color: "#a855f7", desc: "Энергетический хлыст. Создание дронов.", shape: 8 }
+  ];
+
+  for (let i = 0; i < 3; i++) {
+    const cls = classes[i];
+    const x = startX + i * (cardW + gap);
+    const y = startY;
+
+    const hoveredCard = state.mouseX >= x && state.mouseX <= x + cardW && state.mouseY >= y && state.mouseY <= y + cardH;
+    const isSelected = state.selectedClass === (i + 1);
+
+    ctx.fillStyle = isSelected ? "rgba(30, 41, 59, 0.45)" : (hoveredCard ? "rgba(30, 41, 59, 0.25)" : "rgba(5, 5, 8, 0.75)");
+    ctx.strokeStyle = isSelected ? cls.color : (hoveredCard ? "rgba(255, 255, 255, 0.45)" : "rgba(255, 255, 255, 0.15)");
+    ctx.lineWidth = isSelected ? 3 : (hoveredCard ? 2 : 1.5);
+
+    ctx.beginPath();
+    ctx.roundRect(x, y, cardW, cardH, 10);
+    ctx.fill();
+    ctx.stroke();
+
+    // Draw Shape Icon
+    ctx.save();
+    ctx.translate(x + cardW / 2, y + 45 * uiScale);
+    ctx.fillStyle = cls.color + "33";
+    ctx.strokeStyle = cls.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const sides = cls.shape;
+    const r = 20 * uiScale;
+    for (let j = 0; j < sides; j++) {
+      const a = (j * 2 * Math.PI) / sides - Math.PI / 2;
+      ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    // Name
+    ctx.fillStyle = isSelected ? "#ffffff" : "#cbd5e1";
+    ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = "center";
+    ctx.fillText(cls.name, x + cardW / 2, y + 90 * uiScale);
+
+    // Description
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = `${9 * uiScale}px 'JetBrains Mono', monospace`;
+    const descWords = cls.desc.split(" ");
+    let line = "";
+    let lineY = y + 120 * uiScale;
+    for (let n = 0; n < descWords.length; n++) {
+      const testLine = line + descWords[n] + " ";
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > cardW - 20 * uiScale && n > 0) {
+        ctx.fillText(line, x + cardW / 2, lineY);
+        line = descWords[n] + " ";
+        lineY += 13 * uiScale;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, x + cardW / 2, lineY);
+
+    if (isSelected) {
+      ctx.fillStyle = cls.color;
+      ctx.font = `bold ${10 * uiScale}px 'JetBrains Mono', monospace`;
+      ctx.fillText("[ВЫБРАНО]", x + cardW / 2, y + cardH - 15 * uiScale);
+    }
+  }
 
   const inputW = 320;
   const inputH = 44;
   const inputX = cx - inputW / 2;
-  const inputY = cy - 10;
+  const inputY = cy + 100 * uiScale;
 
   ctx.fillStyle = "rgba(5, 5, 8, 0.75)";
   ctx.beginPath();
@@ -506,7 +586,7 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   const btnW = 260;
   const btnH = 52;
   const btnX = cx - btnW / 2;
-  const btnY = cy + 80;
+  const btnY = cy + 180 * uiScale;
 
   const hovered = state.mouseX >= btnX && state.mouseX <= btnX + btnW && state.mouseY >= btnY && state.mouseY <= btnY + btnH;
 
