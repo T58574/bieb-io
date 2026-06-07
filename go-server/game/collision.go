@@ -276,20 +276,18 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		p, ok1 := w.Players[a.ID]
 		o, ok2 := w.Orbs[b.ID]
 		if ok1 && ok2 && p.Alive {
-			if !(p.Level >= 10 && p.ClassID == 0) {
-				gainedXP := uint32(float64(o.XPValue) * 0.75 * (1.0 + float64(p.StatExpMod)*0.01))
-				if gainedXP == 0 && o.XPValue > 0 {
-					gainedXP = 1
-				}
-				p.XP += gainedXP
-				p.Score += gainedXP
-				for p.XP >= p.MaxXP {
-					p.XP -= p.MaxXP
-					p.Level++
-					p.MaxXP = uint32(float64(p.MaxXP) * 1.3)
-					p.Health = p.MaxHealth
-					p.UpgradePoints++
-				}
+			gainedXP := uint32(float64(o.XPValue) * 0.75 * (1.0 + float64(p.StatExpMod)*0.01))
+			if gainedXP == 0 && o.XPValue > 0 {
+				gainedXP = 1
+			}
+			p.XP += gainedXP
+			p.Score += gainedXP
+			for p.XP >= p.MaxXP {
+				p.XP -= p.MaxXP
+				p.Level++
+				p.MaxXP = uint32(float64(p.MaxXP) * 1.3)
+				p.Health = p.MaxHealth
+				p.UpgradePoints++
 			}
 			p.FlashTimer = 0.12
 			p.StateFlags |= 2

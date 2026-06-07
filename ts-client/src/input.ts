@@ -101,26 +101,11 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
       const uiScale = Math.min(canvas.width / 1920, canvas.height / 1080);
       const cx = canvas.width / 2;
       const cy = canvas.height / 2;
-      const cardW = 180 * uiScale;
-      const cardH = 200 * uiScale;
-      const gap = 20 * uiScale;
-      const numClasses = localizationData.classes.length;
-      const totalWidth = numClasses * cardW + (numClasses - 1) * gap;
-      const startX = cx - totalWidth / 2;
-      const startY = cy - 130 * uiScale;
-
-      for (let i = 0; i < numClasses; i++) {
-        const x = startX + i * (cardW + gap);
-        if (e.clientX >= x && e.clientX <= x + cardW && e.clientY >= startY && e.clientY <= startY + cardH) {
-          state.selectedClass = i + 1;
-          return;
-        }
-      }
 
       const btnW = 260;
-      const btnH = 56;
+      const btnH = 52;
       const btnX = cx - btnW / 2;
-      const btnY = cy + 180 * uiScale;
+      const btnY = cy + 50 * uiScale;
       if (e.clientX >= btnX && e.clientX <= btnX + btnW && e.clientY >= btnY && e.clientY <= btnY + btnH) {
         if (state.usernameInput.length > 0) {
           state.playerUsername = state.usernameInput;
@@ -144,28 +129,6 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
 
     if (state.gameState === "playing") {
       if (state.playerId !== null) {
-        const me = renderEntities.get(state.playerId);
-        if (me && me.subtype === 0 && state.currentLevel >= 10) {
-          const uiScale = Math.min(canvas.width / 1920, canvas.height / 1080);
-          const cx = canvas.width / 2;
-          const cy = canvas.height / 2;
-          const cardW = 200 * uiScale;
-          const cardH = 260 * uiScale;
-          const gap = 24 * uiScale;
-          const numClasses = localizationData.classes.length;
-          const totalWidth = numClasses * cardW + (numClasses - 1) * gap;
-          const startX = cx - totalWidth / 2;
-          const startY = cy - 120 * uiScale;
-          for (let i = 0; i < numClasses; i++) {
-            const x = startX + i * (cardW + gap);
-            if (e.clientX >= x && e.clientX <= x + cardW && e.clientY >= startY && e.clientY <= startY + cardH) {
-              sendClassUpgrade(i + 1);
-              return;
-            }
-          }
-          return;
-        }
-
         if (state.upgradePoints > 0) {
           const cx = canvas.width / 2;
           const cy = canvas.height / 2;
@@ -196,16 +159,12 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
   window.setInterval(() => {
     if (socket && socket.readyState === WebSocket.OPEN && state.gameState === "playing") {
       let mask = 0;
-      const me = state.playerId !== null ? renderEntities.get(state.playerId) : null;
-      const isUpgrading = me && me.subtype === 0 && state.currentLevel >= 10;
-      if (!isUpgrading) {
-        if (keys.w) mask |= 0x01;
-        if (keys.a) mask |= 0x02;
-        if (keys.s) mask |= 0x04;
-        if (keys.d) mask |= 0x08;
-        if (keys.space) mask |= 0x10;
-        if (keys.mouseLeft) mask |= 0x20;
-      }
+      if (keys.w) mask |= 0x01;
+      if (keys.a) mask |= 0x02;
+      if (keys.s) mask |= 0x04;
+      if (keys.d) mask |= 0x08;
+      if (keys.space) mask |= 0x10;
+      if (keys.mouseLeft) mask |= 0x20;
       socket.send(serializeInput(mask, state.mouseAngle, state.selectedUpgradeChoice, state.selectedDeleteChoice || 0));
       if (state.selectedUpgradeChoice !== 0) {
         state.selectedUpgradeChoice = 0;

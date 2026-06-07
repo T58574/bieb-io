@@ -491,86 +491,10 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.fillText("[СИНХРОНИЗАЦИЯ КОГНИТИВНОГО ЯДРА // АКТИВНО]", cx, cy - 185);
 
-  // --- CLASS SELECTION CARDS ---
-  const cardW = 180 * uiScale;
-  const cardH = 200 * uiScale;
-  const gap = 20 * uiScale;
-  const numClasses = localizationData.classes.length;
-  const totalWidth = numClasses * cardW + (numClasses - 1) * gap;
-  const startX = cx - totalWidth / 2;
-  const startY = cy - 130 * uiScale;
-
-  for (let i = 0; i < numClasses; i++) {
-    const cls = localizationData.classes[i];
-    const x = startX + i * (cardW + gap);
-    const y = startY;
-
-    const hoveredCard = state.mouseX >= x && state.mouseX <= x + cardW && state.mouseY >= y && state.mouseY <= y + cardH;
-    const isSelected = state.selectedClass === (i + 1);
-
-    ctx.fillStyle = isSelected ? "rgba(30, 41, 59, 0.45)" : (hoveredCard ? "rgba(30, 41, 59, 0.25)" : "rgba(5, 5, 8, 0.75)");
-    ctx.strokeStyle = isSelected ? cls.color : (hoveredCard ? "rgba(255, 255, 255, 0.45)" : "rgba(255, 255, 255, 0.15)");
-    ctx.lineWidth = isSelected ? 3 : (hoveredCard ? 2 : 1.5);
-
-    ctx.beginPath();
-    ctx.roundRect(x, y, cardW, cardH, 10);
-    ctx.fill();
-    ctx.stroke();
-
-    // Draw Shape Icon
-    ctx.save();
-    ctx.translate(x + cardW / 2, y + 45 * uiScale);
-    ctx.fillStyle = cls.color + "33";
-    ctx.strokeStyle = cls.color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    const sides = cls.shape;
-    const r = 20 * uiScale;
-    for (let j = 0; j < sides; j++) {
-      const a = (j * 2 * Math.PI) / sides - Math.PI / 2;
-      ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-    }
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
-
-    // Name
-    ctx.fillStyle = isSelected ? "#ffffff" : "#cbd5e1";
-    ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
-    ctx.textAlign = "center";
-    ctx.fillText(cls.name, x + cardW / 2, y + 90 * uiScale);
-
-    // Description
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = `${9 * uiScale}px 'JetBrains Mono', monospace`;
-    const descWords = cls.desc.split(" ");
-    let line = "";
-    let lineY = y + 120 * uiScale;
-    for (let n = 0; n < descWords.length; n++) {
-      const testLine = line + descWords[n] + " ";
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > cardW - 20 * uiScale && n > 0) {
-        ctx.fillText(line, x + cardW / 2, lineY);
-        line = descWords[n] + " ";
-        lineY += 13 * uiScale;
-      } else {
-        line = testLine;
-      }
-    }
-    ctx.fillText(line, x + cardW / 2, lineY);
-
-    if (isSelected) {
-      ctx.fillStyle = cls.color;
-      ctx.font = `bold ${10 * uiScale}px 'JetBrains Mono', monospace`;
-      ctx.fillText("[ВЫБРАНО]", x + cardW / 2, y + cardH - 15 * uiScale);
-    }
-  }
-
   const inputW = 320;
   const inputH = 44;
   const inputX = cx - inputW / 2;
-  const inputY = cy + 100 * uiScale;
+  const inputY = cy - 30 * uiScale;
 
   ctx.fillStyle = "rgba(5, 5, 8, 0.75)";
   ctx.beginPath();
@@ -590,7 +514,7 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   const btnW = 260;
   const btnH = 52;
   const btnX = cx - btnW / 2;
-  const btnY = cy + 180 * uiScale;
+  const btnY = cy + 50 * uiScale;
 
   const hovered = state.mouseX >= btnX && state.mouseX <= btnX + btnW && state.mouseY >= btnY && state.mouseY <= btnY + btnH;
 
@@ -661,84 +585,7 @@ export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: numbe
   ctx.fillText(localizationData.ui.restart_prompt, cx, canvasHeight - 40);
 }
 
-export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
-  ctx.fillStyle = "rgba(5, 5, 8, 0.85)";
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-  const cx = canvasWidth / 2;
-  const cy = canvasHeight / 2;
-
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `bold ${24 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "center";
-  ctx.fillText(localizationData.ui.class_selection_title, cx, cy - 180 * uiScale);
-
-  const cardW = 200 * uiScale;
-  const cardH = 260 * uiScale;
-  const gap = 24 * uiScale;
-  const numClasses = localizationData.classes.length;
-  const totalWidth = numClasses * cardW + (numClasses - 1) * gap;
-  const startX = cx - totalWidth / 2;
-  const startY = cy - 120 * uiScale;
-
-  for (let i = 0; i < numClasses; i++) {
-    const cls = localizationData.classes[i];
-    const x = startX + i * (cardW + gap);
-    const y = startY;
-
-    const hovered = state.mouseX >= x && state.mouseX <= x + cardW && state.mouseY >= y && state.mouseY <= y + cardH;
-
-    ctx.fillStyle = hovered ? "rgba(30, 41, 59, 0.45)" : "rgba(5, 5, 8, 0.75)";
-    ctx.strokeStyle = hovered ? cls.color : "rgba(255, 255, 255, 0.15)";
-    ctx.lineWidth = hovered ? 3 : 1.5;
-
-    ctx.beginPath();
-    ctx.roundRect(x, y, cardW, cardH, 12);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.save();
-    ctx.translate(x + cardW / 2, y + 60 * uiScale);
-    ctx.fillStyle = cls.color + "33";
-    ctx.strokeStyle = cls.color;
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    const sides = cls.shape;
-    const r = 28 * uiScale;
-    for (let j = 0; j < sides; j++) {
-      const a = (j * 2 * Math.PI) / sides - Math.PI / 2;
-      ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-    }
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `bold ${15 * uiScale}px 'JetBrains Mono', monospace`;
-    ctx.textAlign = "center";
-    ctx.fillText(cls.name, x + cardW / 2, y + 130 * uiScale);
-
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "10px 'JetBrains Mono', monospace";
-
-    const words = cls.desc.split(" ");
-    let line = "";
-    let lineY = y + 165 * uiScale;
-    for (let n = 0; n < words.length; n++) {
-      const testLine = line + words[n] + " ";
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > cardW - 24 * uiScale && n > 0) {
-        ctx.fillText(line, x + cardW / 2, lineY);
-        line = words[n] + " ";
-        lineY += 15 * uiScale;
-      } else {
-        line = testLine;
-      }
-    }
-    ctx.fillText(line, x + cardW / 2, lineY);
-  }
-}
 
 export function drawPauseUI(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
   ctx.fillStyle = "rgba(5, 5, 8, 0.65)";
@@ -1296,12 +1143,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   drawHUD(ctx, canvasWidth, canvasHeight, uiScale);
   drawUpgradePanel(ctx, uiScale);
 
-  if (state.playerId !== null) {
-    const me = renderEntities.get(state.playerId);
-    if (me && me.subtype === 0 && state.currentLevel >= 10) {
-      drawClassSelectionUI(ctx, canvasWidth, canvasHeight, uiScale);
-    }
-  }
+
 
   if (state.upgradePoints > 0) {
     drawUpgradeCardsOverlay(ctx, canvasWidth, canvasHeight, uiScale);

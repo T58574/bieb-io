@@ -467,16 +467,4 @@ func (w *GameWorld) updatePlayers(dt float64) {
 }
 
 func (w *GameWorld) UpgradePlayerClass(id uint16, classID uint8) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	p, exists := w.Players[id]
-	if !exists || !p.Alive {
-		return
-	}
-	if (p.Level >= 10 || p.Level == 1) && p.ClassID == 0 && classID >= 1 && classID <= 3 {
-		p.ClassID = classID
-		if classCfg, ok := GetClassConfig(classID); ok {
-			p.Mass = classCfg.Mass
-		}
-	}
 }
