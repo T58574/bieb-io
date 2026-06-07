@@ -22,27 +22,32 @@ func TestWelcome(t *testing.T) {
 
 func TestJoin(t *testing.T) {
 	validUsername := "antigravity"
-	payload := make([]byte, 2+len(validUsername))
+	payload := make([]byte, 3+len(validUsername))
 	payload[0] = 1
 	payload[1] = uint8(len(validUsername))
 	copy(payload[2:], []byte(validUsername))
+	payload[2+len(validUsername)] = 4
 
-	decoded, err := DecodeJoin(payload)
+	decoded, classId, err := DecodeJoin(payload)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if decoded != validUsername {
 		t.Errorf("expected %s, got %s", validUsername, decoded)
 	}
+	if classId != 4 {
+		t.Errorf("expected class 4, got %d", classId)
+	}
 
 	// Test invalid characters
 	invalidUsername := "hello world"
-	invalidPayload := make([]byte, 2+len(invalidUsername))
+	invalidPayload := make([]byte, 3+len(invalidUsername))
 	invalidPayload[0] = 1
 	invalidPayload[1] = uint8(len(invalidUsername))
 	copy(invalidPayload[2:], []byte(invalidUsername))
+	invalidPayload[2+len(invalidUsername)] = 0
 
-	_, err = DecodeJoin(invalidPayload)
+	_, _, err = DecodeJoin(invalidPayload)
 	if err == nil {
 		t.Errorf("expected error for invalid characters, got nil")
 	} else if err.Error() != "invalid characters in username" {
@@ -51,12 +56,13 @@ func TestJoin(t *testing.T) {
 
 	// Test too long username
 	longUsername := "averylongusernamethatshouldfail"
-	longPayload := make([]byte, 2+len(longUsername))
+	longPayload := make([]byte, 3+len(longUsername))
 	longPayload[0] = 1
 	longPayload[1] = uint8(len(longUsername))
 	copy(longPayload[2:], []byte(longUsername))
+	longPayload[2+len(longUsername)] = 0
 
-	_, err = DecodeJoin(longPayload)
+	_, _, err = DecodeJoin(longPayload)
 	if err == nil {
 		t.Errorf("expected error for too long username, got nil")
 	} else if err.Error() != "invalid username length" {
@@ -64,11 +70,12 @@ func TestJoin(t *testing.T) {
 	}
 
 	// Test empty username
-	emptyPayload := make([]byte, 2)
+	emptyPayload := make([]byte, 3)
 	emptyPayload[0] = 1
 	emptyPayload[1] = 0
+	emptyPayload[2] = 0
 
-	_, err = DecodeJoin(emptyPayload)
+	_, _, err = DecodeJoin(emptyPayload)
 	if err == nil {
 		t.Errorf("expected error for empty username, got nil")
 	} else if err.Error() != "invalid username length" {

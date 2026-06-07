@@ -105,7 +105,23 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
       const btnW = 260;
       const btnH = 52;
       const btnX = cx - btnW / 2;
-      const btnY = cy + 50 * uiScale;
+      const btnY = cy + 60 * uiScale;
+
+      const classW = 80;
+      const classH = 40;
+      const classGap = 10;
+      const totalClassesW = 5 * classW + 4 * classGap;
+      const startX = cx - totalClassesW / 2;
+      const classY = cy - 10 * uiScale;
+
+      for (let i = 0; i < 5; i++) {
+        const clsX = startX + i * (classW + classGap);
+        if (e.clientX >= clsX && e.clientX <= clsX + classW && e.clientY >= classY && e.clientY <= classY + classH) {
+          state.selectedClass = i;
+          return;
+        }
+      }
+
       if (e.clientX >= btnX && e.clientX <= btnX + btnW && e.clientY >= btnY && e.clientY <= btnY + btnH) {
         if (state.usernameInput.length > 0) {
           state.playerUsername = state.usernameInput;

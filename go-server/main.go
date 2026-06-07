@@ -112,9 +112,9 @@ func (s *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 		}
 		opcode := msg[0]
 		if opcode == 1 {
-			username, err := protocol.DecodeJoin(msg)
+			username, classId, err := protocol.DecodeJoin(msg)
 			if err == nil {
-				s.world.AddPlayer(client.id, username)
+				s.world.AddPlayer(client.id, username, classId)
 				client.joined = true
 				welcome := protocol.EncodeWelcome(client.id, float32(s.world.Width), float32(s.world.Height))
 				_ = client.send(welcome)
