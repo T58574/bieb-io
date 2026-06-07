@@ -37,6 +37,10 @@ export interface WorldStateMessage {
   statMinionPierce: number;
   statMinionRegen: number;
   waveNumber: number;
+  card1: number;
+  card2: number;
+  card3: number;
+  inventory: number[];
   entities: EntityState[];
   removedIds: number[];
 }
@@ -61,13 +65,14 @@ export function serializeJoin(username: string): ArrayBuffer {
   return buffer;
 }
 
-export function serializeInput(keys: number, mouseAngle: number, upgradeSelect: number): ArrayBuffer {
-  const buffer = new ArrayBuffer(7);
+export function serializeInput(keys: number, mouseAngle: number, upgradeSelect: number, deleteSlotSelect: number): ArrayBuffer {
+  const buffer = new ArrayBuffer(8);
   const view = new DataView(buffer);
   view.setUint8(0, 2);
   view.setUint8(1, keys);
   view.setFloat32(2, mouseAngle, true);
   view.setUint8(6, upgradeSelect);
+  view.setUint8(7, deleteSlotSelect);
   return buffer;
 }
 
@@ -84,7 +89,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       arenaHeight: view.getFloat32(7, true),
     };
   } else if (opcode === 2) {
-    if (view.byteLength < 38) return null;
+    if (view.byteLength < 73) return null;
     const tick = view.getUint32(1, true);
     const xp = view.getUint32(5, true);
     const maxXp = view.getUint32(9, true);
@@ -97,7 +102,14 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
     const statsPack2 = view.getUint32(28, true);
     const waveNumber = view.getUint16(32, true);
     const entitiesCount = view.getUint16(34, true);
-    const removedCount = view.getUint16(36, true);
+    const card1 = view.getUint8(36);
+    const card2 = view.getUint8(37);
+    const card3 = view.getUint8(38);
+    const inventory: number[] = [];
+    for (let i = 0; i < 32; i++) {
+      inventory.push(view.getUint8(39 + i));
+    }
+    const removedCount = view.getUint16(71, true);
 
     const statRegen = statsPack1 & 0xFF;
     const statMaxHP = (statsPack1 >> 8) & 0xFF;
@@ -109,7 +121,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
     const statMinionRegen = (statsPack2 >> 24) & 0xFF;
 
     const entities: EntityState[] = [];
-    let offset = 38;
+    let offset = 73;
     for (let i = 0; i < entitiesCount; i++) {
       if (offset + 26 > view.byteLength) break;
       entities.push({
@@ -153,6 +165,10 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       statMinionPierce,
       statMinionRegen,
       waveNumber,
+      card1,
+      card2,
+      card3,
+      inventory,
       entities,
       removedIds,
     };

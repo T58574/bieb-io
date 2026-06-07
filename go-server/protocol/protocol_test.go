@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"encoding/binary"
 	"math"
 	"testing"
 )
@@ -20,23 +21,63 @@ func TestWelcome(t *testing.T) {
 }
 
 func TestJoin(t *testing.T) {
-	username := "antigravity"
-	payload := make([]byte, 2+len(username))
+	validUsername := "antigravity"
+	payload := make([]byte, 2+len(validUsername))
 	payload[0] = 1
-	payload[1] = uint8(len(username))
-	copy(payload[2:], []byte(username))
+	payload[1] = uint8(len(validUsername))
+	copy(payload[2:], []byte(validUsername))
 
 	decoded, err := DecodeJoin(payload)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if decoded != username {
-		t.Errorf("expected %s, got %s", username, decoded)
+	if decoded != validUsername {
+		t.Errorf("expected %s, got %s", validUsername, decoded)
+	}
+
+	// Test invalid characters
+	invalidUsername := "hello world"
+	invalidPayload := make([]byte, 2+len(invalidUsername))
+	invalidPayload[0] = 1
+	invalidPayload[1] = uint8(len(invalidUsername))
+	copy(invalidPayload[2:], []byte(invalidUsername))
+
+	_, err = DecodeJoin(invalidPayload)
+	if err == nil {
+		t.Errorf("expected error for invalid characters, got nil")
+	} else if err.Error() != "invalid characters in username" {
+		t.Errorf("expected 'invalid characters in username', got '%s'", err.Error())
+	}
+
+	// Test too long username
+	longUsername := "averylongusernamethatshouldfail"
+	longPayload := make([]byte, 2+len(longUsername))
+	longPayload[0] = 1
+	longPayload[1] = uint8(len(longUsername))
+	copy(longPayload[2:], []byte(longUsername))
+
+	_, err = DecodeJoin(longPayload)
+	if err == nil {
+		t.Errorf("expected error for too long username, got nil")
+	} else if err.Error() != "invalid username length" {
+		t.Errorf("expected 'invalid username length', got '%s'", err.Error())
+	}
+
+	// Test empty username
+	emptyPayload := make([]byte, 2)
+	emptyPayload[0] = 1
+	emptyPayload[1] = 0
+
+	_, err = DecodeJoin(emptyPayload)
+	if err == nil {
+		t.Errorf("expected error for empty username, got nil")
+	} else if err.Error() != "invalid username length" {
+		t.Errorf("expected 'invalid username length', got '%s'", err.Error())
 	}
 }
 
 func TestInput(t *testing.T) {
-	payload := make([]byte, 7)
+	payload := make([]byte, 8)
 	payload[0] = 2
 	payload[1] = 0x05
 	bits := math.Float32bits(1.57)
@@ -45,6 +86,7 @@ func TestInput(t *testing.T) {
 	payload[4] = byte(bits >> 16)
 	payload[5] = byte(bits >> 24)
 	payload[6] = 3
+	payload[7] = 4
 
 	input, err := DecodeInput(payload)
 	if err != nil {
@@ -58,6 +100,9 @@ func TestInput(t *testing.T) {
 	}
 	if input.UpgradeSelect != 3 {
 		t.Errorf("upgrade mismatch")
+	}
+	if input.DeleteSlotSelect != 4 {
+		t.Errorf("delete slot mismatch")
 	}
 }
 
@@ -78,11 +123,36 @@ func TestWorldState(t *testing.T) {
 
 	removedIDs := []uint16{5, 10}
 
-	buf := EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, 0, 0, 1, entities, removedIDs)
+	buf := EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, 0, 0, 1, 0, 0, 0, make([]byte, 32), entities, removedIDs)
 	if buf[0] != 2 {
 		t.Errorf("expected opcode 2")
 	}
-	if len(buf) != 38+26+4 {
-		t.Errorf("expected len %d, got %d", 38+26+4, len(buf))
+	if len(buf) != 73+26+4 {
+		t.Errorf("expected len %d, got %d", 73+26+4, len(buf))
+	}
+}
+
+func TestEncodeGameOver(t *testing.T) {
+	score := uint32(12345)
+	wave := uint32(10)
+
+	buf := EncodeGameOver(score, wave)
+
+	if len(buf) != 9 {
+		t.Errorf("expected length 9, got %d", len(buf))
+	}
+
+	if buf[0] != 4 {
+		t.Errorf("expected opcode 4, got %d", buf[0])
+	}
+
+	decodedScore := binary.LittleEndian.Uint32(buf[1:5])
+	if decodedScore != score {
+		t.Errorf("expected score %d, got %d", score, decodedScore)
+	}
+
+	decodedWave := binary.LittleEndian.Uint32(buf[5:9])
+	if decodedWave != wave {
+		t.Errorf("expected wave %d, got %d", wave, decodedWave)
 	}
 }

@@ -3,7 +3,9 @@ package main
 import (
 	"io"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"sync"
 	"time"
@@ -35,6 +37,32 @@ type GameServer struct {
 	world    *game.GameWorld
 }
 
+func checkOrigin(r *http.Request) bool {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return true
+	}
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+
+	reqHostname := r.Host
+	if host, _, err := net.SplitHostPort(reqHostname); err == nil {
+		reqHostname = host
+	}
+	if u.Hostname() == reqHostname {
+		return true
+	}
+
+	allowed := os.Getenv("ALLOWED_ORIGIN")
+	if allowed != "" && origin == allowed {
+		return true
+	}
+
+	return false
+}
+
 func NewGameServer() *GameServer {
 	return &GameServer{
 		clients: make(map[uint16]*Client),
@@ -42,9 +70,7 @@ func NewGameServer() *GameServer {
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  2048,
 			WriteBufferSize: 2048,
-			CheckOrigin: func(r *http.Request) bool {
-				return true
-			},
+			CheckOrigin:     checkOrigin,
 		},
 		world: game.NewGameWorld(),
 	}
@@ -95,8 +121,19 @@ func (s *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 			if client.joined {
 				input, err := protocol.DecodeInput(msg)
 				if err == nil {
-					s.world.UpdateInput(client.id, input.Keys, input.MouseAngle, input.UpgradeSelect)
+					s.world.UpdateInput(client.id, input.Keys, input.MouseAngle, input.UpgradeSelect, input.DeleteSlotSelect)
 				}
+			}
+		} else if opcode == 5 {
+			if client.joined {
+				classID, err := protocol.DecodeUpgradeClass(msg)
+				if err == nil {
+					s.world.UpgradePlayerClass(client.id, classID)
+				}
+			}
+		} else if opcode == 6 {
+			if client.joined {
+				s.world.TogglePause()
 			}
 		}
 	}
@@ -151,7 +188,24 @@ func (s *GameServer) broadcastState(tick uint32) {
 			p.UpgradePoints,
 			statsPack1,
 			statsPack2,
-			uint16(s.world.WaveNumber),
+			func() uint16 {
+				wv := uint16(s.world.WaveNumber)
+				hasUpgrades := false
+				for _, player := range s.world.Players {
+					if player.Alive && player.UpgradePoints > 0 {
+						hasUpgrades = true
+						break
+					}
+				}
+				if s.world.Paused || hasUpgrades {
+					wv |= 0x8000
+				}
+				return wv
+			}(),
+			p.CardChoices[0],
+			p.CardChoices[1],
+			p.CardChoices[2],
+			p.GetInventoryArray(),
 			states,
 			removedIDs,
 		)
