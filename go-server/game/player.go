@@ -251,6 +251,22 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		if p.UpgradePoints > 0 && p.CardChoices[0] == 0 {
 			w.rollUpgradeCards(p)
 		}
+		baseMaxHP := 100.0 + float64(p.StatMaxHP)*25.0
+		var totalFlatHP, totalPercentHP float64
+		for _, mID := range p.Inventory {
+			if mID == 0 {
+				continue
+			}
+			if mod, ok := GetItemModifier(uint16(mID)); ok {
+				totalFlatHP += mod.StatModifiers.FlatHP
+				totalPercentHP += mod.StatModifiers.PercentHP
+			}
+		}
+		p.MaxHealth = (baseMaxHP + totalFlatHP) * (1.0 + totalPercentHP)
+		if p.Health > p.MaxHealth {
+			p.Health = p.MaxHealth
+		}
+
 		speedMul := 1.0 + float64(p.StatSpeed)*0.08
 		itemSpeedMul := 1.0
 		if count, ok := p.Inventory[1]; ok {

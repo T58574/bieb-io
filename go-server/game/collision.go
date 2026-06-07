@@ -118,6 +118,9 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 					dmgMelee *= 0.7
 				}
 				m.Health -= dmgMelee
+				if m.Health <= 0 {
+					w.triggerOnKillEffects(p.ID, m)
+				}
 				if m.Type == 2 {
 					m.Health = 0
 				}
@@ -149,6 +152,9 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 					dmg *= 2.0
 				}
 				m.Health -= dmg
+				if m.Health <= 0 && bullet.OwnerType == 0 {
+					w.triggerOnKillEffects(bullet.OwnerID, m)
+				}
 				m.Vel = m.Vel.Add(bullet.Vel.Normalize().Mul(1.8))
 				if bullet.OwnerType == 0 {
 					p, okP := w.Players[bullet.OwnerID]
@@ -288,5 +294,30 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 			delete(w.LootDrops, b.ID)
 		}
 		return
+	}
+}
+
+func (w *GameWorld) triggerOnKillEffects(killerID uint16, deadMob *Mob) {
+	killer, ok := w.Players[killerID]
+	if !ok || !killer.Alive {
+		return
+	}
+	for _, mID := range killer.Inventory {
+		if mID == 0 {
+			continue
+		}
+		if mod, ok := GetItemModifier(uint16(mID)); ok {
+			if mod.OnKillEffectTrigger == TRIGGER_AREA_EXPLOSION {
+				for _, otherMob := range w.Mobs {
+					if otherMob.ID == deadMob.ID {
+						continue
+					}
+					distSq := otherMob.Pos.Sub(deadMob.Pos).LengthSq()
+					if distSq < 140.0*140.0 {
+						otherMob.Health -= 35.0
+					}
+				}
+			}
+		}
 	}
 }
