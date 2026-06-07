@@ -1,6 +1,7 @@
 import { state, renderEntities } from "./state";
 import { drawAndUpdateParticles } from "./particles";
 import { sendClassUpgrade } from "./network";
+import localizationData from "./items_localization.json";
 
 export const shapeCache = new Map<string, HTMLCanvasElement>();
 
@@ -228,18 +229,18 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
   ctx.fillStyle = "#64748b";
   ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "left";
-  ctx.fillText("МЕТРИКИ ЯДРА СИСТЕМЫ", panelX, panelY - 14 * uiScale);
+  ctx.fillText(localizationData.ui.stats_title, panelX, panelY - 14 * uiScale);
 
   const barX = panelX + labelW;
 
-  drawStatBar(ctx, "РЕГЕН. ЯДРА", state.statRegen, barX, panelY, "#10b981", "1", uiScale);
-  drawStatBar(ctx, "СТАБИЛЬНОСТЬ", state.statMaxHP, barX, panelY + rowH, "#22c55e", "2", uiScale);
-  drawStatBar(ctx, "ЧАСТОТА", state.statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3", uiScale);
-  drawStatBar(ctx, "УРОН ДРОНОВ", state.statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4", uiScale);
-  drawStatBar(ctx, "СКОР. ДРОНОВ", state.statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5", uiScale);
-  drawStatBar(ctx, "ХП ДРОНОВ", state.statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6", uiScale);
-  drawStatBar(ctx, "ПРОБИВ. ДР.", state.statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7", uiScale);
-  drawStatBar(ctx, "РЕГЕН. ДР.", state.statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8", uiScale);
+  drawStatBar(ctx, localizationData.ui.stats.regen, state.statRegen, barX, panelY, "#10b981", "1", uiScale);
+  drawStatBar(ctx, localizationData.ui.stats.hp, state.statMaxHP, barX, panelY + rowH, "#22c55e", "2", uiScale);
+  drawStatBar(ctx, localizationData.ui.stats.speed, state.statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3", uiScale);
+  drawStatBar(ctx, localizationData.ui.stats.minion_dmg, state.statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4", uiScale);
+  drawStatBar(ctx, localizationData.ui.stats.minion_speed, state.statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5", uiScale);
+  drawStatBar(ctx, localizationData.ui.stats.minion_hp, state.statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6", uiScale);
+  drawStatBar(ctx, localizationData.ui.stats.minion_pierce, state.statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7", uiScale);
+  drawStatBar(ctx, localizationData.ui.stats.minion_regen, state.statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8", uiScale);
 }
 
 export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
@@ -249,12 +250,7 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
   const gap = 6 * uiScale;
   const rightX = canvasWidth - 210 * uiScale;
 
-  const itemDetails: Record<number, { name: string; color: string; desc: string; abbrev: string; rarity: string }> = {
-    1: { name: "КОНДЕНСАТОР", color: "#10b981", desc: "+10% Частота", abbrev: "Opt\nCap", rarity: "Common" },
-    2: { name: "СОПРОЦЕССОР", color: "#fbbf24", desc: "+15% Вычисления\n+5% Вамп", abbrev: "Over\nProc", rarity: "Rare" },
-    3: { name: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Взрывы на\nубийстве", abbrev: "Necr\nCore", rarity: "Unique" },
-    4: { name: "МУЛЬТИСПЛИТ", color: "#ef4444", desc: "+1 снаряд при стрельбе", abbrev: "Multi\nSplit", rarity: "Unique" }
-  };
+  const itemDetails: Record<string, { name: string; color: string; desc: string; abbrev: string; rarity: string }> = localizationData.items;
 
   const itemCounts = new Map<number, number>();
   for (let i = 0; i < 16; i++) {
@@ -280,7 +276,7 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
   ctx.fillStyle = "#64748b";
   ctx.font = `bold ${10 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "center";
-  ctx.fillText("МОДУЛИ", rightX + 97 * uiScale, startY - 10 * uiScale);
+  ctx.fillText(localizationData.ui.module_title, rightX + 97 * uiScale, startY - 10 * uiScale);
 
   for (let i = 0; i < uniqueItems.length; i++) {
     const itemID = uniqueItems[i];
@@ -427,7 +423,7 @@ export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canv
   ctx.fillStyle = "#64748b";
   ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "center";
-  ctx.fillText(`СЕКТОР ЧИПА: ${state.waveNumber}`, centerX, bottomY - 54 * uiScale);
+  ctx.fillText(`${localizationData.ui.sector_prefix}${state.waveNumber}`, centerX, bottomY - 54 * uiScale);
 
   drawInventoryHUD(ctx, canvasWidth, canvasHeight, uiScale);
 }
@@ -489,17 +485,13 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   const cardW = 180 * uiScale;
   const cardH = 200 * uiScale;
   const gap = 20 * uiScale;
-  const startX = cx - 290 * uiScale;
+  const numClasses = localizationData.classes.length;
+  const totalWidth = numClasses * cardW + (numClasses - 1) * gap;
+  const startX = cx - totalWidth / 2;
   const startY = cy - 130 * uiScale;
 
-  const classes = [
-    { name: "РЕЙНДЖЕР", color: "#00f0ff", desc: "Лазерный импульс. Высокий DPS. Разгон кэша.", shape: 6 },
-    { name: "ТЕХНОМАГ", color: "#fbbf24", desc: "Плазменный сгусток. AoE. Цепной разряд.", shape: 5 },
-    { name: "НЕКРОМАНТ", color: "#a855f7", desc: "Энергетический хлыст. Создание дронов.", shape: 8 }
-  ];
-
-  for (let i = 0; i < 3; i++) {
-    const cls = classes[i];
+  for (let i = 0; i < numClasses; i++) {
+    const cls = localizationData.classes[i];
     const x = startX + i * (cardW + gap);
     const y = startY;
 
@@ -656,7 +648,7 @@ export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: numbe
 
   ctx.fillStyle = "#475569";
   ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.fillText("Нажмите ENTER для перезапуска ядра", cx, canvasHeight - 40);
+  ctx.fillText(localizationData.ui.restart_prompt, cx, canvasHeight - 40);
 }
 
 export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
@@ -669,22 +661,18 @@ export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth:
   ctx.fillStyle = "#ffffff";
   ctx.font = `bold ${24 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "center";
-  ctx.fillText("ВЫБЕРИТЕ СПЕЦИФИКАЦИЮ АРХИТЕКТУРЫ", cx, cy - 180 * uiScale);
+  ctx.fillText(localizationData.ui.class_selection_title, cx, cy - 180 * uiScale);
 
   const cardW = 200 * uiScale;
   const cardH = 260 * uiScale;
   const gap = 24 * uiScale;
-  const startX = cx - 312 * uiScale;
+  const numClasses = localizationData.classes.length;
+  const totalWidth = numClasses * cardW + (numClasses - 1) * gap;
+  const startX = cx - totalWidth / 2;
   const startY = cy - 120 * uiScale;
 
-  const classes = [
-    { name: "РЕЙНДЖЕР", color: "#00f0ff", desc: "Направленный Лазерный Импульс линейный высокий DPS. Пассивка: Разгон Кэша - взрыв на каждый 3-й хит.", shape: 6 },
-    { name: "ТЕХНОМАГ", color: "#fbbf24", desc: "Плазменный Сгусток АоЕ сфера насквозь. Пассивка: Цепной Разряд - молния на критический хит.", shape: 5 },
-    { name: "НЕКРОМАНТ", color: "#a855f7", desc: "Энергетический Хлыст маркирует цель. Пассивка: Протокол Реанимации - перепрошивка вирусов в дроны.", shape: 8 }
-  ];
-
-  for (let i = 0; i < 3; i++) {
-    const cls = classes[i];
+  for (let i = 0; i < numClasses; i++) {
+    const cls = localizationData.classes[i];
     const x = startX + i * (cardW + gap);
     const y = startY;
 
