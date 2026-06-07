@@ -278,6 +278,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		if ok1 && ok2 && p.Alive {
 			if !(p.Level >= 10 && p.ClassID == 0) {
 				gainedXP := uint32(float64(o.XPValue) * 0.75 * (1.0 + float64(p.StatExpMod)*0.01))
+				gainedXP := uint32(float64(o.XPValue) * 0.375)
 				if gainedXP == 0 && o.XPValue > 0 {
 					gainedXP = 1
 				}

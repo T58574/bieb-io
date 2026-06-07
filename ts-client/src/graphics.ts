@@ -239,7 +239,7 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
   ctx.fillStyle = "#64748b";
   ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
   ctx.textAlign = "left";
-  ctx.fillText("МЕТРИКИ ЯДРА СИСТЕМЫ", panelX, panelY - 14 * uiScale);
+  ctx.fillText(localizationData.ui.stats_title, panelX, panelY - 14 * uiScale);
 
   const barX = panelX + labelW;
 
@@ -247,7 +247,7 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
   drawStatBar(ctx, localizationData.ui.stats.hp, state.statMaxHP, barX, panelY + rowH, "#22c55e", "2", uiScale);
   drawStatBar(ctx, localizationData.ui.stats.speed, state.statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3", uiScale);
   drawStatBar(ctx, localizationData.ui.stats.minion_dmg, state.statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4", uiScale);
-  drawStatBar(ctx, "СКОР. ДРОНОВ", state.statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5", uiScale);
+  drawStatBar(ctx, localizationData.ui.stats.minion_speed, state.statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5", uiScale);
   drawStatBar(ctx, localizationData.ui.stats.minion_hp, state.statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6", uiScale);
   drawStatBar(ctx, localizationData.ui.stats.minion_pierce, state.statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7", uiScale);
   drawStatBar(ctx, localizationData.ui.stats.minion_regen, state.statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8", uiScale);
@@ -658,7 +658,7 @@ export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: numbe
 
   ctx.fillStyle = "#475569";
   ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.fillText("Нажмите ENTER для перезапуска ядра", cx, canvasHeight - 40);
+  ctx.fillText(localizationData.ui.restart_prompt, cx, canvasHeight - 40);
 }
 
 export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {

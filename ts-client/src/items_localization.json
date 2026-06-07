@@ -1,8 +1,10 @@
 {
   "ui": {
-    "module_title": "МОДУЛИ",
-    "sector_prefix": "СЕКТОР ЧИПА: ",
-    "class_selection_title": "ВЫБЕРИТЕ СПЕЦИФИКАЦИЮ АРХИТЕКТУРЫ",
+    "module_title": "ИНВЕНТАРЬ ПРЕДМЕТОВ",
+    "sector_prefix": "УРОВЕНЬ ВОЛНЫ: ",
+    "class_selection_title": "ВЫБЕРИТЕ ИГРОВОЙ КЛАСС",
+    "stats_title": "ХАРАКТЕРИСТИКИ ПЕРСОНАЖА",
+    "restart_prompt": "Нажмите ENTER для перезапуска",
     "stats": {
       "hp": "ЗДОРОВЬЕ",
       "speed": "СКОРОСТЬ",
