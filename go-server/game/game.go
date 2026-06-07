@@ -34,6 +34,7 @@ type GameWorld struct {
 	Minions          map[uint16]*Minion
 	Fields           map[uint16]*ChronoField
 	LootDrops        map[uint16]*LootDrop
+	Singularities    map[uint16]*Singularity
 	nextID           uint16
 	Width            float64
 	Height           float64
@@ -48,6 +49,7 @@ type GameWorld struct {
 	WaveDuration     float64
 	WaveTimeLeft     float64
 	WaveDifficulty   float64
+	SingularityTimer float64
 	Paused           bool
 	bulletPool       sync.Pool
 	mobPool          sync.Pool
@@ -67,6 +69,7 @@ func NewGameWorld() *GameWorld {
 		Minions:          make(map[uint16]*Minion),
 		Fields:           make(map[uint16]*ChronoField),
 		LootDrops:        make(map[uint16]*LootDrop),
+		Singularities:    make(map[uint16]*Singularity),
 		nextID:           worldCfg.NextIDStart,
 		Width:            worldCfg.ArenaWidth,
 		Height:           worldCfg.ArenaHeight,
@@ -77,6 +80,7 @@ func NewGameWorld() *GameWorld {
 		WaveDuration:     CurrentWaveConfig.BaseDuration,
 		WaveTimeLeft:     0.0,
 		WaveDifficulty:   1.0,
+		SingularityTimer: worldCfg.SingularitySpawnInterval,
 		inputChan:        make(chan InputEvent, worldCfg.InputBufferSize),
 		RemovedEntityIDs: make([]uint16, 0, 128),
 	}
@@ -132,8 +136,26 @@ func (w *GameWorld) Tick(dt float64) {
 	}
 	w.ElapsedTime += dt
 	w.updateWaveSystem(dt)
+
+	worldCfg := GetWorldConfig()
+	w.SingularityTimer -= dt
+	if w.SingularityTimer <= 0 {
+		w.SingularityTimer = worldCfg.SingularitySpawnInterval
+		sid := w.GenerateID()
+		w.Singularities[sid] = &Singularity{
+			ID:         sid,
+			Pos:        physics.Vector2D{X: w.rand.Float64() * w.Width, Y: w.rand.Float64() * w.Height},
+			Radius:     worldCfg.SingularityRadius,
+			CoreRadius: worldCfg.SingularityCoreRadius,
+			Force:      worldCfg.SingularityForce,
+			Damage:     worldCfg.SingularityDamage,
+			Duration:   worldCfg.SingularityDuration,
+		}
+	}
+
 	w.updatePlayers(dt)
 	w.updateFields(dt)
+	w.updateSingularities(dt)
 	w.updateMobs(dt)
 	w.updateBullets(dt)
 	w.updateMinions(dt)
@@ -216,6 +238,19 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 			Health:    1,
 			MaxHealth: 1,
 			Radius:    uint16(f.Radius),
+		})
+	}
+	for _, s := range w.Singularities {
+		states = append(states, protocol.EntityState{
+			ID:        s.ID,
+			Type:      7,
+			Subtype:   0,
+			X:         float32(s.Pos.X),
+			Y:         float32(s.Pos.Y),
+			Angle:     0,
+			Health:    1,
+			MaxHealth: 1,
+			Radius:    uint16(s.Radius), // We'll pass total radius here. Client can infer core radius.
 		})
 	}
 	for _, ld := range w.LootDrops {

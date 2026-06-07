@@ -52,6 +52,8 @@ type Player struct {
 	ChargeLevel      float64
 	ShootCooldown    float64
 	FlashTimer       float64
+	DashCooldown     float64
+	DashTimer        float64
 	CardChoices      [3]uint8
 	Inventory        map[uint16]int
 	invCache         []uint8
@@ -418,6 +420,41 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		p.Vel = p.Vel.Add(physics.Vector2D{X: ax, Y: ay})
 		p.Vel = p.Vel.Mul(pCfg.Friction)
 
+		if p.DashCooldown > 0 {
+			p.DashCooldown -= dt
+		}
+		if p.DashTimer > 0 {
+			p.DashTimer -= dt
+			if p.DashTimer <= 0 {
+				p.StateFlags &^= 0x100000 // Remove dash flag
+			}
+		}
+
+		if p.Keys&0x10 != 0 && p.DashCooldown <= 0 {
+			// Trigger dash
+			p.DashCooldown = 3.0 * (1.0 - math.Min(0.5, float64(p.StatCooldownMod)*pCfg.CooldownReductionPerLevel))
+			p.DashTimer = 0.2
+			p.StateFlags |= 0x100000 // Set dash flag
+
+			// Boost velocity in current direction, or mouse direction if stationary
+			dashDir := p.Vel.Normalize()
+			if dashDir.LengthSq() == 0 {
+				dashDir = physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
+			}
+			p.Vel = dashDir.Mul(40.0) // Big velocity boost
+
+			// Spawn ChronoField
+			fID := w.GenerateID()
+			f := w.fieldPool.Get().(*ChronoField)
+			*f = ChronoField{}
+			f.ID = fID
+			f.OwnerID = p.ID
+			f.Pos = p.Pos
+			f.Radius = 150.0
+			f.Duration = 3.0
+			w.Fields[fID] = f
+		}
+
 		numShields := (p.StateFlags >> 4) & 0xF
 		if numShields > 0 {
 			for i := uint32(0); i < numShields; i++ {
@@ -460,6 +497,7 @@ func (w *GameWorld) updatePlayers(dt float64) {
 
 			var totalFlatDmg, totalPercentDmg float64
 			addProjectiles := int(p.StatAddProjectiles)
+			bBounces := 0
 			for itemID, count := range p.Inventory {
 				if count <= 0 {
 					continue
@@ -470,6 +508,7 @@ func (w *GameWorld) updatePlayers(dt float64) {
 					bSpeed += mod.StatModifiers.BulletSpeed * float64(count)
 					bPierce += mod.StatModifiers.PierceCount * count
 					addProjectiles += mod.StatModifiers.AddProjectiles * count
+					bBounces += mod.StatModifiers.BounceCount * count
 				}
 			}
 			bDamage = (bDamage + totalFlatDmg) * (1.0 + totalPercentDmg)
@@ -495,14 +534,25 @@ func (w *GameWorld) updatePlayers(dt float64) {
 				b.Damage = bDamage
 				b.Lifetime = bLifetime
 				b.Pierce = bPierce
+				b.Bounces = bBounces
 				w.Bullets[bID] = b
 			}
 		}
 
 		p.Pos = p.Pos.Add(p.Vel)
 		physics.ResolveCircleBox(&p.Pos, p.Radius, &p.Vel, 0, 0, w.Width, w.Height, 0.2)
-		if p.StatRegen > 0 && p.Health < p.MaxHealth {
-			regenRate := float64(p.StatRegen) * upgCfg.GlobalMultipliers.RegenPerLevel
+
+		var itemRegen float64
+		for itemID, count := range p.Inventory {
+			if count > 0 {
+				if mod, ok := GetItemModifier(itemID); ok {
+					itemRegen += mod.StatModifiers.Regen * float64(count)
+				}
+			}
+		}
+
+		if (p.StatRegen > 0 || itemRegen > 0) && p.Health < p.MaxHealth {
+			regenRate := float64(p.StatRegen)*upgCfg.GlobalMultipliers.RegenPerLevel + itemRegen
 			p.RegenAccum += regenRate * dt
 			if p.RegenAccum >= 1.0 {
 				heal := math.Floor(p.RegenAccum)
