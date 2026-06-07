@@ -1,3 +1,0 @@
-@echo off
-echo Starting Necro-Geometry...
-npm start
