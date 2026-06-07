@@ -120,20 +120,6 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
         ctx.globalAlpha = 0.3;
       }
 
-      if ((ent.stateFlags & 0x100000) !== 0) {
-        ctx.save();
-        ctx.shadowColor = "#00f0ff";
-        ctx.shadowBlur = 15;
-        ctx.globalAlpha = 0.6;
-        ctx.strokeStyle = "#00f0ff";
-        ctx.lineWidth = ent.radius * 0.4;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(-ent.radius * 3, 0);
-        ctx.stroke();
-        ctx.restore();
-      }
-
       const isFlashing = (ent.stateFlags & 2) !== 0;
 
       if (ent.subtype === 1) {
@@ -503,49 +489,6 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
       ctx.beginPath();
       ctx.arc(0, 0, ent.radius * 0.4, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
-    } else if (ent.type === 7) {
-      ctx.save();
-
-      const time = Date.now() / 1000;
-
-      // Pull-in radius visualization
-      const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, ent.radius);
-      grad.addColorStop(0, "rgba(0, 0, 0, 0.9)");
-      grad.addColorStop(0.3, "rgba(50, 0, 100, 0.5)");
-      grad.addColorStop(0.8, "rgba(100, 0, 200, 0.1)");
-      grad.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(0, 0, ent.radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Swirling core
-      ctx.rotate(time * 2);
-      const coreRadius = ent.radius * 0.2; // approx 150 / 800
-      ctx.fillStyle = "#000000";
-      ctx.beginPath();
-      ctx.arc(0, 0, coreRadius, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.strokeStyle = "rgba(168, 85, 247, 0.8)";
-      ctx.lineWidth = 4;
-      for (let i = 0; i < 4; i++) {
-        ctx.beginPath();
-        ctx.arc(0, 0, coreRadius + Math.sin(time * 5 + i) * 10, i * Math.PI / 2, (i + 1) * Math.PI / 2 - 0.2);
-        ctx.stroke();
-      }
-
-      // Debris/Accretion disk rings
-      ctx.rotate(-time * 1.5);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-      ctx.lineWidth = 1.5;
-      for (let i = 1; i <= 3; i++) {
-        ctx.beginPath();
-        ctx.ellipse(0, 0, coreRadius * i * 1.5, coreRadius * i * 1.5 + Math.sin(time) * 10, time * i, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
       ctx.restore();
     }
     ctx.restore();
