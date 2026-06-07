@@ -1,9 +1,0 @@
-{
-  "arenaWidth": 6000.0,
-  "arenaHeight": 6000.0,
-  "gridSize": 60,
-  "cellSize": 100.0,
-  "tickRate": 60,
-  "inputBufferSize": 4096,
-  "nextIDStart": 100
-}
