@@ -1,0 +1,39 @@
+{
+  "waveSpawnTables": {
+    "1": [
+      { "type": 3, "weight": 0.7 },
+      { "type": 0, "weight": 0.3 }
+    ],
+    "2": [
+      { "type": 3, "weight": 0.4 },
+      { "type": 0, "weight": 0.4 },
+      { "type": 1, "weight": 0.2 }
+    ],
+    "3": [
+      { "type": 0, "weight": 0.3 },
+      { "type": 1, "weight": 0.4 },
+      { "type": 2, "weight": 0.3 }
+    ],
+    "default": [
+      { "type": 3, "weight": 0.2 },
+      { "type": 0, "weight": 0.2 },
+      { "type": 1, "weight": 0.3 },
+      { "type": 2, "weight": 0.3 }
+    ]
+  },
+  "spawnInterval": {
+    "base": 3.0,
+    "reductionPerWave": 0.1,
+    "minimum": 1.0
+  },
+  "packSize": {
+    "base": 4,
+    "perWave": 2
+  },
+  "maxAlive": {
+    "base": 60,
+    "perWave": 40,
+    "cap": 1000000
+  },
+  "wavePauseTime": 2.0
+}

@@ -1,0 +1,8 @@
+{
+  "base_duration": 30.0,
+  "duration_multiplier": 0.99,
+  "difficulty_multiplier": 1.10,
+  "mob_count_multiplier": 1.20,
+  "base_mob_count": 70.0,
+  "speed_difficulty_exponent": 0.2
+}

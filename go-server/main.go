@@ -221,7 +221,10 @@ func main() {
 		Compress:   true,
 	}))
 
-	configDir := "../config/"
+	configDir := "./config/"
+	if _, err := os.Stat(configDir); os.IsNotExist(err) {
+		configDir = "../config/"
+	}
 
 	if err := game.LoadWorldConfig(configDir + "world.json"); err != nil {
 		log.Fatalf("Failed to load world config: %v", err)
@@ -275,9 +278,14 @@ func main() {
 		log.Fatalf("Failed to load spawn config: %v", err)
 	}
 
+	clientDir := "./client"
+	if _, err := os.Stat(clientDir); os.IsNotExist(err) {
+		clientDir = "../ts-client/dist"
+	}
 	server := NewGameServer()
 	go server.startLoop()
 	http.HandleFunc("/ws", server.handleConnection)
+	http.Handle("/", http.FileServer(http.Dir(clientDir)))
 	log.Println("Server running on 0.0.0.0:8080")
 	if err := http.ListenAndServe("0.0.0.0:8080", nil); err != nil {
 		log.Fatal(err)
