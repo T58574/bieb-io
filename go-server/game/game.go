@@ -19,22 +19,22 @@ type InputEvent struct {
 }
 
 type LootDrop struct {
-	ID     uint16
-	ItemID uint8
-	Pos    physics.Vector2D
-	Radius float64
+	ID            uint16
+	ItemID        uint8
+	Pos           physics.Vector2D
+	Vel           physics.Vector2D
+	Radius        float64
+	AttractTarget uint16
 }
 
 type GameWorld struct {
 	Players          map[uint16]*Player
 	Mobs             map[uint16]*Mob
 	Bullets          map[uint16]*Bullet
-	Orbs             map[uint16]*ExpOrb
 	Minions          map[uint16]*Minion
 	Fields           map[uint16]*ChronoField
 	LootDrops        map[uint16]*LootDrop
 	nextID           uint16
-	orbMergeTimer    float64
 	Width            float64
 	Height           float64
 	mu               sync.RWMutex
@@ -51,7 +51,6 @@ type GameWorld struct {
 	Paused           bool
 	bulletPool       sync.Pool
 	mobPool          sync.Pool
-	orbPool          sync.Pool
 	fieldPool        sync.Pool
 	grid             [60][60][]HashItem
 	inputChan        chan InputEvent
@@ -63,7 +62,6 @@ func NewGameWorld() *GameWorld {
 		Players:          make(map[uint16]*Player),
 		Mobs:             make(map[uint16]*Mob),
 		Bullets:          make(map[uint16]*Bullet),
-		Orbs:             make(map[uint16]*ExpOrb),
 		Minions:          make(map[uint16]*Minion),
 		Fields:           make(map[uint16]*ChronoField),
 		LootDrops:        make(map[uint16]*LootDrop),
@@ -88,11 +86,6 @@ func NewGameWorld() *GameWorld {
 	w.mobPool = sync.Pool{
 		New: func() interface{} {
 			return &Mob{}
-		},
-	}
-	w.orbPool = sync.Pool{
-		New: func() interface{} {
-			return &ExpOrb{}
 		},
 	}
 	w.fieldPool = sync.Pool{
@@ -121,11 +114,6 @@ func (w *GameWorld) Tick(dt float64) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.processInputs()
-	w.orbMergeTimer += dt
-	if w.orbMergeTimer >= 1.0 {
-		w.orbMergeTimer = 0.0
-		w.mergeOrbs()
-	}
 	hasUpgrades := false
 	for _, p := range w.Players {
 		if p.Alive && p.UpgradePoints > 0 {
@@ -145,7 +133,7 @@ func (w *GameWorld) Tick(dt float64) {
 	w.updateMobs(dt)
 	w.updateBullets(dt)
 	w.updateMinions(dt)
-	w.updateOrbs(dt)
+	w.updateLootDrops(dt)
 	w.rebuildSpatialGrid()
 	w.resolveCollisionsOptimized()
 }
@@ -199,28 +187,7 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 			Radius:    uint16(b.Radius),
 		})
 	}
-	for _, o := range w.Orbs {
-		var subtype uint8 = 1
-		if o.XPValue > 500 {
-			subtype = 4
-		} else if o.XPValue > 100 {
-			subtype = 3
-		} else if o.XPValue > 20 {
-			subtype = 2
-		}
 
-		states = append(states, protocol.EntityState{
-			ID:        o.ID,
-			Type:      3,
-			Subtype:   subtype,
-			X:         float32(o.Pos.X),
-			Y:         float32(o.Pos.Y),
-			Angle:     0,
-			Health:    1,
-			MaxHealth: 1,
-			Radius:    uint16(o.Radius),
-		})
-	}
 	for _, minion := range w.Minions {
 		states = append(states, protocol.EntityState{
 			ID:        minion.ID,
@@ -279,4 +246,39 @@ func (w *GameWorld) TogglePause() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.Paused = !w.Paused
+}
+
+func (w *GameWorld) updateLootDrops(dt float64) {
+	for id, ld := range w.LootDrops {
+		if ld.AttractTarget != 0 {
+			p, ok := w.Players[ld.AttractTarget]
+			if !ok || !p.Alive {
+				ld.AttractTarget = 0
+			} else {
+				dir := p.Pos.Sub(ld.Pos).Normalize()
+				ld.Vel = ld.Vel.Add(dir.Mul(0.85)).Normalize().Mul(8.5)
+				ld.Pos = ld.Pos.Add(ld.Vel)
+			}
+		} else {
+			var target *Player
+			var minDistSq float64 = -1
+			for _, p := range w.Players {
+				if !p.Alive {
+					continue
+				}
+				distSq := p.Pos.Sub(ld.Pos).LengthSq()
+				if minDistSq < 0 || distSq < minDistSq {
+					minDistSq = distSq
+					target = p
+				}
+			}
+			if target != nil {
+				ld.AttractTarget = target.ID
+			}
+		}
+		if ld.Pos.X < 0 || ld.Pos.X > w.Width || ld.Pos.Y < 0 || ld.Pos.Y > w.Height {
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
+			delete(w.LootDrops, id)
+		}
+	}
 }

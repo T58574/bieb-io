@@ -369,7 +369,16 @@ func (w *GameWorld) updateMobs(dt float64) {
 				}
 			}
 			w.dropLoot(m.Pos, m.Rarity, m.Type, m.KillerID)
-			w.spawnOrb(m.Pos, m.XPValue)
+			if m.KillerID != 0 {
+				w.AwardXP(m.KillerID, m.XPValue)
+			} else {
+				for _, p := range w.Players {
+					if p.Alive {
+						w.AwardXP(p.ID, m.XPValue)
+						break
+					}
+				}
+			}
 			w.mobPool.Put(m)
 			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Mobs, id)

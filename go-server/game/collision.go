@@ -34,9 +34,7 @@ func (w *GameWorld) rebuildSpatialGrid() {
 	for _, b := range w.Bullets {
 		w.insertToGrid(HashItem{ID: b.ID, Type: 2, Pos: b.Pos, Radius: b.Radius, Damage: b.Damage, OwnerID: b.OwnerID, OwnerType: b.OwnerType})
 	}
-	for _, o := range w.Orbs {
-		w.insertToGrid(HashItem{ID: o.ID, Type: 3, Pos: o.Pos, Radius: o.Radius})
-	}
+
 	for _, minion := range w.Minions {
 		w.insertToGrid(HashItem{ID: minion.ID, Type: 4, Pos: minion.Pos, Radius: minion.Radius, Damage: minion.Damage})
 	}
@@ -272,31 +270,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		}
 		return
 	}
-	if a.Type == 0 && b.Type == 3 {
-		p, ok1 := w.Players[a.ID]
-		o, ok2 := w.Orbs[b.ID]
-		if ok1 && ok2 && p.Alive {
-			gainedXP := uint32(float64(o.XPValue) * 0.75 * (1.0 + float64(p.StatExpMod)*0.01))
-			if gainedXP == 0 && o.XPValue > 0 {
-				gainedXP = 1
-			}
-			p.XP += gainedXP
-			p.Score += gainedXP
-			for p.XP >= p.MaxXP {
-				p.XP -= p.MaxXP
-				p.Level++
-				p.MaxXP = uint32(float64(p.MaxXP) * 1.3)
-				p.Health = p.MaxHealth
-				p.UpgradePoints++
-			}
-			p.FlashTimer = 0.12
-			p.StateFlags |= 2
-			w.orbPool.Put(o)
-			w.RemovedEntityIDs = append(w.RemovedEntityIDs, b.ID)
-			delete(w.Orbs, b.ID)
-		}
-		return
-	}
+
 	if a.Type == 0 && b.Type == 6 {
 		p, ok1 := w.Players[a.ID]
 		ld, ok2 := w.LootDrops[b.ID]

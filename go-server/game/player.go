@@ -468,3 +468,23 @@ func (w *GameWorld) updatePlayers(dt float64) {
 
 func (w *GameWorld) UpgradePlayerClass(id uint16, classID uint8) {
 }
+
+func (w *GameWorld) AwardXP(playerID uint16, xpValue uint32) {
+	p, ok := w.Players[playerID]
+	if !ok || !p.Alive {
+		return
+	}
+	gainedXP := uint32(float64(xpValue) * 0.75 * (1.0 + float64(p.StatExpMod)*0.01))
+	if gainedXP == 0 && xpValue > 0 {
+		gainedXP = 1
+	}
+	p.XP += gainedXP
+	p.Score += gainedXP
+	for p.XP >= p.MaxXP {
+		p.XP -= p.MaxXP
+		p.Level++
+		p.MaxXP = uint32(float64(p.MaxXP) * 1.3)
+		p.Health = p.MaxHealth
+		p.UpgradePoints++
+	}
+}

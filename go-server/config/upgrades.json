@@ -25,10 +25,10 @@
     { "ID": 23, "MaxLevel": 1000, "Type": "PickupItemRadius", "Value": 0.01 }
   ],
   "GlobalMultipliers": {
-    "BaseMaxHP": 100.0,
-    "HPPerLevel": 25.0,
-    "SpeedPerLevel": 0.08,
-    "RegenPerLevel": 0.8,
+    "BaseMaxHP": 50.0,
+    "HPPerLevel": 10.0,
+    "SpeedPerLevel": 0.01,
+    "RegenPerLevel": 0.5,
     "ShieldDamagePerSecond": 30.0,
     "MinionDamagePerLevel": 0.15
   }

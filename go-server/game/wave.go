@@ -54,8 +54,8 @@ func (w *GameWorld) updateWaveSystem(dt float64) {
 	}
 
 	maxAlive := 60 + int(w.WaveNumber)*40
-	if maxAlive > 400 {
-		maxAlive = 400
+	if maxAlive > 1000000 {
+		maxAlive = 1000000
 	}
 
 	if w.WaveMobsLeft > 0 && len(w.Mobs) < maxAlive {

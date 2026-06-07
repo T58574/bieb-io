@@ -1007,33 +1007,7 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
         ctx.lineWidth = 1.5;
         ctx.stroke();
       }
-    } else if (ent.type === 3) {
-      ctx.save();
-      ctx.rotate(Date.now() / 350);
-      let color = "#eab308";
-      let strokeColor = "#fbbf24";
-      if (ent.subtype === 2) {
-        color = "#10b981";
-        strokeColor = "#34d399";
-      } else if (ent.subtype === 3) {
-        color = "#3b82f6";
-        strokeColor = "#60a5fa";
-      } else if (ent.subtype === 4) {
-        color = "#a855f7";
-        strokeColor = "#c084fc";
-      }
-      ctx.fillStyle = color;
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(0, -ent.radius);
-      ctx.lineTo(ent.radius, 0);
-      ctx.lineTo(0, ent.radius);
-      ctx.lineTo(-ent.radius, 0);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
+
     } else if (ent.type === 4) {
       ctx.save();
       ctx.fillStyle = "#1e0a2b";
@@ -1093,12 +1067,9 @@ export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, c
     } else if (ent.type === 6) {
       ctx.save();
       ctx.rotate(Date.now() / 1000);
-      let color = "#10b981";
-      if (ent.subtype === 2) {
-        color = "#fbbf24";
-      } else if (ent.subtype === 3) {
-        color = "#d946ef";
-      }
+      const itemKey = String(ent.subtype);
+      const itemInfo = (localizationData.items as any)[itemKey];
+      const color = itemInfo ? itemInfo.color : "#10b981";
       ctx.fillStyle = "rgba(15, 23, 42, 0.65)";
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
