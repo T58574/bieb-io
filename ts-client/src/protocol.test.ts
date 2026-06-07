@@ -128,15 +128,15 @@ describe('protocol serialization', () => {
         view.setUint8(24 + 8, 7);
         view.setUint8(24 + 9, 8);
 
-        view.setUint16(48, 3, true);
-        view.setUint16(50, 0, true);
-        view.setUint8(52, 11);
-        view.setUint8(53, 12);
-        view.setUint8(54, 13);
-        view.setUint8(55, 1);
-        view.setUint8(56, 2);
-        view.setUint8(57, 3);
-        view.setUint8(58, 4);
+        view.setUint16(48, 3, true); // waveNumber
+        view.setUint16(50, 0, true); // entitiesCount
+        view.setUint8(52, 11); // card1
+        view.setUint8(53, 12); // card2
+        view.setUint8(54, 13); // card3
+        view.setUint8(55, 1); // inventory[0]
+        view.setUint8(56, 2); // inventory[1]
+        view.setUint8(57, 3); // inventory[2]
+        view.setUint8(58, 4); // inventory[3]
         view.setUint16(255, 0, true);
 
         const msg = deserializeMessage(buffer);
