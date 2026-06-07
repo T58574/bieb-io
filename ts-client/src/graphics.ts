@@ -2,6 +2,7 @@ import { state, renderEntities } from "./state";
 import { drawAndUpdateParticles } from "./particles";
 import { sendClassUpgrade } from "./network";
 import localizationData from "./items_localization.json";
+import { TextRenderer } from "./text";
 
 export const shapeCache = new Map<string, HTMLCanvasElement>();
 
@@ -80,10 +81,7 @@ export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWid
   const cx = canvasWidth / 2;
   const cy = canvasHeight / 2;
 
-  ctx.fillStyle = "#00f0ff";
-  ctx.font = `bold ${24 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "center";
-  ctx.fillText("ДОСТУПНО ОБНОВЛЕНИЕ ПО", cx, cy - 200 * uiScale);
+  TextRenderer.draw(ctx, "ДОСТУПНО ОБНОВЛЕНИЕ ПО", cx, cy - 200 * uiScale, "#00f0ff", { fontSize: 24, align: "center", bold: true }, canvasWidth, canvasHeight);
 
   const cardW = 200 * uiScale;
   const cardH = 280 * uiScale;
@@ -134,41 +132,33 @@ export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWid
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = details.color;
-    ctx.font = `bold ${10 * uiScale}px 'JetBrains Mono', monospace`;
-    ctx.textAlign = "center";
-    ctx.fillText(details.rarity.toUpperCase(), x + cardW / 2, y + 30 * uiScale);
+    TextRenderer.draw(ctx, details.rarity.toUpperCase(), x + cardW / 2, y + 30 * uiScale, details.color, { fontSize: 10, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `bold ${12 * uiScale}px 'JetBrains Mono', monospace`;
     const titleWords = details.title.split(" ");
     let titleY = y + 70 * uiScale;
     for (const w of titleWords) {
-      ctx.fillText(w, x + cardW / 2, titleY);
+      TextRenderer.draw(ctx, w, x + cardW / 2, titleY, "#ffffff", { fontSize: 12, align: "center", bold: true }, canvasWidth, canvasHeight);
       titleY += 16 * uiScale;
     }
 
-    ctx.fillStyle = "#94a3b8";
-    ctx.font = "10px 'JetBrains Mono', monospace";
     const descWords = details.desc.split(" ");
     let descLine = "";
     let descY = y + 170 * uiScale;
+    ctx.font = `${Math.max(6, 10 * uiScale)}px 'JetBrains Mono', monospace`;
     for (let n = 0; n < descWords.length; n++) {
       const testLine = descLine + descWords[n] + " ";
       const metrics = ctx.measureText(testLine);
       if (metrics.width > cardW - 24 * uiScale && n > 0) {
-        ctx.fillText(descLine, x + cardW / 2, descY);
+        TextRenderer.draw(ctx, descLine, x + cardW / 2, descY, "#94a3b8", { fontSize: 10, align: "center" }, canvasWidth, canvasHeight);
         descLine = descWords[n] + " ";
         descY += 14 * uiScale;
       } else {
         descLine = testLine;
       }
     }
-    ctx.fillText(descLine, x + cardW / 2, descY);
+    TextRenderer.draw(ctx, descLine, x + cardW / 2, descY, "#94a3b8", { fontSize: 10, align: "center" }, canvasWidth, canvasHeight);
 
-    ctx.fillStyle = hovered ? "#00f0ff" : "#64748b";
-    ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-    ctx.fillText(`[НАЖМИТЕ ${i + 1}]`, x + cardW / 2, y + cardH - 25 * uiScale);
+    TextRenderer.draw(ctx, `[НАЖМИТЕ ${i + 1}]`, x + cardW / 2, y + cardH - 25 * uiScale, hovered ? "#00f0ff" : "#64748b", { fontSize: 11, align: "center", bold: true }, canvasWidth, canvasHeight);
   }
 }
 
@@ -265,10 +255,7 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
   ctx.lineWidth = 1.5 * uiScale;
   ctx.stroke();
 
-  ctx.fillStyle = "#64748b";
-  ctx.font = `bold ${10 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "center";
-  ctx.fillText("УСИЛЕНИЯ ПЕРСОНАЖА", leftX + 97 * uiScale, startY - 10 * uiScale);
+  TextRenderer.draw(ctx, "УСИЛЕНИЯ ПЕРСОНАЖА", leftX + 97 * uiScale, startY - 10 * uiScale, "#64748b", { fontSize: 10, align: "center", bold: true }, canvasWidth, canvasHeight);
 
   for (let i = 0; i < activeUpgrades.length; i++) {
     const upg = activeUpgrades[i];
@@ -288,19 +275,13 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = upg.color;
-    ctx.font = `bold ${8 * uiScale}px 'JetBrains Mono', monospace`;
-    ctx.textAlign = "center";
     const lines = upg.abbrev.split("\n");
-    ctx.fillText(lines[0], x + slotW / 2, y + 18 * uiScale);
+    TextRenderer.draw(ctx, lines[0], x + slotW / 2, y + 18 * uiScale, upg.color, { fontSize: 8, align: "center", bold: true }, canvasWidth, canvasHeight);
     if (lines[1]) {
-      ctx.fillText(lines[1], x + slotW / 2, y + 28 * uiScale);
+      TextRenderer.draw(ctx, lines[1], x + slotW / 2, y + 28 * uiScale, upg.color, { fontSize: 8, align: "center", bold: true }, canvasWidth, canvasHeight);
     }
 
-    ctx.fillStyle = upg.count > 0 ? "#ffffff" : "#64748b";
-    ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-    ctx.textAlign = "right";
-    ctx.fillText(`v${upg.count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale);
+    TextRenderer.draw(ctx, `v${upg.count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale, upg.count > 0 ? "#ffffff" : "#64748b", { fontSize: 11, align: "right", bold: true }, canvasWidth, canvasHeight);
 
     if (hovered) {
       ctx.save();
@@ -316,17 +297,12 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number)
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = "#ffffff";
-      ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-      ctx.textAlign = "left";
-      ctx.fillText(upg.name, popX + 10 * uiScale, popY + 18 * uiScale);
+      TextRenderer.draw(ctx, upg.name, popX + 10 * uiScale, popY + 18 * uiScale, "#ffffff", { fontSize: 11, align: "left", bold: true }, canvasWidth, canvasHeight);
 
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = `${9 * uiScale}px 'JetBrains Mono', monospace`;
       const descLines = upg.desc.split("\n");
-      ctx.fillText(descLines[0], popX + 10 * uiScale, popY + 34 * uiScale);
+      TextRenderer.draw(ctx, descLines[0], popX + 10 * uiScale, popY + 34 * uiScale, "#94a3b8", { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
       if (descLines[1]) {
-        ctx.fillText(descLines[1], popX + 10 * uiScale, popY + 46 * uiScale);
+        TextRenderer.draw(ctx, descLines[1], popX + 10 * uiScale, popY + 46 * uiScale, "#94a3b8", { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
       }
       ctx.restore();
     }
@@ -363,10 +339,7 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
   ctx.lineWidth = 1.5 * uiScale;
   ctx.stroke();
 
-  ctx.fillStyle = "#64748b";
-  ctx.font = `bold ${10 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "center";
-  ctx.fillText(localizationData.ui.module_title, rightX + 97 * uiScale, startY - 10 * uiScale);
+  TextRenderer.draw(ctx, localizationData.ui.module_title, rightX + 97 * uiScale, startY - 10 * uiScale, "#64748b", { fontSize: 10, align: "center", bold: true }, canvasWidth, canvasHeight);
 
   for (let i = 0; i < uniqueItems.length; i++) {
     const itemID = uniqueItems[i];
@@ -396,20 +369,14 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
     ctx.stroke();
 
     if (details) {
-      ctx.fillStyle = details.color;
-      ctx.font = `bold ${8 * uiScale}px 'JetBrains Mono', monospace`;
-      ctx.textAlign = "center";
       const lines = details.abbrev.split("\n");
-      ctx.fillText(lines[0], x + slotW / 2, y + 18 * uiScale);
+      TextRenderer.draw(ctx, lines[0], x + slotW / 2, y + 18 * uiScale, details.color, { fontSize: 8, align: "center", bold: true }, canvasWidth, canvasHeight);
       if (lines[1]) {
-        ctx.fillText(lines[1], x + slotW / 2, y + 28 * uiScale);
+        TextRenderer.draw(ctx, lines[1], x + slotW / 2, y + 28 * uiScale, details.color, { fontSize: 8, align: "center", bold: true }, canvasWidth, canvasHeight);
       }
 
       if (count > 1) {
-        ctx.fillStyle = "#ffffff";
-        ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-        ctx.textAlign = "right";
-        ctx.fillText(`x${count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale);
+        TextRenderer.draw(ctx, `x${count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale, "#ffffff", { fontSize: 11, align: "right", bold: true }, canvasWidth, canvasHeight);
       }
 
       if (hovered) {
@@ -426,22 +393,15 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = "#ffffff";
-        ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-        ctx.textAlign = "left";
-        ctx.fillText(details.name, popX + 10 * uiScale, popY + 18 * uiScale);
+        TextRenderer.draw(ctx, details.name, popX + 10 * uiScale, popY + 18 * uiScale, "#ffffff", { fontSize: 11, align: "left", bold: true }, canvasWidth, canvasHeight);
 
-        ctx.fillStyle = "#94a3b8";
-        ctx.font = `${9 * uiScale}px 'JetBrains Mono', monospace`;
         const descLines = details.desc.split("\n");
-        ctx.fillText(descLines[0], popX + 10 * uiScale, popY + 34 * uiScale);
+        TextRenderer.draw(ctx, descLines[0], popX + 10 * uiScale, popY + 34 * uiScale, "#94a3b8", { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
         if (descLines[1]) {
-          ctx.fillText(descLines[1], popX + 10 * uiScale, popY + 46 * uiScale);
+          TextRenderer.draw(ctx, descLines[1], popX + 10 * uiScale, popY + 46 * uiScale, "#94a3b8", { fontSize: 9, align: "left" }, canvasWidth, canvasHeight);
         }
 
-        ctx.fillStyle = "#ef4444";
-        ctx.font = `bold ${9 * uiScale}px 'JetBrains Mono', monospace`;
-        ctx.fillText("[НАЖМИТЕ X ДЛЯ УДАЛЕНИЯ]", popX + 10 * uiScale, popY + popH - 12 * uiScale);
+        TextRenderer.draw(ctx, "[НАЖМИТЕ X ДЛЯ УДАЛЕНИЯ]", popX + 10 * uiScale, popY + popH - 12 * uiScale, "#ef4444", { fontSize: 9, align: "left", bold: true }, canvasWidth, canvasHeight);
         ctx.restore();
       }
     }
@@ -492,28 +452,17 @@ export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canv
     ctx.fill();
   }
 
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "center";
-  ctx.fillText(`ПРОШИВКА ЯДРА: v${state.currentLevel}`, centerX, bottomY - 28 * uiScale);
+  TextRenderer.draw(ctx, `ПРОШИВКА ЯДРА: v${state.currentLevel}`, centerX, bottomY - 28 * uiScale, "#ffffff", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = `bold ${16 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "left";
-  ctx.fillText(`ПАКЕТОВ ДАННЫХ: ${state.currentScore}`, 20 * uiScale, canvasHeight - 25 * uiScale);
+  TextRenderer.draw(ctx, `ПАКЕТОВ ДАННЫХ: ${state.currentScore}`, 20 * uiScale, canvasHeight - 25 * uiScale, "#94a3b8", { fontSize: 16, align: "left", bold: true }, canvasWidth, canvasHeight);
 
   let activeMinions = 0;
   for (const ent of renderEntities.values()) {
     if (ent.type === 4) activeMinions++;
   }
-  ctx.textAlign = "right";
-  ctx.font = `bold ${16 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.fillText(`АКТИВНЫЕ ДРОНЫ: ${activeMinions}`, canvasWidth - 20 * uiScale, 35 * uiScale);
+  TextRenderer.draw(ctx, `АКТИВНЫЕ ДРОНЫ: ${activeMinions}`, canvasWidth - 20 * uiScale, 35 * uiScale, "#94a3b8", { fontSize: 16, align: "right", bold: true }, canvasWidth, canvasHeight);
 
-  ctx.fillStyle = "#64748b";
-  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "center";
-  ctx.fillText(`${localizationData.ui.sector_prefix}${state.waveNumber}`, centerX, bottomY - 54 * uiScale);
+  TextRenderer.draw(ctx, `${localizationData.ui.sector_prefix}${state.waveNumber}`, centerX, bottomY - 54 * uiScale, "#64748b", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
   drawInventoryHUD(ctx, canvasWidth, canvasHeight, uiScale);
 }
@@ -562,14 +511,9 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.lineTo(cx + 250, cy - 260);
   ctx.stroke();
 
-  ctx.fillStyle = "#00f0ff";
-  ctx.font = "bold 44px 'JetBrains Mono', monospace";
-  ctx.textAlign = "center";
-  ctx.fillText("NECRO-GEOMETRY", cx, cy - 220);
+  TextRenderer.draw(ctx, "NECRO-GEOMETRY", cx, cy - 220 * uiScale, "#00f0ff", { fontSize: 44, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  ctx.fillStyle = "#64748b";
-  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.fillText("[СИНХРОНИЗАЦИЯ КОГНИТИВНОГО ЯДРА // АКТИВНО]", cx, cy - 185);
+  TextRenderer.draw(ctx, "[СИНХРОНИЗАЦИЯ КОГНИТИВНОГО ЯДРА // АКТИВНО]", cx, cy - 185 * uiScale, "#64748b", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
   const inputW = 320;
   const inputH = 44;
@@ -584,12 +528,9 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  ctx.fillStyle = state.usernameInput.length > 0 ? "#ffffff" : "#64748b";
-  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "center";
   const displayText = state.usernameInput.length > 0 ? `>> ID: ${state.usernameInput}` : ">> ВВЕДИТЕ ИДЕНТИФИКАТОР...";
   const blink = Math.floor(Date.now() / 500) % 2 === 0 && state.usernameInput.length > 0 ? "|" : "";
-  ctx.fillText(displayText + blink, cx, inputY + 27);
+  TextRenderer.draw(ctx, displayText + blink, cx, inputY + 27, state.usernameInput.length > 0 ? "#ffffff" : "#64748b", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
   const btnW = 260;
   const btnH = 52;
@@ -606,14 +547,9 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  ctx.fillStyle = hovered ? "#00f0ff" : "#ffffff";
-  ctx.font = `bold ${15 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "center";
-  ctx.fillText("[ЗАПУСТИТЬ ЯДРО]", cx, btnY + 32);
+  TextRenderer.draw(ctx, "[ЗАПУСТИТЬ ЯДРО]", cx, btnY + 32, hovered ? "#00f0ff" : "#ffffff", { fontSize: 15, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  ctx.fillStyle = "#475569";
-  ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.fillText("WASD/ДВИЖЕНИЕ | МЫШЬ/ПРИЦЕЛ | ЛКМ/СТРЕЛЬБА | ПРОБЕЛ/ПРИЗЫВ", cx, canvasHeight - 40);
+  TextRenderer.draw(ctx, "WASD/ДВИЖЕНИЕ | МЫШЬ/ПРИЦЕЛ | ЛКМ/СТРЕЛЬБА | ПРОБЕЛ/ПРИЗЫВ", cx, canvasHeight - 40 * uiScale, "#475569", { fontSize: 11, align: "center", bold: true }, canvasWidth, canvasHeight);
 }
 
 export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
@@ -624,22 +560,13 @@ export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: numbe
   const cx = canvasWidth / 2;
   const cy = canvasHeight / 2;
 
-  ctx.fillStyle = "#ff2a5f";
-  ctx.font = "bold 40px 'JetBrains Mono', monospace";
-  ctx.textAlign = "center";
-  ctx.fillText("КРИТИЧЕСКИЙ СБОЙ ЯДРА", cx, cy - 100);
+  TextRenderer.draw(ctx, "КРИТИЧЕСКИЙ СБОЙ ЯДРА", cx, cy - 100 * uiScale, "#ff2a5f", { fontSize: 40, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  ctx.fillStyle = "#64748b";
-  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.fillText("ОТЧЕТ МЕТРИК СЕКТОРА // АВАРИЙНЫЙ КОЛЛАПС", cx, cy - 65);
+  TextRenderer.draw(ctx, "ОТЧЕТ МЕТРИК СЕКТОРА // АВАРИЙНЫЙ КОЛЛАПС", cx, cy - 65 * uiScale, "#64748b", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 18px 'JetBrains Mono', monospace";
-  ctx.fillText(`СОБРАНО ДАННЫХ: ${state.gameOverScore}`, cx, cy - 10);
+  TextRenderer.draw(ctx, `СОБРАНО ДАННЫХ: ${state.gameOverScore}`, cx, cy - 10 * uiScale, "#ffffff", { fontSize: 18, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = "16px 'JetBrains Mono', monospace";
-  ctx.fillText(`СТАБИЛЬНЫХ ЦИКЛОВ: ${state.gameOverWave}`, cx, cy + 25);
+  TextRenderer.draw(ctx, `СТАБИЛЬНЫХ ЦИКЛОВ: ${state.gameOverWave}`, cx, cy + 25 * uiScale, "#94a3b8", { fontSize: 16, align: "center" }, canvasWidth, canvasHeight);
 
   const btnW = 260;
   const btnH = 52;
@@ -656,13 +583,9 @@ export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: numbe
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  ctx.fillStyle = hovered ? "#00f0ff" : "#ffffff";
-  ctx.font = `bold ${15 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.fillText("[ПЕРЕЗАПУСК ЯДРА]", cx, btnY + 32);
+  TextRenderer.draw(ctx, "[ПЕРЕЗАПУСК ЯДРА]", cx, btnY + 32, hovered ? "#00f0ff" : "#ffffff", { fontSize: 15, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  ctx.fillStyle = "#475569";
-  ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.fillText(localizationData.ui.restart_prompt, cx, canvasHeight - 40);
+  TextRenderer.draw(ctx, localizationData.ui.restart_prompt, cx, canvasHeight - 40 * uiScale, "#475569", { fontSize: 11, align: "center", bold: true }, canvasWidth, canvasHeight);
 }
 
 
@@ -674,14 +597,9 @@ export function drawPauseUI(ctx: CanvasRenderingContext2D, canvasWidth: number, 
   const cx = canvasWidth / 2;
   const cy = canvasHeight / 2;
 
-  ctx.fillStyle = "#00f0ff";
-  ctx.font = `bold ${28 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "center";
-  ctx.fillText("СИСТЕМА НА ПАУЗЕ", cx, cy - 20 * uiScale);
+  TextRenderer.draw(ctx, "СИСТЕМА НА ПАУЗЕ", cx, cy - 20 * uiScale, "#00f0ff", { fontSize: 28, align: "center", bold: true }, canvasWidth, canvasHeight);
 
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = `bold ${13 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.fillText("[НАЖМИТЕ ESC ДЛЯ ПРОДОЛЖЕНИЯ]", cx, cy + 20 * uiScale);
+  TextRenderer.draw(ctx, "[НАЖМИТЕ ESC ДЛЯ ПРОДОЛЖЕНИЯ]", cx, cy + 20 * uiScale, "#94a3b8", { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 }
 
 export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {

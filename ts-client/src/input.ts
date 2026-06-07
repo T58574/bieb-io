@@ -68,7 +68,7 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
         }
       }
       const uniqueItems = Array.from(itemCounts.keys());
-      const rightX = canvas.width - 210;
+      const rightX = canvas.clientWidth - 210;
       const startY = 120;
       const slotW = 44;
       const slotH = 44;
@@ -90,17 +90,17 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
     state.mouseX = e.clientX;
     state.mouseY = e.clientY;
     if (state.gameState === "playing") {
-      const cx = canvas.width / 2;
-      const cy = canvas.height / 2;
+      const cx = canvas.clientWidth / 2;
+      const cy = canvas.clientHeight / 2;
       state.mouseAngle = Math.atan2(e.clientY - cy, e.clientX - cx);
     }
   });
 
   window.addEventListener("mousedown", (e) => {
     if (state.gameState === "menu") {
-      const uiScale = Math.min(canvas.width / 1920, canvas.height / 1080);
-      const cx = canvas.width / 2;
-      const cy = canvas.height / 2;
+      const uiScale = Math.min(canvas.clientWidth / 1920, canvas.clientHeight / 1080);
+      const cx = canvas.clientWidth / 2;
+      const cy = canvas.clientHeight / 2;
 
       const btnW = 260;
       const btnH = 52;
@@ -116,11 +116,11 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
     }
 
     if (state.gameState === "gameover") {
-      const cx = canvas.width / 2;
+      const cx = canvas.clientWidth / 2;
       const btnW = 260;
       const btnH = 56;
       const btnX = cx - btnW / 2;
-      const btnY = canvas.height / 2 + 100;
+      const btnY = canvas.clientHeight / 2 + 100;
       if (e.clientX >= btnX && e.clientX <= btnX + btnW && e.clientY >= btnY && e.clientY <= btnY + btnH) {
         state.gameState = "menu";
       }
@@ -130,8 +130,8 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
     if (state.gameState === "playing") {
       if (state.playerId !== null) {
         if (state.upgradePoints > 0) {
-          const cx = canvas.width / 2;
-          const cy = canvas.height / 2;
+          const cx = canvas.clientWidth / 2;
+          const cy = canvas.clientHeight / 2;
           const cardW = 200;
           const cardH = 280;
           const gap = 30;
