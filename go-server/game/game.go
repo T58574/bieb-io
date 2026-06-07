@@ -102,31 +102,6 @@ func NewGameWorld() *GameWorld {
 	return w
 }
 
-func (w *GameWorld) reset() {
-	w.Mobs = make(map[uint16]*Mob)
-	w.Bullets = make(map[uint16]*Bullet)
-	w.Orbs = make(map[uint16]*ExpOrb)
-	w.Minions = make(map[uint16]*Minion)
-	w.Fields = make(map[uint16]*ChronoField)
-	w.LootDrops = make(map[uint16]*LootDrop)
-	w.RemovedEntityIDs = make([]uint16, 0, 128)
-	w.WaveNumber = 0
-	w.WaveActive = false
-	w.WavePauseTimer = 2.0
-	w.WaveMobsLeft = 0
-	w.WaveSpawnTimer = 0.0
-	w.ElapsedTime = 0.0
-	w.orbMergeTimer = 0.0
-	w.Paused = false
-	for {
-		select {
-		case <-w.inputChan:
-		default:
-			return
-		}
-	}
-}
-
 func (w *GameWorld) GenerateID() uint16 {
 	w.nextID++
 	if w.nextID == 0 {

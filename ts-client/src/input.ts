@@ -27,19 +27,9 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
       return;
     }
 
-    if (e.code === "KeyP" || e.key === "p" || e.key === "P" || e.key === "з" || e.key === "З") {
-      if (state.gameState === "playing") {
-        sendPauseToggle();
-      }
-      return;
-    }
-
     if (e.key === "Escape") {
       if (state.gameState === "playing") {
-        if (socket && socket.readyState !== WebSocket.CLOSED) {
-          socket.close();
-        }
-        state.gameState = "menu";
+        sendPauseToggle();
       }
       return;
     }
