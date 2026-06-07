@@ -10,6 +10,7 @@ export interface Particle {
   alpha: number;
   life: number;
   maxLife: number;
+  text?: string;
 }
 
 export const particles: Particle[] = [];
@@ -33,6 +34,21 @@ export function spawnDeathExplosion(x: number, y: number, radius: number) {
   }
 }
 
+export function spawnFloatingText(x: number, y: number, text: string, color: string) {
+  particles.push({
+    x: x,
+    y: y,
+    vx: (Math.random() - 0.5) * 0.5,
+    vy: -1.2 - Math.random() * 0.6,
+    radius: 0,
+    color: color,
+    alpha: 1.0,
+    life: 0,
+    maxLife: 50,
+    text: text
+  });
+}
+
 export function drawAndUpdateParticles(ctx: CanvasRenderingContext2D, px: number, py: number, canvasWidth: number, canvasHeight: number) {
   ctx.save();
   for (let i = particles.length - 1; i >= 0; i--) {
@@ -49,11 +65,23 @@ export function drawAndUpdateParticles(ctx: CanvasRenderingContext2D, px: number
     }
     const rx = p.x - px + canvasWidth / 2;
     const ry = p.y - py + canvasHeight / 2;
-    ctx.fillStyle = p.color;
+    
+    ctx.save();
     ctx.globalAlpha = p.alpha;
-    ctx.beginPath();
-    ctx.arc(rx, ry, p.radius, 0, Math.PI * 2);
-    ctx.fill();
+    if (p.text) {
+      ctx.fillStyle = p.color;
+      ctx.font = "bold 15px 'JetBrains Mono', monospace";
+      ctx.textAlign = "center";
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 4;
+      ctx.fillText(p.text, rx, ry);
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(rx, ry, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
   ctx.restore();
 }

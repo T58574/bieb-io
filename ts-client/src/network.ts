@@ -1,6 +1,6 @@
 import { deserializeMessage, serializeJoin } from "./protocol";
 import { state, renderEntities } from "./state";
-import { spawnDeathExplosion } from "./particles";
+import { spawnDeathExplosion, spawnFloatingText } from "./particles";
 
 export let socket: WebSocket | null = null;
 
@@ -75,6 +75,20 @@ function handleServerMessage(event: MessageEvent) {
     state.arenaHeight = msg.arenaHeight;
     sendClassUpgrade(state.selectedClass);
   } else if (msg.type === "worldState") {
+    if (state.playerId !== null) {
+      let xpDiff = 0;
+      if (msg.level > state.currentLevel && state.currentLevel > 0) {
+        xpDiff = (state.maxXP - state.currentXP) + msg.xp;
+      } else if (msg.xp > state.currentXP && msg.level === state.currentLevel) {
+        xpDiff = msg.xp - state.currentXP;
+      }
+      if (xpDiff > 0) {
+        const me = renderEntities.get(state.playerId);
+        if (me) {
+          spawnFloatingText(me.x, me.y - 35, `+${xpDiff} XP`, "#fbbf24");
+        }
+      }
+    }
     state.currentXP = msg.xp;
     state.maxXP = msg.maxXp;
     state.currentLevel = msg.level;
