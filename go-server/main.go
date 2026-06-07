@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
+	"runtime"
 	"sync"
 	"time"
 
@@ -287,7 +289,26 @@ func main() {
 	http.HandleFunc("/ws", server.handleConnection)
 	http.Handle("/", http.FileServer(http.Dir(clientDir)))
 	log.Println("Server running on 0.0.0.0:8080")
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		openBrowser("http://localhost:8080")
+	}()
 	if err := http.ListenAndServe("0.0.0.0:8080", nil); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func openBrowser(targetURL string) {
+	var err error
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", targetURL).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", targetURL).Start()
+	case "darwin":
+		err = exec.Command("open", targetURL).Start()
+	}
+	if err != nil {
+		log.Println(err)
 	}
 }

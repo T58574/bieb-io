@@ -10,4 +10,5 @@ mkdir release\client
 copy go-server\go-server.exe release\game.exe > nul
 xcopy /e /i /y config release\config > nul
 xcopy /e /i /y ts-client\dist release\client > nul
+echo @start game.exe > release\play.bat
 exit /b 0
