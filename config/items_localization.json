@@ -115,6 +115,27 @@
       "desc": "+3 СкорСнар\n+50% Урон\n+1 Снаряд\n+1 Пробитие",
       "abbrev": "Ann\nIhi",
       "rarity": "Legendary"
+    },
+    "15": {
+      "name": "КВАНТОВАЯ БРОНЯ",
+      "color": "#f97316",
+      "desc": "+100 ХП\n+20 Броня\n+0.5 СкорСнар",
+      "abbrev": "Quant\nPlat",
+      "rarity": "Legendary"
+    },
+    "16": {
+      "name": "КАТАЛИЗАТОР",
+      "color": "#d946ef",
+      "desc": "+5 Реген\n+25% Скор",
+      "abbrev": "Aura\nCat",
+      "rarity": "Unique"
+    },
+    "17": {
+      "name": "ЦЕПНАЯ МОЛНИЯ",
+      "color": "#f97316",
+      "desc": "Молния при\nубийстве",
+      "abbrev": "Chain\nLight",
+      "rarity": "Legendary"
     }
   },
   "classes": []

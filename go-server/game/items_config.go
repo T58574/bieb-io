@@ -12,6 +12,7 @@ type OnKillEffectTrigger uint8
 const (
 	TRIGGER_NONE OnKillEffectTrigger = iota
 	TRIGGER_AREA_EXPLOSION
+	TRIGGER_CHAIN_LIGHTNING
 )
 
 type ItemStatModifiers struct {
@@ -24,6 +25,8 @@ type ItemStatModifiers struct {
 	BulletSpeed   float64
 	AddProjectiles int
 	PierceCount   int
+	Regen         float64
+	Armor         float64
 }
 
 type ItemModifier struct {

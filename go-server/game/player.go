@@ -492,8 +492,18 @@ func (w *GameWorld) updatePlayers(dt float64) {
 
 		p.Pos = p.Pos.Add(p.Vel)
 		physics.ResolveCircleBox(&p.Pos, p.Radius, &p.Vel, 0, 0, w.Width, w.Height, 0.2)
-		if p.StatRegen > 0 && p.Health < p.MaxHealth {
-			regenRate := float64(p.StatRegen) * upgCfg.GlobalMultipliers.RegenPerLevel
+
+		var itemRegen float64
+		for itemID, count := range p.Inventory {
+			if count > 0 {
+				if mod, ok := GetItemModifier(itemID); ok {
+					itemRegen += mod.StatModifiers.Regen * float64(count)
+				}
+			}
+		}
+
+		if (p.StatRegen > 0 || itemRegen > 0) && p.Health < p.MaxHealth {
+			regenRate := float64(p.StatRegen)*upgCfg.GlobalMultipliers.RegenPerLevel + itemRegen
 			p.RegenAccum += regenRate * dt
 			if p.RegenAccum >= 1.0 {
 				heal := math.Floor(p.RegenAccum)
