@@ -97,9 +97,7 @@ function handleServerMessage(event: MessageEvent) {
     state.inventory = msg.inventory;
     state.cameraZoom = Math.max(0.5, 1.0 - (state.currentLevel - 1) * 0.01);
 
-    const receivedIds = new Set<number>();
     for (const ent of msg.entities) {
-      receivedIds.add(ent.id);
       const existing = renderEntities.get(ent.id);
       if (existing) {
         existing.subtype = ent.subtype;
@@ -128,14 +126,12 @@ function handleServerMessage(event: MessageEvent) {
         });
       }
     }
-    for (const id of renderEntities.keys()) {
-      if (!receivedIds.has(id)) {
-        const ent = renderEntities.get(id);
-        if (ent && ent.type === 1) {
-          spawnDeathExplosion(ent.x, ent.y, ent.radius);
-        }
-        renderEntities.delete(id);
+    for (const id of msg.removedIds) {
+      const ent = renderEntities.get(id);
+      if (ent && ent.type === 1) {
+        spawnDeathExplosion(ent.x, ent.y, ent.radius);
       }
+      renderEntities.delete(id);
     }
   } else if (msg.type === "gameOver") {
     state.gameOverScore = msg.score;

@@ -31,6 +31,7 @@ func (w *GameWorld) updateMinions(dt float64) {
 	for id, m := range w.Minions {
 		owner, ok := w.Players[m.OwnerID]
 		if !ok || !owner.Alive {
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Minions, id)
 			continue
 		}
@@ -38,6 +39,7 @@ func (w *GameWorld) updateMinions(dt float64) {
 			m.Lifetime -= dt
 			if m.Lifetime <= 0 {
 				w.removeMinionFromPlayer(owner, id)
+				w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 				delete(w.Minions, id)
 				continue
 			}
@@ -76,6 +78,7 @@ func (w *GameWorld) updateMinions(dt float64) {
 		}
 		if m.Health <= 0 {
 			w.removeMinionFromPlayer(owner, id)
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Minions, id)
 		}
 	}
@@ -133,6 +136,7 @@ func (w *GameWorld) spawnMinion(ownerID uint16, pos physics.Vector2D) {
 	if len(owner.MinionIDs) >= maxLimit {
 		oldID := owner.MinionIDs[0]
 		w.removeMinionFromPlayer(owner, oldID)
+		w.RemovedEntityIDs = append(w.RemovedEntityIDs, oldID)
 		delete(w.Minions, oldID)
 	}
 	mID := w.GenerateID()

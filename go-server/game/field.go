@@ -17,6 +17,7 @@ func (w *GameWorld) updateFields(dt float64) {
 		f.Duration -= dt
 		if f.Duration <= 0 {
 			w.fieldPool.Put(f)
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Fields, id)
 			continue
 		}

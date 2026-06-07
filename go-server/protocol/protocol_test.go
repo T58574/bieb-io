@@ -121,12 +121,14 @@ func TestWorldState(t *testing.T) {
 		},
 	}
 
-	buf := EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, 0, 0, 1, 0, 0, 0, make([]byte, 32), entities)
+	removedIDs := []uint16{5, 10}
+
+	buf := EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, 0, 0, 1, 0, 0, 0, make([]byte, 32), entities, removedIDs)
 	if buf[0] != 2 {
 		t.Errorf("expected opcode 2")
 	}
-	if len(buf) != 71+26 {
-		t.Errorf("expected len %d, got %d", 71+26, len(buf))
+	if len(buf) != 73+26+4 {
+		t.Errorf("expected len %d, got %d", 73+26+4, len(buf))
 	}
 }
 

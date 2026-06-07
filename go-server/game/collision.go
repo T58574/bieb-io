@@ -281,6 +281,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 			p.FlashTimer = 0.12
 			p.StateFlags |= 2
 			w.orbPool.Put(o)
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, b.ID)
 			delete(w.Orbs, b.ID)
 		}
 		return
@@ -291,6 +292,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		if ok1 && ok2 && p.Alive {
 			p.Inventory[uint16(ld.ItemID)]++
 			p.invDirty = true
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, b.ID)
 			delete(w.LootDrops, b.ID)
 		}
 		return

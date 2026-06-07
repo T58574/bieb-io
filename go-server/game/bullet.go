@@ -23,6 +23,7 @@ func (w *GameWorld) updateBullets(dt float64) {
 		b.Lifetime -= dt
 		if b.Lifetime <= 0 || b.Pos.X < 0 || b.Pos.X > w.Width || b.Pos.Y < 0 || b.Pos.Y > w.Height {
 			w.bulletPool.Put(b)
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Bullets, id)
 		}
 	}

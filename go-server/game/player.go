@@ -115,8 +115,10 @@ func (w *GameWorld) RemovePlayer(id uint16) {
 		return
 	}
 	for _, mID := range p.MinionIDs {
+		w.RemovedEntityIDs = append(w.RemovedEntityIDs, mID)
 		delete(w.Minions, mID)
 	}
+	w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 	delete(w.Players, id)
 }
 
@@ -232,7 +234,9 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		}
 		if p.Health <= 0 {
 			p.Alive = false
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, p.ID)
 			for _, mID := range p.MinionIDs {
+				w.RemovedEntityIDs = append(w.RemovedEntityIDs, mID)
 				delete(w.Minions, mID)
 			}
 			p.MinionIDs = nil

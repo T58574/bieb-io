@@ -55,6 +55,7 @@ func (w *GameWorld) updateOrbs(dt float64) {
 		}
 		if o.Pos.X < 0 || o.Pos.X > w.Width || o.Pos.Y < 0 || o.Pos.Y > w.Height {
 			w.orbPool.Put(o)
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Orbs, id)
 		}
 	}

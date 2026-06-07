@@ -26,50 +26,52 @@ type LootDrop struct {
 }
 
 type GameWorld struct {
-	Players        map[uint16]*Player
-	Mobs           map[uint16]*Mob
-	Bullets        map[uint16]*Bullet
-	Orbs           map[uint16]*ExpOrb
-	Minions        map[uint16]*Minion
-	Fields         map[uint16]*ChronoField
-	LootDrops      map[uint16]*LootDrop
-	nextID         uint16
-	Width          float64
-	Height         float64
-	mu             sync.RWMutex
-	rand           *rand.Rand
-	ElapsedTime    float64
-	WaveNumber     uint32
-	WaveActive     bool
-	WavePauseTimer float64
-	WaveMobsLeft   int
-	WaveSpawnTimer float64
-	Paused         bool
-	bulletPool     sync.Pool
-	mobPool        sync.Pool
-	orbPool        sync.Pool
-	fieldPool      sync.Pool
-	grid           [60][60][]HashItem
-	inputChan      chan InputEvent
+	Players          map[uint16]*Player
+	Mobs             map[uint16]*Mob
+	Bullets          map[uint16]*Bullet
+	Orbs             map[uint16]*ExpOrb
+	Minions          map[uint16]*Minion
+	Fields           map[uint16]*ChronoField
+	LootDrops        map[uint16]*LootDrop
+	nextID           uint16
+	Width            float64
+	Height           float64
+	mu               sync.RWMutex
+	rand             *rand.Rand
+	ElapsedTime      float64
+	WaveNumber       uint32
+	WaveActive       bool
+	WavePauseTimer   float64
+	WaveMobsLeft     int
+	WaveSpawnTimer   float64
+	Paused           bool
+	bulletPool       sync.Pool
+	mobPool          sync.Pool
+	orbPool          sync.Pool
+	fieldPool        sync.Pool
+	grid             [60][60][]HashItem
+	inputChan        chan InputEvent
+	RemovedEntityIDs []uint16
 }
 
 func NewGameWorld() *GameWorld {
 	w := &GameWorld{
-		Players:        make(map[uint16]*Player),
-		Mobs:           make(map[uint16]*Mob),
-		Bullets:        make(map[uint16]*Bullet),
-		Orbs:           make(map[uint16]*ExpOrb),
-		Minions:        make(map[uint16]*Minion),
-		Fields:         make(map[uint16]*ChronoField),
-		LootDrops:      make(map[uint16]*LootDrop),
-		nextID:         100,
-		Width:          6000.0,
-		Height:         6000.0,
-		rand:           rand.New(rand.NewSource(time.Now().UnixNano())),
-		WaveNumber:     0,
-		WaveActive:     false,
-		WavePauseTimer: 2.0,
-		inputChan:      make(chan InputEvent, 4096),
+		Players:          make(map[uint16]*Player),
+		Mobs:             make(map[uint16]*Mob),
+		Bullets:          make(map[uint16]*Bullet),
+		Orbs:             make(map[uint16]*ExpOrb),
+		Minions:          make(map[uint16]*Minion),
+		Fields:           make(map[uint16]*ChronoField),
+		LootDrops:        make(map[uint16]*LootDrop),
+		nextID:           100,
+		Width:            6000.0,
+		Height:           6000.0,
+		rand:             rand.New(rand.NewSource(time.Now().UnixNano())),
+		WaveNumber:       0,
+		WaveActive:       false,
+		WavePauseTimer:   2.0,
+		inputChan:        make(chan InputEvent, 4096),
+		RemovedEntityIDs: make([]uint16, 0, 128),
 	}
 	w.bulletPool = sync.Pool{
 		New: func() interface{} {
@@ -107,6 +109,7 @@ func (w *GameWorld) GenerateID() uint16 {
 	return w.nextID
 }
 
+
 func (w *GameWorld) Tick(dt float64) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -132,6 +135,7 @@ func (w *GameWorld) Tick(dt float64) {
 	w.rebuildSpatialGrid()
 	w.resolveCollisionsOptimized()
 }
+
 
 func (w *GameWorld) ExportState() []protocol.EntityState {
 	w.mu.RLock()
@@ -234,6 +238,18 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 		})
 	}
 	return states
+}
+
+func (w *GameWorld) GetAndClearRemovedIDs() []uint16 {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if len(w.RemovedEntityIDs) == 0 {
+		return nil
+	}
+	ids := make([]uint16, len(w.RemovedEntityIDs))
+	copy(ids, w.RemovedEntityIDs)
+	w.RemovedEntityIDs = w.RemovedEntityIDs[:0]
+	return ids
 }
 
 func (w *GameWorld) TogglePause() {

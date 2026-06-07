@@ -352,12 +352,6 @@ func (w *GameWorld) updateMobs(dt float64) {
 			for _, p := range w.Players {
 				if p.Alive {
 					owner = p
-					if (p.StateFlags & (1 << 8)) != 0 {
-						hasNecrosis = true
-					}
-					if count, ok := p.Inventory[3]; ok && count > 0 {
-						hasNecrosis = true
-					}
 					break
 				}
 			}
@@ -373,6 +367,7 @@ func (w *GameWorld) updateMobs(dt float64) {
 			w.dropLoot(m.Pos, m.Rarity, m.Type)
 			w.spawnOrb(m.Pos, m.XPValue)
 			w.mobPool.Put(m)
+			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
 			delete(w.Mobs, id)
 		}
 	}

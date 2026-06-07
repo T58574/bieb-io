@@ -157,6 +157,7 @@ func (s *GameServer) broadcastState(tick uint32) {
 		return
 	}
 	states := s.world.ExportState()
+	removedIDs := s.world.GetAndClearRemovedIDs()
 
 	for _, client := range s.clients {
 		if !client.joined {
@@ -206,6 +207,7 @@ func (s *GameServer) broadcastState(tick uint32) {
 			p.CardChoices[2],
 			p.GetInventoryArray(),
 			states,
+			removedIDs,
 		)
 		_ = client.send(stateBuf)
 	}

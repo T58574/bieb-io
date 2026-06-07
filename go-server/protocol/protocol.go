@@ -10,15 +10,15 @@ import (
 var validUsername = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,16}$`)
 
 type EntityState struct {
-	ID        uint16
-	Type      uint8
-	Subtype   uint8
-	X         float32
-	Y         float32
-	Angle     float32
-	Health    uint16
-	MaxHealth uint16
-	Radius    uint16
+	ID         uint16
+	Type       uint8
+	Subtype    uint8
+	X          float32
+	Y          float32
+	Angle      float32
+	Health     uint16
+	MaxHealth  uint16
+	Radius     uint16
 	StateFlags uint32
 }
 
@@ -38,9 +38,10 @@ func EncodeWelcome(playerID uint16, arenaWidth, arenaHeight float32) []byte {
 	return buf
 }
 
-func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32, health, maxHealth uint16, upgradePoints uint8, statsPack1, statsPack2 uint32, waveNumber uint16, card1, card2, card3 uint8, inventory []uint8, entities []EntityState) []byte {
+func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32, health, maxHealth uint16, upgradePoints uint8, statsPack1, statsPack2 uint32, waveNumber uint16, card1, card2, card3 uint8, inventory []uint8, entities []EntityState, removedIDs []uint16) []byte {
 	count := len(entities)
-	bufSize := 71 + count*26
+	removedCount := len(removedIDs)
+	bufSize := 73 + count*26 + removedCount*2
 	buf := make([]byte, bufSize)
 	buf[0] = 2
 	binary.LittleEndian.PutUint32(buf[1:5], tick)
@@ -65,8 +66,9 @@ func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32,
 			buf[39+i] = 0
 		}
 	}
+	binary.LittleEndian.PutUint16(buf[71:73], uint16(removedCount))
 
-	offset := 71
+	offset := 73
 	for i := 0; i < count; i++ {
 		ent := &entities[i]
 		binary.LittleEndian.PutUint16(buf[offset:offset+2], ent.ID)
@@ -81,6 +83,12 @@ func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32,
 		binary.LittleEndian.PutUint32(buf[offset+22:offset+26], ent.StateFlags)
 		offset += 26
 	}
+
+	for i := 0; i < removedCount; i++ {
+		binary.LittleEndian.PutUint16(buf[offset:offset+2], removedIDs[i])
+		offset += 2
+	}
+
 	return buf
 }
 
