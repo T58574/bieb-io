@@ -71,52 +71,7 @@ export function drawGrid(ctx: CanvasRenderingContext2D, cx: number, cy: number, 
   }
 }
 
-export function drawStatBar(ctx: CanvasRenderingContext2D, label: string, level: number, x: number, y: number, color: string, hotkey: string, uiScale: number) {
-  const barW = 140 * uiScale;
-  const barH = 16 * uiScale;
-  const maxLvl = 7;
 
-  ctx.fillStyle = "#94a3b8";
-  ctx.font = `bold ${10 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "right";
-  ctx.fillText(label, x - 8 * uiScale, y + 12 * uiScale);
-
-  ctx.fillStyle = "rgba(5, 5, 8, 0.85)";
-  ctx.beginPath();
-  ctx.roundRect(x, y, barW, barH, 4);
-  ctx.fill();
-
-  const fillW = (level / maxLvl) * barW;
-  if (fillW > 0) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.roundRect(x, y, fillW, barH, 4);
-    ctx.fill();
-  }
-
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-  ctx.lineWidth = 1;
-  for (let i = 1; i < maxLvl; i++) {
-    const sx = x + (i / maxLvl) * barW;
-    ctx.beginPath();
-    ctx.moveTo(sx, y);
-    ctx.lineTo(sx, y + barH);
-    ctx.stroke();
-  }
-
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.roundRect(x, y, barW, barH, 4);
-  ctx.stroke();
-
-  if (state.upgradePoints > 0 && level < maxLvl) {
-    ctx.fillStyle = "#fbbf24";
-    ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-    ctx.textAlign = "left";
-    ctx.fillText("+" + hotkey, x + barW + 6 * uiScale, y + 13 * uiScale);
-  }
-}
 
 export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
   ctx.fillStyle = "rgba(5, 5, 8, 0.85)";
@@ -218,39 +173,114 @@ export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWid
 }
 
 export function drawUpgradePanel(ctx: CanvasRenderingContext2D, uiScale: number) {
-  if (state.upgradePoints > 0) {
+  interface UpgradeDetail {
+    id: string;
+    name: string;
+    count: number;
+    color: string;
+    abbrev: string;
+    desc: string;
+  }
+
+  const activeUpgrades: UpgradeDetail[] = [];
+  if (state.statRegen > 0) activeUpgrades.push({ id: "regen", name: "РЕГЕНЕРАЦИЯ", count: state.statRegen, color: "#10b981", abbrev: "HP\nReg", desc: "Автоматическое восстановление здоровья." });
+  if (state.statMaxHP > 0) activeUpgrades.push({ id: "hp", name: "МАКС. ЗДОРОВЬЕ", count: state.statMaxHP, color: "#22c55e", abbrev: "Max\nHP", desc: "Увеличение максимального здоровья." });
+  if (state.statSpeed > 0) activeUpgrades.push({ id: "speed", name: "СКОРОСТЬ ДВИЖЕНИЯ", count: state.statSpeed, color: "#3b82f6", abbrev: "Move\nSpd", desc: "Повышение скорости перемещения." });
+  if (state.statMinionDmg > 0) activeUpgrades.push({ id: "minion_dmg", name: "УРОН ДРОНОВ", count: state.statMinionDmg, color: "#ef4444", abbrev: "Drn\nDmg", desc: "Увеличение урона дронов." });
+  if (state.statMinionSpeed > 0) activeUpgrades.push({ id: "minion_speed", name: "СКОРОСТЬ ДРОНОВ", count: state.statMinionSpeed, color: "#f97316", abbrev: "Drn\nSpd", desc: "Повышение скорости дронов." });
+  if (state.statMinionHP > 0) activeUpgrades.push({ id: "minion_hp", name: "ЗДОРОВЬЕ ДРОНОВ", count: state.statMinionHP, color: "#06b6d4", abbrev: "Drn\nHP", desc: "Увеличение прочности дронов." });
+  if (state.statMinionPierce > 0) activeUpgrades.push({ id: "minion_pierce", name: "ПРОБИВАЕМОСТЬ ДРОНОВ", count: state.statMinionPierce, color: "#8b5cf6", abbrev: "Drn\nPrc", desc: "Количество пробиваемых врагов." });
+  if (state.statMinionRegen > 0) activeUpgrades.push({ id: "minion_regen", name: "РЕГЕНЕРАЦИЯ ДРОНОВ", count: state.statMinionRegen, color: "#a3e635", abbrev: "Drn\nReg", desc: "Восстановление прочности дронов." });
+
+  if (activeUpgrades.length === 0) {
     return;
   }
-  const panelX = 12 * uiScale;
-  const panelY = 100 * uiScale;
-  const rowH = 24 * uiScale;
-  const labelW = 90 * uiScale;
 
-  ctx.fillStyle = "rgba(5, 5, 8, 0.75)";
+  const startY = 120 * uiScale;
+  const slotW = 44 * uiScale;
+  const slotH = 44 * uiScale;
+  const gap = 6 * uiScale;
+  const leftX = 22 * uiScale;
+
+  const rows = Math.max(1, Math.ceil(activeUpgrades.length / 4));
+  const height = rows * (slotH + gap) + 50 * uiScale;
+
+  ctx.fillStyle = "rgba(5, 5, 8, 0.65)";
   ctx.beginPath();
-  ctx.roundRect(panelX - 6, panelY - 34, labelW + 160, rowH * 8 + 50, 10);
+  ctx.roundRect(leftX - 10 * uiScale, startY - 30 * uiScale, 214 * uiScale, height, 10 * uiScale);
   ctx.fill();
   ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.roundRect(panelX - 6, panelY - 34, labelW + 160, rowH * 8 + 50, 10);
+  ctx.lineWidth = 1.5 * uiScale;
   ctx.stroke();
 
   ctx.fillStyle = "#64748b";
-  ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
-  ctx.textAlign = "left";
-  ctx.fillText(localizationData.ui.stats_title, panelX, panelY - 14 * uiScale);
+  ctx.font = `bold ${10 * uiScale}px 'JetBrains Mono', monospace`;
+  ctx.textAlign = "center";
+  ctx.fillText("УСИЛЕНИЯ ПЕРСОНАЖА", leftX + 97 * uiScale, startY - 10 * uiScale);
 
-  const barX = panelX + labelW;
+  for (let i = 0; i < activeUpgrades.length; i++) {
+    const upg = activeUpgrades[i];
+    const c = i % 4;
+    const r = Math.floor(i / 4);
+    const x = leftX + c * (slotW + gap);
+    const y = startY + r * (slotH + gap);
 
-  drawStatBar(ctx, localizationData.ui.stats.regen, state.statRegen, barX, panelY, "#10b981", "1", uiScale);
-  drawStatBar(ctx, localizationData.ui.stats.hp, state.statMaxHP, barX, panelY + rowH, "#22c55e", "2", uiScale);
-  drawStatBar(ctx, localizationData.ui.stats.speed, state.statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3", uiScale);
-  drawStatBar(ctx, localizationData.ui.stats.minion_dmg, state.statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4", uiScale);
-  drawStatBar(ctx, localizationData.ui.stats.minion_speed, state.statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5", uiScale);
-  drawStatBar(ctx, localizationData.ui.stats.minion_hp, state.statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6", uiScale);
-  drawStatBar(ctx, localizationData.ui.stats.minion_pierce, state.statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7", uiScale);
-  drawStatBar(ctx, localizationData.ui.stats.minion_regen, state.statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8", uiScale);
+    const hovered = state.mouseX >= x && state.mouseX <= x + slotW && state.mouseY >= y && state.mouseY <= y + slotH;
+
+    ctx.fillStyle = hovered ? "rgba(30, 41, 59, 0.75)" : "rgba(10, 15, 26, 0.75)";
+    ctx.strokeStyle = upg.color;
+    ctx.lineWidth = hovered ? 2.5 * uiScale : 1.5 * uiScale;
+
+    ctx.beginPath();
+    ctx.roundRect(x, y, slotW, slotH, 6 * uiScale);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = upg.color;
+    ctx.font = `bold ${8 * uiScale}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = "center";
+    const lines = upg.abbrev.split("\n");
+    ctx.fillText(lines[0], x + slotW / 2, y + 18 * uiScale);
+    if (lines[1]) {
+      ctx.fillText(lines[1], x + slotW / 2, y + 28 * uiScale);
+    }
+
+    if (upg.count > 0) {
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
+      ctx.textAlign = "right";
+      ctx.fillText(`v${upg.count}`, x + slotW - 4 * uiScale, y + slotH - 4 * uiScale);
+    }
+
+    if (hovered) {
+      ctx.save();
+      ctx.fillStyle = "rgba(5, 5, 8, 0.95)";
+      ctx.strokeStyle = upg.color;
+      ctx.lineWidth = 1.5 * uiScale;
+      const popW = 180 * uiScale;
+      const popH = 64 * uiScale;
+      const popX = leftX + 214 * uiScale + 10 * uiScale;
+      const popY = y - 5 * uiScale;
+      ctx.beginPath();
+      ctx.roundRect(popX, popY, popW, popH, 8 * uiScale);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `bold ${11 * uiScale}px 'JetBrains Mono', monospace`;
+      ctx.textAlign = "left";
+      ctx.fillText(upg.name, popX + 10 * uiScale, popY + 18 * uiScale);
+
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = `${9 * uiScale}px 'JetBrains Mono', monospace`;
+      const descLines = upg.desc.split("\n");
+      ctx.fillText(descLines[0], popX + 10 * uiScale, popY + 34 * uiScale);
+      if (descLines[1]) {
+        ctx.fillText(descLines[1], popX + 10 * uiScale, popY + 46 * uiScale);
+      }
+      ctx.restore();
+    }
+  }
 }
 
 export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, uiScale: number) {
