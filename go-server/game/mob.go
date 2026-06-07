@@ -171,7 +171,7 @@ func (w *GameWorld) spawnSingleMob() {
 
 	hp *= hpMultiplier
 	dmg *= dmgMultiplier
-	xpVal = uint32(float64(xpVal) * xpMultiplier)
+	xpVal = uint32(float64(xpVal) * xpMultiplier * w.WaveDifficulty)
 	rad *= radiusMultiplier
 
 	m := w.mobPool.Get().(*Mob)
@@ -264,7 +264,7 @@ func (w *GameWorld) updateMobs(dt float64) {
 				speedMul *= 1.5
 			}
 			if m.Type < 10 {
-				speedMul *= w.WaveDifficulty
+				speedMul *= math.Pow(w.WaveDifficulty, CurrentWaveConfig.SpeedDifficultyExponent)
 			}
 
 			if m.Type == 0 {
@@ -505,17 +505,17 @@ func (w *GameWorld) spawnBoss(bossType uint8) {
 		hp = 600 * w.WaveDifficulty
 		rad = 48
 		dmg = 18 * w.WaveDifficulty
-		xpVal = 500
+		xpVal = uint32(500 * w.WaveDifficulty)
 	} else if bossType == 11 {
 		hp = 900 * w.WaveDifficulty
 		rad = 56
 		dmg = 28 * w.WaveDifficulty
-		xpVal = 800
+		xpVal = uint32(800 * w.WaveDifficulty)
 	} else {
 		hp = 2500 * w.WaveDifficulty
 		rad = 72
 		dmg = 45 * w.WaveDifficulty
-		xpVal = 2000
+		xpVal = uint32(2000 * w.WaveDifficulty)
 	}
 
 	m := w.mobPool.Get().(*Mob)
