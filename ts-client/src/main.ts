@@ -946,11 +946,46 @@ function renderGame() {
         }
       }
     } else if (ent.type === 1) {
+      const rarity = ent.stateFlags & 0xFF;
+      const modifiers = (ent.stateFlags >> 8) & 0xFF;
+      let fillColor = "#990022";
+      let strokeColor = "#ff2a5f";
+      if (rarity === 1) {
+        fillColor = "#1e3a8a";
+        strokeColor = "#3b82f6";
+      } else if (rarity === 2) {
+        fillColor = "#78350f";
+        strokeColor = "#fbbf24";
+      } else if (rarity === 3) {
+        fillColor = "#581c87";
+        strokeColor = "#d946ef";
+      }
+
+      if ((modifiers & 4) !== 0) {
+        ctx.beginPath();
+        ctx.arc(0, 0, ent.radius + 4, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(34, 197, 94, 0.5)";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
+      if ((modifiers & 8) !== 0) {
+        ctx.beginPath();
+        ctx.arc(0, 0, ent.radius + 8, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.6)";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      ctx.save();
+      if (ent.subtype === 10 || ent.subtype === 11) {
+        ctx.rotate(Date.now() / 600);
+      }
+
       if (ent.subtype === 1) {
-        const cacheKey = `m_1_${ent.radius}`;
+        const cacheKey = `m_1_${ent.radius}_${rarity}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#990022";
-          c.strokeStyle = "#ff2a5f";
+          c.fillStyle = fillColor;
+          c.strokeStyle = strokeColor;
           c.lineWidth = 3;
           c.beginPath();
           for (let i = 0; i < 5; i++) {
@@ -963,10 +998,10 @@ function renderGame() {
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else if (ent.subtype === 2) {
-        const cacheKey = `m_2_${ent.radius}`;
+        const cacheKey = `m_2_${ent.radius}_${rarity}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#990022";
-          c.strokeStyle = "#ff2a5f";
+          c.fillStyle = fillColor;
+          c.strokeStyle = strokeColor;
           c.lineWidth = 3;
           c.beginPath();
           for (let i = 0; i < 6; i++) {
@@ -979,10 +1014,10 @@ function renderGame() {
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       } else if (ent.subtype === 3) {
-        const cacheKey = `m_3_${ent.radius}`;
+        const cacheKey = `m_3_${ent.radius}_${rarity}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#990022";
-          c.strokeStyle = "#ff2a5f";
+          c.fillStyle = fillColor;
+          c.strokeStyle = strokeColor;
           c.lineWidth = 3;
           c.beginPath();
           for (let i = 0; i < 3; i++) {
@@ -994,11 +1029,49 @@ function renderGame() {
           c.stroke();
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
-      } else {
-        const cacheKey = `m_0_${ent.radius}`;
+      } else if (ent.subtype === 10) {
+        const cacheKey = `m_boss_10_${ent.radius}_${rarity}`;
         const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
-          c.fillStyle = "#990022";
-          c.strokeStyle = "#ff2a5f";
+          c.fillStyle = fillColor;
+          c.strokeStyle = strokeColor;
+          c.lineWidth = 4;
+          c.beginPath();
+          for (let i = 0; i < 10; i++) {
+            const a = (i * 2 * Math.PI) / 10;
+            c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          c.closePath();
+          c.fill();
+          c.stroke();
+          c.strokeStyle = "#ffffff";
+          c.lineWidth = 1.5;
+          c.beginPath();
+          c.arc(0, 0, r * 0.4, 0, Math.PI * 2);
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
+      } else if (ent.subtype === 11) {
+        const cacheKey = `m_boss_11_${ent.radius}_${rarity}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = fillColor;
+          c.strokeStyle = strokeColor;
+          c.lineWidth = 4;
+          c.beginPath();
+          for (let i = 0; i < 16; i++) {
+            const a = (i * 2 * Math.PI) / 16;
+            const curR = i % 2 === 0 ? r : r * 0.65;
+            c.lineTo(Math.cos(a) * curR, Math.sin(a) * curR);
+          }
+          c.closePath();
+          c.fill();
+          c.stroke();
+        });
+        ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
+      } else {
+        const cacheKey = `m_0_${ent.radius}_${rarity}`;
+        const sc = getShapeCanvas(cacheKey, ent.radius, (c, r) => {
+          c.fillStyle = fillColor;
+          c.strokeStyle = strokeColor;
           c.lineWidth = 3;
           c.beginPath();
           c.arc(0, 0, r, 0, Math.PI * 2);
@@ -1007,6 +1080,7 @@ function renderGame() {
         });
         ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
       }
+      ctx.restore();
 
       if (ent.health < ent.maxHealth) {
         ctx.rotate(-ent.angle);

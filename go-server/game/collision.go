@@ -15,8 +15,8 @@ type HashItem struct {
 }
 
 func (w *GameWorld) rebuildSpatialGrid() {
-	for r := 0; r < 20; r++ {
-		for c := 0; c < 20; c++ {
+	for r := 0; r < 60; r++ {
+		for c := 0; c < 60; c++ {
 			w.grid[r][c] = w.grid[r][c][:0]
 		}
 	}
@@ -45,20 +45,20 @@ func (w *GameWorld) insertToGrid(item HashItem) {
 	row := int(item.Pos.Y / 100.0)
 	if col < 0 {
 		col = 0
-	} else if col >= 20 {
-		col = 19
+	} else if col >= 60 {
+		col = 59
 	}
 	if row < 0 {
 		row = 0
-	} else if row >= 20 {
-		row = 19
+	} else if row >= 60 {
+		row = 59
 	}
 	w.grid[row][col] = append(w.grid[row][col], item)
 }
 
 func (w *GameWorld) resolveCollisionsOptimized() {
-	for r := 0; r < 20; r++ {
-		for c := 0; c < 20; c++ {
+	for r := 0; r < 60; r++ {
+		for c := 0; c < 60; c++ {
 			items := w.grid[r][c]
 			if len(items) == 0 {
 				continue
@@ -67,7 +67,7 @@ func (w *GameWorld) resolveCollisionsOptimized() {
 			for dr := -1; dr <= 1; dr++ {
 				for dc := -1; dc <= 1; dc++ {
 					nr, nc := r+dr, c+dc
-					if nr >= 0 && nr < 20 && nc >= 0 && nc < 20 {
+					if nr >= 0 && nr < 60 && nc >= 0 && nc < 60 {
 						neighbors = append(neighbors, w.grid[nr][nc]...)
 					}
 				}
@@ -107,11 +107,17 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 			relVelStart := p.Vel.Sub(m.Vel).Length()
 			if physics.ResolveCircleCircle(&p.Pos, &m.Pos, p.Radius, m.Radius, &p.Vel, &m.Vel, p.Mass, 1.0, 0.3) {
 				kineticEnergy := 0.5 * p.Mass * (relVelStart * relVelStart)
+				dmgKinetic := kineticEnergy * 0.005
+				dmgMelee := p.Radius * 0.25
+				if m.Modifiers&8 != 0 {
+					dmgKinetic *= 0.7
+					dmgMelee *= 0.7
+				}
 				if p.ClassID == 1 && relVelStart > 100.0 {
-					m.Health -= kineticEnergy * 0.005
+					m.Health -= dmgKinetic
 				}
 				p.Health -= m.Damage * 0.12
-				m.Health -= p.Radius * 0.25
+				m.Health -= dmgMelee
 				if m.Type == 2 {
 					p.Health -= m.Damage * 0.5
 					m.Health = 0
@@ -125,7 +131,11 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		m, ok2 := w.Mobs[b.ID]
 		if ok1 && ok2 {
 			if bullet.OwnerType == 0 || bullet.OwnerType == 2 {
-				m.Health -= bullet.Damage
+				dmg := bullet.Damage
+				if m.Modifiers&8 != 0 {
+					dmg *= 0.7
+				}
+				m.Health -= dmg
 				m.Vel = m.Vel.Add(bullet.Vel.Normalize().Mul(1.8))
 				bullet.Pierce--
 				if bullet.Pierce <= 0 {
@@ -155,7 +165,11 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		m, ok2 := w.Mobs[b.ID]
 		if ok1 && ok2 {
 			if physics.ResolveCircleCircle(&minion.Pos, &m.Pos, minion.Radius, m.Radius, &minion.Vel, &m.Vel, 1.0, 1.0, 0.25) {
-				m.Health -= minion.Damage
+				dmg := minion.Damage
+				if m.Modifiers&8 != 0 {
+					dmg *= 0.7
+				}
+				m.Health -= dmg
 				minion.Health -= m.Damage * 0.4
 				if m.Type == 2 {
 					minion.Health = 0

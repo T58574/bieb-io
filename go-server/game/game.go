@@ -38,7 +38,7 @@ type GameWorld struct {
 	mobPool        sync.Pool
 	orbPool        sync.Pool
 	fieldPool      sync.Pool
-	grid           [20][20][]HashItem
+	grid           [60][60][]HashItem
 	inputChan      chan InputEvent
 }
 
@@ -51,8 +51,8 @@ func NewGameWorld() *GameWorld {
 		Minions:        make(map[uint16]*Minion),
 		Fields:         make(map[uint16]*ChronoField),
 		nextID:         100,
-		Width:          2000.0,
-		Height:         2000.0,
+		Width:          6000.0,
+		Height:         6000.0,
 		rand:           rand.New(rand.NewSource(time.Now().UnixNano())),
 		WaveNumber:     0,
 		WaveActive:     false,
@@ -79,8 +79,8 @@ func NewGameWorld() *GameWorld {
 			return &ChronoField{}
 		},
 	}
-	for r := 0; r < 20; r++ {
-		for c := 0; c < 20; c++ {
+	for r := 0; r < 60; r++ {
+		for c := 0; c < 60; c++ {
 			w.grid[r][c] = make([]HashItem, 0, 32)
 		}
 	}
@@ -143,6 +143,7 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 			Health:    uint16(math.Max(0, m.Health)),
 			MaxHealth: uint16(m.MaxHealth),
 			Radius:    uint16(m.Radius),
+			StateFlags: uint32(m.Rarity) | (uint32(m.Modifiers) << 8),
 		})
 	}
 	for _, b := range w.Bullets {

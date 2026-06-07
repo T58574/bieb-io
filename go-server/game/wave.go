@@ -20,6 +20,7 @@ func (w *GameWorld) updateWaveSystem(dt float64) {
 			w.WaveActive = true
 			w.WaveMobsLeft = 40 + int(w.WaveNumber)*30
 			w.WaveSpawnTimer = 0
+			w.spawnBossesForWave()
 		}
 		return
 	}
