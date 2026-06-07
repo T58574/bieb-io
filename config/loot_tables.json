@@ -3,14 +3,14 @@
     "LootChance": 1.0,
     "Groups": [
       { "Weight": 10, "Items": [3, 4, 9, 10, 11] },
-      { "Weight": 90, "Items": [12, 13, 14] }
+      { "Weight": 90, "Items": [12, 13, 14, 15] }
     ]
   },
   "normal_rarity_3": {
     "LootChance": 0.5,
     "Groups": [
       { "Weight": 85, "Items": [3, 4, 9, 10, 11] },
-      { "Weight": 15, "Items": [12, 13, 14] }
+      { "Weight": 15, "Items": [12, 13, 14, 15] }
     ]
   },
   "normal_rarity_2": {

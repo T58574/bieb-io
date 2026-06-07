@@ -112,5 +112,15 @@
       "AddProjectiles": 1,
       "PierceCount": 1
     }
+  },
+  {
+    "ID": 15,
+    "Rarity": 4,
+    "StatModifiers": {
+      "AddProjectiles": 1,
+      "PercentDamage": 0.2,
+      "PercentSpeed": 0.1,
+      "BulletSpeed": 1.0
+    }
   }
 ]

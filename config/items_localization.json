@@ -115,6 +115,13 @@
       "desc": "+3 СкорСнар\n+50% Урон\n+1 Снаряд\n+1 Пробитие",
       "abbrev": "Ann\nIhi",
       "rarity": "Legendary"
+    },
+    "15": {
+      "name": "КВАНТОВЫЙ ЯДРО",
+      "color": "#f97316",
+      "desc": "+1 Снаряд\n+20% Урон\n+10% Скор\n+1 СкорСнар",
+      "abbrev": "Quant\nCore",
+      "rarity": "Legendary"
     }
   },
   "classes": []

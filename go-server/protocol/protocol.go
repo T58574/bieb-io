@@ -52,14 +52,14 @@ func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32,
 	binary.LittleEndian.PutUint16(buf[19:21], health)
 	binary.LittleEndian.PutUint16(buf[21:23], maxHealth)
 	buf[23] = upgradePoints
-	for i := 0; i < 24; i++ {
+	for i := 0; i < 26; i++ {
 		if i < len(upgradeLevels) {
 			buf[24+i] = upgradeLevels[i]
 		} else {
 			buf[24+i] = 0
 		}
 	}
-	binary.LittleEndian.PutUint16(buf[48:50], waveNumber)
+	binary.LittleEndian.PutUint16(buf[50:52], waveNumber)
 	binary.LittleEndian.PutUint16(buf[50:52], uint16(count))
 	buf[52] = card1
 	buf[53] = card2
