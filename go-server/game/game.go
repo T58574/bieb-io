@@ -317,7 +317,10 @@ func (w *GameWorld) updateLootDrops(dt float64) {
 				}
 			}
 			if target != nil {
-				ld.AttractTarget = target.ID
+				attractRadius := 100.0 + float64(target.StatPickupItemRadius)*200.0
+				if minDistSq < attractRadius*attractRadius {
+					ld.AttractTarget = target.ID
+				}
 			}
 		}
 		if ld.Pos.X < 0 || ld.Pos.X > w.Width || ld.Pos.Y < 0 || ld.Pos.Y > w.Height {

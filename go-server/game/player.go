@@ -43,6 +43,8 @@ type Player struct {
 	StatSpread       uint16
 	StatExpMod       uint16
 	StatLootQuantity uint16
+	StatPickupItemRadius uint16
+	StatThorns       uint16
 	RegenAccum       float64
 	ClassID          uint8
 	Mass             float64
@@ -292,6 +294,13 @@ func (w *GameWorld) applyCardUpgrade(p *Player, choiceIndex uint8) {
 			}
 		case "StatLootQuality":
 		case "PickupItemRadius":
+			if p.StatPickupItemRadius < cardCfg.MaxLevel {
+				p.StatPickupItemRadius++
+			}
+		case "StatThorns":
+			if p.StatThorns < cardCfg.MaxLevel {
+				p.StatThorns++
+			}
 		case "FlagUnlock":
 			p.StateFlags |= uint32(cardCfg.Value)
 		}
