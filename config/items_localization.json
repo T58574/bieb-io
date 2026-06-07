@@ -115,13 +115,6 @@
       "desc": "+3 СкорСнар\n+50% Урон\n+1 Снаряд\n+1 Пробитие",
       "abbrev": "Ann\nIhi",
       "rarity": "Legendary"
-    },
-    "15": {
-      "name": "КИНЕТИЧЕСКИЙ РЕФЛЕКТОР",
-      "color": "#ef4444",
-      "desc": "Снаряды отскакивают\nот стен 2 раза",
-      "abbrev": "Bnc\nWall",
-      "rarity": "Unique"
     }
   },
   "classes": []

@@ -214,6 +214,19 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 					m.Health = 0
 				}
 				dmgToPlayer := m.Damage * combatCfg.MeleeContactDamageMultiplier * (1.0 - math.Min(combatCfg.MaxDefianceReduction, float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel))
+
+				var armor float64
+				for itemID, count := range p.Inventory {
+					if count > 0 {
+						if mod, ok := GetItemModifier(itemID); ok {
+							armor += mod.StatModifiers.Armor * float64(count)
+						}
+					}
+				}
+				if armor > 0 {
+					dmgToPlayer *= (100.0 / (100.0 + armor))
+				}
+
 				if len(p.MinionIDs) > 0 {
 					droneID := p.MinionIDs[0]
 					if drone, okD := w.Minions[droneID]; okD {
@@ -329,6 +342,19 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 			}
 			if bullet.OwnerType == 1 {
 				dmgToPlayer := bullet.Damage * (1.0 - math.Min(combatCfg.MaxDefianceReduction, float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel))
+
+				var armor float64
+				for itemID, count := range p.Inventory {
+					if count > 0 {
+						if mod, ok := GetItemModifier(itemID); ok {
+							armor += mod.StatModifiers.Armor * float64(count)
+						}
+					}
+				}
+				if armor > 0 {
+					dmgToPlayer *= (100.0 / (100.0 + armor))
+				}
+
 				if len(p.MinionIDs) > 0 {
 					droneID := p.MinionIDs[0]
 					if drone, okD := w.Minions[droneID]; okD {
@@ -412,6 +438,17 @@ func (w *GameWorld) triggerOnKillEffects(killerID uint16, deadMob *Mob) {
 					distSq := otherMob.Pos.Sub(deadMob.Pos).LengthSq()
 					if distSq < explRadSq {
 						otherMob.Health -= combatCfg.ExplosionDamage * float64(count)
+					}
+				}
+			} else if mod.OnKillEffectTrigger == TRIGGER_CHAIN_LIGHTNING {
+				chainRadSq := combatCfg.LaserChainRadius * combatCfg.LaserChainRadius
+				for _, otherMob := range w.Mobs {
+					if otherMob.ID == deadMob.ID {
+						continue
+					}
+					distSq := otherMob.Pos.Sub(deadMob.Pos).LengthSq()
+					if distSq < chainRadSq {
+						otherMob.Health -= combatCfg.LaserChainDamage * float64(count)
 					}
 				}
 			}

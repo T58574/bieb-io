@@ -112,12 +112,5 @@
       "AddProjectiles": 1,
       "PierceCount": 1
     }
-  },
-  {
-    "ID": 15,
-    "Rarity": 3,
-    "StatModifiers": {
-      "BounceCount": 2
-    }
   }
 ]
