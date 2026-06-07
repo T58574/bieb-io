@@ -403,17 +403,19 @@ func (w *GameWorld) dropLoot(pos physics.Vector2D, rarity uint8, mobType uint8) 
 	var itemID uint8
 
 	if mobType == 10 || mobType == 11 || mobType == 12 {
-		if roll < 0.5 {
-			itemID = 3
-		} else {
-			itemID = 4
+		if w.rand.Float64() < 0.5 {
+			if roll < 0.5 {
+				itemID = 3
+			} else {
+				itemID = 4
+			}
 		}
 	} else {
-		if roll < 0.10 {
+		if roll < 0.05 {
 			itemID = 1
-		} else if roll < 0.11 {
+		} else if roll < 0.055 {
 			itemID = 2
-		} else if roll < 0.14 {
+		} else if roll < 0.07 {
 			if w.rand.Float64() < 0.5 {
 				itemID = 3
 			} else {
