@@ -48,7 +48,6 @@ type GameWorld struct {
 	WaveDuration     float64
 	WaveTimeLeft     float64
 	WaveDifficulty   float64
-	WaveTicks        uint32
 	Paused           bool
 	bulletPool       sync.Pool
 	mobPool          sync.Pool

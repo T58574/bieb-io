@@ -58,19 +58,16 @@ func TestWaveSpawning(t *testing.T) {
 	if w.WaveNumber != 1 {
 		t.Fatalf("expected wave 1, got %d", w.WaveNumber)
 	}
-	if len(w.Mobs) != 0 {
-		t.Fatalf("expected 0 mobs on wave start tick, got %d", len(w.Mobs))
+
+	w.Tick(0.016)
+	expectedPackSize := 4 + 2*1
+	if len(w.Mobs) != expectedPackSize {
+		t.Fatalf("expected %d mobs spawned on tick 1, got %d", expectedPackSize, len(w.Mobs))
 	}
 
 	w.Tick(0.016)
-	if len(w.Mobs) == 0 {
-		t.Fatal("expected mobs to spawn on tick 1")
-	}
-
-	mobsCountAfterSpawn := len(w.Mobs)
-	w.Tick(0.016)
-	if len(w.Mobs) != mobsCountAfterSpawn {
-		t.Fatalf("expected mob count to stay %d, got %d", mobsCountAfterSpawn, len(w.Mobs))
+	if len(w.Mobs) != expectedPackSize {
+		t.Fatalf("expected mob count to stay %d, got %d", expectedPackSize, len(w.Mobs))
 	}
 }
 
