@@ -22,7 +22,8 @@
     { "ID": 20, "MaxLevel": 1000, "Type": "StatExpMod", "Value": 0.01 },
     { "ID": 21, "MaxLevel": 1000, "Type": "StatLootQuantity", "Value": 0.01 },
     { "ID": 22, "MaxLevel": 1000, "Type": "StatLootQuality", "Value": 0.01 },
-    { "ID": 23, "MaxLevel": 1000, "Type": "PickupItemRadius", "Value": 0.01 }
+    { "ID": 23, "MaxLevel": 1000, "Type": "PickupItemRadius", "Value": 0.01 },
+    { "ID": 24, "MaxLevel": 1000, "Type": "StatThorns", "Value": 1.0 }
   ],
   "GlobalMultipliers": {
     "BaseMaxHP": 50.0,

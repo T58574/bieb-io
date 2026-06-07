@@ -105,22 +105,23 @@ func EncodeGameOver(score uint32, wave uint32) []byte {
 	return buf
 }
 
-func DecodeJoin(buf []byte) (string, error) {
+func DecodeJoin(buf []byte) (string, uint8, error) {
 	if len(buf) < 2 {
-		return "", errors.New("invalid join size")
+		return "", 0, errors.New("invalid join size")
 	}
 	usernameLen := int(buf[1])
 	if usernameLen == 0 || usernameLen > 16 {
-		return "", errors.New("invalid username length")
+		return "", 0, errors.New("invalid username length")
 	}
-	if len(buf) < 2+usernameLen {
-		return "", errors.New("invalid join size for username")
+	if len(buf) < 3+usernameLen {
+		return "", 0, errors.New("invalid join size for username and class")
 	}
 	username := string(buf[2 : 2+usernameLen])
 	if !validUsername.MatchString(username) {
-		return "", errors.New("invalid characters in username")
+		return "", 0, errors.New("invalid characters in username")
 	}
-	return username, nil
+	classId := buf[2+usernameLen]
+	return username, classId, nil
 }
 
 func DecodeInput(buf []byte) (ClientInput, error) {

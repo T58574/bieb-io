@@ -117,6 +117,16 @@
     "ID": 15,
     "Rarity": 4,
     "StatModifiers": {
+      "AddProjectiles": 1,
+      "PercentDamage": 0.2,
+      "PercentSpeed": 0.1,
+      "BulletSpeed": 1.0
+    }
+  },
+  {
+    "ID": 151,
+    "Rarity": 4,
+    "StatModifiers": {
       "FlatHP": 100.0,
       "Armor": 20.0,
       "BulletSpeed": 0.5

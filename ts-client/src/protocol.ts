@@ -46,15 +46,16 @@ export interface GameOverMessage {
 
 export type GameMessage = WelcomeMessage | WorldStateMessage | GameOverMessage;
 
-export function serializeJoin(username: string): ArrayBuffer {
+export function serializeJoin(username: string, classId: number): ArrayBuffer {
   const encoder = new TextEncoder();
   const nameBytes = encoder.encode(username);
-  const buffer = new ArrayBuffer(2 + nameBytes.length);
+  const buffer = new ArrayBuffer(3 + nameBytes.length);
   const view = new DataView(buffer);
   view.setUint8(0, 1);
   view.setUint8(1, nameBytes.length);
   const u8Array = new Uint8Array(buffer, 2);
   u8Array.set(nameBytes);
+  view.setUint8(2 + nameBytes.length, classId);
   return buffer;
 }
 

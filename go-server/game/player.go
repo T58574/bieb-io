@@ -43,6 +43,8 @@ type Player struct {
 	StatSpread       uint16
 	StatExpMod       uint16
 	StatLootQuantity uint16
+	StatPickupItemRadius uint16
+	StatThorns       uint16
 	RegenAccum       float64
 	ClassID          uint8
 	Mass             float64
@@ -121,7 +123,7 @@ func (p *Player) GetUpgradeLevels() []uint8 {
 	return levels
 }
 
-func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
+func (w *GameWorld) AddPlayer(id uint16, username string, classID uint8) *Player {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	pCfg := GetPlayerConfig()
@@ -137,7 +139,7 @@ func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 		Level:          pCfg.StartLevel,
 		Score:          0,
 		Alive:          true,
-		ClassID:        0,
+		ClassID:        classID,
 		Mass:           1.0,
 		StateFlags:     0,
 		ChargeLevel:    0.0,
@@ -290,6 +292,13 @@ func (w *GameWorld) applyCardUpgrade(p *Player, choiceIndex uint8) {
 			}
 		case "StatLootQuality":
 		case "PickupItemRadius":
+			if p.StatPickupItemRadius < cardCfg.MaxLevel {
+				p.StatPickupItemRadius++
+			}
+		case "StatThorns":
+			if p.StatThorns < cardCfg.MaxLevel {
+				p.StatThorns++
+			}
 		case "FlagUnlock":
 			p.StateFlags |= uint32(cardCfg.Value)
 		}

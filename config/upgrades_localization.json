@@ -19,5 +19,8 @@
   "18": { "title": "БРОНЕБОЙНОСТЬ", "color": "#10b981", "desc": "+1 пробитие снарядов", "rarity": "Rare", "abbrev": "Prc", "stateKey": "statPierceCount" },
   "19": { "title": "УГОЛ АТАКИ", "color": "#14b8a6", "desc": "Увеличение разброса на +5%", "rarity": "Common", "abbrev": "Sprd", "stateKey": "statSpread" },
   "20": { "title": "ОБУЧЕНИЕ НЕЙРОСЕТИ", "color": "#0ea5e9", "desc": "Получаемый опыт +1%", "rarity": "Common", "abbrev": "XP\nMod", "stateKey": "statExpMod" },
-  "21": { "title": "КВАНТОВЫЙ АНАЛИЗАТОР", "color": "#6366f1", "desc": "Шанс дропа предметов +5%", "rarity": "Common", "abbrev": "Loot\nQty", "stateKey": "statLootQuantity" }
+  "21": { "title": "КВАНТОВЫЙ АНАЛИЗАТОР", "color": "#6366f1", "desc": "Шанс дропа предметов +5%", "rarity": "Common", "abbrev": "Loot\nQty", "stateKey": "statLootQuantity" },
+  "22": { "title": "СОВЕРШЕНСТВО", "color": "#d946ef", "desc": "Качество предметов +1%", "rarity": "Common", "abbrev": "Loot\nQual", "stateKey": "statLootQuality" },
+  "23": { "title": "МАГНИТНОЕ ПОЛЕ", "color": "#eab308", "desc": "Увеличение радиуса сбора", "rarity": "Common", "abbrev": "Mag", "stateKey": "statPickupRadius" },
+  "24": { "title": "ШИПЫ", "color": "#ef4444", "desc": "Ответный урон при касании", "rarity": "Common", "abbrev": "Thorn", "stateKey": "statThorns" }
 }

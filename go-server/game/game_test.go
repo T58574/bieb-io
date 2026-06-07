@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 }
 func TestGameWorld(t *testing.T) {
 	w := NewGameWorld()
-	p := w.AddPlayer(1, "test")
+	p := w.AddPlayer(1, "test", 0)
 	if p == nil {
 		t.Fatal("player not added")
 	}
@@ -39,7 +39,7 @@ func TestGameWorld(t *testing.T) {
 
 func TestRemovePlayer(t *testing.T) {
 	w := NewGameWorld()
-	p := w.AddPlayer(1, "test_remove")
+	p := w.AddPlayer(1, "test_remove", 0)
 
 	if len(w.Players) != 1 {
 		t.Fatalf("expected 1 player, got %d", len(w.Players))
@@ -68,7 +68,7 @@ func TestRemovePlayer(t *testing.T) {
 
 func TestWaveSpawning(t *testing.T) {
 	w := NewGameWorld()
-	_ = w.AddPlayer(1, "tester")
+	_ = w.AddPlayer(1, "tester", 0)
 	w.WavePauseTimer = 0.0
 
 	w.Tick(0.016)

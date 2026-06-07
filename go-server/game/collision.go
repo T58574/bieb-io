@@ -203,6 +203,9 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 				}
 				_ = dmgKinetic
 				m.Health -= dmgMelee
+				if p.StatThorns > 0 {
+					m.Health -= float64(p.StatThorns) * 10.0
+				}
 				if m.Health <= 0 {
 					m.KillerID = p.ID
 					w.triggerOnKillEffects(p.ID, m)
