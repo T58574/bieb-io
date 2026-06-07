@@ -18,8 +18,10 @@ type HashItem struct {
 }
 
 func (w *GameWorld) rebuildSpatialGrid() {
-	for r := 0; r < 60; r++ {
-		for c := 0; c < 60; c++ {
+	worldCfg := GetWorldConfig()
+	gridSize := worldCfg.GridSize
+	for r := 0; r < gridSize; r++ {
+		for c := 0; c < gridSize; c++ {
 			w.grid[r][c] = w.grid[r][c][:0]
 		}
 	}
@@ -45,22 +47,28 @@ func (w *GameWorld) rebuildSpatialGrid() {
 }
 
 func (w *GameWorld) insertToGrid(item HashItem) {
-	col := int(item.Pos.X / 100.0)
-	row := int(item.Pos.Y / 100.0)
+	worldCfg := GetWorldConfig()
+	cellSize := worldCfg.CellSize
+	gridSize := worldCfg.GridSize
+	col := int(item.Pos.X / cellSize)
+	row := int(item.Pos.Y / cellSize)
 	if col < 0 {
 		col = 0
-	} else if col >= 60 {
-		col = 59
+	} else if col >= gridSize {
+		col = gridSize - 1
 	}
 	if row < 0 {
 		row = 0
-	} else if row >= 60 {
-		row = 59
+	} else if row >= gridSize {
+		row = gridSize - 1
 	}
 	w.grid[row][col] = append(w.grid[row][col], item)
 }
 
 func (w *GameWorld) insertBulletToGrid(b *Bullet) {
+	worldCfg := GetWorldConfig()
+	cellSize := worldCfg.CellSize
+	gridSize := worldCfg.GridSize
 	diff := b.Pos.Sub(b.PrevPos)
 	dist := diff.Length()
 	item := HashItem{
@@ -82,17 +90,17 @@ func (w *GameWorld) insertBulletToGrid(b *Bullet) {
 	for i := 0; i <= steps; i++ {
 		t := float64(i) / float64(steps)
 		pt := b.PrevPos.Add(diff.Mul(t))
-		col := int(pt.X / 100.0)
-		row := int(pt.Y / 100.0)
+		col := int(pt.X / cellSize)
+		row := int(pt.Y / cellSize)
 		if col < 0 {
 			col = 0
-		} else if col >= 60 {
-			col = 59
+		} else if col >= gridSize {
+			col = gridSize - 1
 		}
 		if row < 0 {
 			row = 0
-		} else if row >= 60 {
-			row = 59
+		} else if row >= gridSize {
+			row = gridSize - 1
 		}
 		if col != lastCol || row != lastRow {
 			w.grid[row][col] = append(w.grid[row][col], item)
@@ -123,8 +131,10 @@ func checkCollisionSegmentCircle(s0, s1 physics.Vector2D, rS float64, c physics.
 }
 
 func (w *GameWorld) resolveCollisionsOptimized() {
-	for r := 0; r < 60; r++ {
-		for c := 0; c < 60; c++ {
+	worldCfg := GetWorldConfig()
+	gridSize := worldCfg.GridSize
+	for r := 0; r < gridSize; r++ {
+		for c := 0; c < gridSize; c++ {
 			items := w.grid[r][c]
 			if len(items) == 0 {
 				continue
@@ -133,7 +143,7 @@ func (w *GameWorld) resolveCollisionsOptimized() {
 			for dr := -1; dr <= 1; dr++ {
 				for dc := -1; dc <= 1; dc++ {
 					nr, nc := r+dr, c+dc
-					if nr >= 0 && nr < 60 && nc >= 0 && nc < 60 {
+					if nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize {
 						neighbors = append(neighbors, w.grid[nr][nc]...)
 					}
 				}
@@ -166,6 +176,9 @@ func (w *GameWorld) resolveCollisionsOptimized() {
 }
 
 func (w *GameWorld) handleCollisionPair(a, b HashItem) {
+	combatCfg := GetCombatConfig()
+	rarityCfg := GetRarityConfig()
+
 	if a.Type == 1 && b.Type == 1 {
 		m1, ok1 := w.Mobs[a.ID]
 		m2, ok2 := w.Mobs[b.ID]
@@ -180,12 +193,15 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		if ok1 && ok2 && p.Alive {
 			relVelStart := p.Vel.Sub(m.Vel).Length()
 			if physics.ResolveCircleCircle(&p.Pos, &m.Pos, p.Radius, m.Radius, &p.Vel, &m.Vel, p.Mass, 1.0, 0.3) {
-				dmgKinetic := 0.5 * p.Mass * (relVelStart * relVelStart) * 0.005
-				dmgMelee := p.Radius * 0.25
-				if m.Modifiers&8 != 0 {
-					dmgKinetic *= 0.7
-					dmgMelee *= 0.7
+				dmgKinetic := 0.5 * p.Mass * (relVelStart * relVelStart) * combatCfg.KineticDamageFactor
+				dmgMelee := p.Radius * combatCfg.MeleeDamageRadiusFactor
+				if armorMod, ok := rarityCfg.Modifiers["armor"]; ok {
+					if m.Modifiers&(1<<armorMod.Bit) != 0 {
+						dmgKinetic *= armorMod.DamageReduction
+						dmgMelee *= armorMod.DamageReduction
+					}
 				}
+				_ = dmgKinetic
 				m.Health -= dmgMelee
 				if m.Health <= 0 {
 					m.KillerID = p.ID
@@ -194,7 +210,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 				if m.Type == 2 {
 					m.Health = 0
 				}
-				dmgToPlayer := m.Damage * 0.12 * (1.0 - math.Min(0.5, float64(p.StatCritDefiance)*0.05))
+				dmgToPlayer := m.Damage * combatCfg.MeleeContactDamageMultiplier * (1.0 - math.Min(combatCfg.MaxDefianceReduction, float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel))
 				if len(p.MinionIDs) > 0 {
 					droneID := p.MinionIDs[0]
 					if drone, okD := w.Minions[droneID]; okD {
@@ -216,15 +232,17 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 			}
 			if bullet.OwnerType == 0 || bullet.OwnerType == 2 {
 				dmg := bullet.Damage
-				if m.Modifiers&8 != 0 {
-					dmg *= 0.7
+				if armorMod, ok := rarityCfg.Modifiers["armor"]; ok {
+					if m.Modifiers&(1<<armorMod.Bit) != 0 {
+						dmg *= armorMod.DamageReduction
+					}
 				}
 				isCrit := false
-				critChance := 0.20
-				critMultiplier := 2.0
+				critChance := combatCfg.BaseCritChance
+				critMultiplier := combatCfg.BaseCritMultiplier
 				if p, okP := w.Players[bullet.OwnerID]; okP && p.Alive {
-					critChance += float64(p.StatCritChance) * 0.05
-					critMultiplier += float64(p.StatCritDamage) * 0.05
+					critChance += float64(p.StatCritChance) * combatCfg.CritChancePerLevel
+					critMultiplier += float64(p.StatCritDamage) * combatCfg.CritDamagePerLevel
 				}
 
 				if bullet.Subtype == 2 && w.rand.Float64() < critChance {
@@ -236,49 +254,51 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 					m.KillerID = bullet.OwnerID
 					w.triggerOnKillEffects(bullet.OwnerID, m)
 				}
-				m.Vel = m.Vel.Add(bullet.Vel.Normalize().Mul(1.8))
+				m.Vel = m.Vel.Add(bullet.Vel.Normalize().Mul(combatCfg.BulletKnockback))
 				if bullet.OwnerType == 0 {
 					p, okP := w.Players[bullet.OwnerID]
 					if okP && p.Alive {
 						vampPercent := p.Vampirism
 						if count, ok := p.Inventory[2]; ok {
-							vampPercent += 0.05 * float64(count)
+							vampPercent += combatCfg.VampirismPerItem * float64(count)
 						}
 						if vampPercent > 0 {
 							p.Health = math.Min(p.MaxHealth, p.Health+dmg*vampPercent)
 						}
 						if bullet.Subtype == 1 {
 							p.LaserHitsCount[m.ID]++
-							if p.LaserHitsCount[m.ID] >= 3 {
+							if p.LaserHitsCount[m.ID] >= combatCfg.LaserChainThreshold {
 								p.LaserHitsCount[m.ID] = 0
+								chainRadSq := combatCfg.LaserChainRadius * combatCfg.LaserChainRadius
 								for _, otherMob := range w.Mobs {
 									distSq := otherMob.Pos.Sub(m.Pos).LengthSq()
-									if distSq < 120.0*120.0 {
-										otherMob.Health -= 25.0
+									if distSq < chainRadSq {
+										otherMob.Health -= combatCfg.LaserChainDamage
 									}
 								}
 							}
 						}
 						if isCrit {
 							var targets []*Mob
+							critRangeSq := combatCfg.CritChainRange * combatCfg.CritChainRange
 							for _, otherMob := range w.Mobs {
 								if otherMob.ID == m.ID {
 									continue
 								}
 								distSq := otherMob.Pos.Sub(m.Pos).LengthSq()
-								if distSq < 300.0*300.0 {
+								if distSq < critRangeSq {
 									targets = append(targets, otherMob)
 								}
 							}
 							w.rand.Shuffle(len(targets), func(i, j int) {
 								targets[i], targets[j] = targets[j], targets[i]
 							})
-							limit := 3
+							limit := combatCfg.CritChainLimit
 							if len(targets) < limit {
 								limit = len(targets)
 							}
 							for k := 0; k < limit; k++ {
-								targets[k].Health -= 15.0
+								targets[k].Health -= combatCfg.CritChainDamage
 							}
 						}
 						if bullet.Subtype == 3 {
@@ -302,7 +322,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 				return
 			}
 			if bullet.OwnerType == 1 {
-				dmgToPlayer := bullet.Damage * (1.0 - math.Min(0.5, float64(p.StatCritDefiance)*0.05))
+				dmgToPlayer := bullet.Damage * (1.0 - math.Min(combatCfg.MaxDefianceReduction, float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel))
 				if len(p.MinionIDs) > 0 {
 					droneID := p.MinionIDs[0]
 					if drone, okD := w.Minions[droneID]; okD {
@@ -311,7 +331,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 					}
 				}
 				p.Health -= dmgToPlayer
-				p.Vel = p.Vel.Add(bullet.Vel.Normalize().Mul(0.8))
+				p.Vel = p.Vel.Add(bullet.Vel.Normalize().Mul(combatCfg.PlayerBulletKnockback))
 				bullet.Lifetime = 0
 			}
 		}
@@ -337,11 +357,13 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		if ok1 && ok2 {
 			if physics.ResolveCircleCircle(&minion.Pos, &m.Pos, minion.Radius, m.Radius, &minion.Vel, &m.Vel, 1.0, 1.0, 0.25) {
 				dmg := minion.Damage
-				if m.Modifiers&8 != 0 {
-					dmg *= 0.7
+				if armorMod, ok := rarityCfg.Modifiers["armor"]; ok {
+					if m.Modifiers&(1<<armorMod.Bit) != 0 {
+						dmg *= armorMod.DamageReduction
+					}
 				}
 				m.Health -= dmg
-				minion.Health -= m.Damage * 0.4
+				minion.Health -= m.Damage * combatCfg.MinionContactDamageMultiplier
 				if m.Type == 2 {
 					minion.Health = 0
 					m.Health = 0
@@ -365,6 +387,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 }
 
 func (w *GameWorld) triggerOnKillEffects(killerID uint16, deadMob *Mob) {
+	combatCfg := GetCombatConfig()
 	killer, ok := w.Players[killerID]
 	if !ok || !killer.Alive {
 		return
@@ -375,13 +398,14 @@ func (w *GameWorld) triggerOnKillEffects(killerID uint16, deadMob *Mob) {
 		}
 		if mod, ok := GetItemModifier(itemID); ok {
 			if mod.OnKillEffectTrigger == TRIGGER_AREA_EXPLOSION {
+				explRadSq := combatCfg.ExplosionRadius * combatCfg.ExplosionRadius
 				for _, otherMob := range w.Mobs {
 					if otherMob.ID == deadMob.ID {
 						continue
 					}
 					distSq := otherMob.Pos.Sub(deadMob.Pos).LengthSq()
-					if distSq < 140.0*140.0 {
-						otherMob.Health -= 35.0 * float64(count)
+					if distSq < explRadSq {
+						otherMob.Health -= combatCfg.ExplosionDamage * float64(count)
 					}
 				}
 			}

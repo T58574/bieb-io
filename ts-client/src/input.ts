@@ -1,7 +1,7 @@
 import { state, renderEntities } from "./state";
 import { socket, sendPauseToggle, sendClassUpgrade, connectToServer } from "./network";
 import { serializeInput } from "./protocol";
-import localizationData from "./items_localization.json";
+import localizationData from "../../config/items_localization.json";
 
 export const keys = { w: false, a: false, s: false, d: false, space: false, mouseLeft: false };
 

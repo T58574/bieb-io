@@ -1,7 +1,7 @@
 import { state } from "./state";
 import { TextRenderer } from "./text";
 import { GAMEOVER_LAYOUT } from "./graphics_config";
-import localizationData from "./items_localization.json";
+import localizationData from "../../config/items_localization.json";
 
 export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
   const uiScale = Math.min(canvasWidth / 1920, canvasHeight / 1080);

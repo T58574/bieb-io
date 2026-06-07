@@ -221,24 +221,58 @@ func main() {
 		Compress:   true,
 	}))
 
-	if err := game.LoadItemsConfig("config/items.json"); err != nil {
+	configDir := "../config/"
+
+	if err := game.LoadWorldConfig(configDir + "world.json"); err != nil {
+		log.Fatalf("Failed to load world config: %v", err)
+	}
+
+	if err := game.LoadItemsConfig(configDir + "items.json"); err != nil {
 		log.Fatalf("Failed to load items config: %v", err)
 	}
 
-	if err := game.LoadClassesConfig("config/classes.json"); err != nil {
+	if err := game.LoadClassesConfig(configDir + "classes.json"); err != nil {
 		log.Fatalf("Failed to load classes config: %v", err)
 	}
 
-	if err := game.LoadUpgradesConfig("config/upgrades.json"); err != nil {
+	if err := game.LoadUpgradesConfig(configDir + "upgrades.json"); err != nil {
 		log.Fatalf("Failed to load upgrades config: %v", err)
 	}
 
-	if err := game.LoadWaveConfig("config/waves.json"); err != nil {
+	if err := game.LoadWaveConfig(configDir + "waves.json"); err != nil {
 		log.Fatalf("Failed to load wave config: %v", err)
 	}
 
-	if err := game.LoadLootConfig("config/loot_tables.json"); err != nil {
+	if err := game.LoadLootConfig(configDir + "loot_tables.json"); err != nil {
 		log.Fatalf("Failed to load loot config: %v", err)
+	}
+
+	if err := game.LoadMobsConfig(configDir + "mobs.json"); err != nil {
+		log.Fatalf("Failed to load mobs config: %v", err)
+	}
+
+	if err := game.LoadBossesConfig(configDir + "bosses.json"); err != nil {
+		log.Fatalf("Failed to load bosses config: %v", err)
+	}
+
+	if err := game.LoadRarityConfig(configDir + "rarity.json"); err != nil {
+		log.Fatalf("Failed to load rarity config: %v", err)
+	}
+
+	if err := game.LoadMinionConfig(configDir + "minions.json"); err != nil {
+		log.Fatalf("Failed to load minion config: %v", err)
+	}
+
+	if err := game.LoadCombatConfig(configDir + "combat.json"); err != nil {
+		log.Fatalf("Failed to load combat config: %v", err)
+	}
+
+	if err := game.LoadPlayerConfig(configDir + "player.json"); err != nil {
+		log.Fatalf("Failed to load player config: %v", err)
+	}
+
+	if err := game.LoadSpawnConfig(configDir + "spawn.json"); err != nil {
+		log.Fatalf("Failed to load spawn config: %v", err)
 	}
 
 	server := NewGameServer()

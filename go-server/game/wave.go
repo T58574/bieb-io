@@ -29,9 +29,10 @@ func (w *GameWorld) startNextWave() {
 	}
 	w.WaveMobsLeft = int(targetMobCount)
 
-	spawnInterval := 3.0 - float64(w.WaveNumber)*0.1
-	if spawnInterval < 1.0 {
-		spawnInterval = 1.0
+	spawnCfg := GetSpawnConfig()
+	spawnInterval := spawnCfg.SpawnInterval.Base - float64(w.WaveNumber)*spawnCfg.SpawnInterval.ReductionPerWave
+	if spawnInterval < spawnCfg.SpawnInterval.Minimum {
+		spawnInterval = spawnCfg.SpawnInterval.Minimum
 	}
 	w.WaveSpawnTimer = spawnInterval
 	w.spawnBossesForWave()
@@ -41,6 +42,8 @@ func (w *GameWorld) updateWaveSystem(dt float64) {
 	if !w.hasAlivePlayers() {
 		return
 	}
+
+	spawnCfg := GetSpawnConfig()
 
 	if !w.WaveActive {
 		w.WavePauseTimer -= dt
@@ -57,23 +60,23 @@ func (w *GameWorld) updateWaveSystem(dt float64) {
 		return
 	}
 
-	maxAlive := 60 + int(w.WaveNumber)*40
-	if maxAlive > 1000000 {
-		maxAlive = 1000000
+	maxAlive := spawnCfg.MaxAlive.Base + int(w.WaveNumber)*spawnCfg.MaxAlive.PerWave
+	if maxAlive > spawnCfg.MaxAlive.Cap {
+		maxAlive = spawnCfg.MaxAlive.Cap
 	}
 
 	if w.WaveMobsLeft > 0 && len(w.Mobs) < maxAlive {
 		w.WaveSpawnTimer += dt
 
-		spawnInterval := 3.0 - float64(w.WaveNumber)*0.1
-		if spawnInterval < 1.0 {
-			spawnInterval = 1.0
+		spawnInterval := spawnCfg.SpawnInterval.Base - float64(w.WaveNumber)*spawnCfg.SpawnInterval.ReductionPerWave
+		if spawnInterval < spawnCfg.SpawnInterval.Minimum {
+			spawnInterval = spawnCfg.SpawnInterval.Minimum
 		}
 
 		if w.WaveSpawnTimer >= spawnInterval {
 			w.WaveSpawnTimer = 0
 
-			packSize := 4 + int(w.WaveNumber)*2
+			packSize := spawnCfg.PackSize.Base + int(w.WaveNumber)*spawnCfg.PackSize.PerWave
 			for i := 0; i < packSize && w.WaveMobsLeft > 0 && len(w.Mobs) < maxAlive; i++ {
 				w.spawnSingleMob()
 				w.WaveMobsLeft--

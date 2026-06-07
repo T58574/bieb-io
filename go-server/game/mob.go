@@ -2,6 +2,7 @@ package game
 
 import (
 	"math"
+	"strconv"
 
 	"go-server/physics"
 )
@@ -24,6 +25,9 @@ type Mob struct {
 }
 
 func (w *GameWorld) spawnSingleMob() {
+	mobsCfg := GetMobsConfig()
+	spawnCfg := GetSpawnConfig()
+
 	var rx, ry float64
 	var targetPlayer *Player
 	for _, p := range w.Players {
@@ -34,18 +38,18 @@ func (w *GameWorld) spawnSingleMob() {
 	}
 	if targetPlayer != nil {
 		angle := w.rand.Float64() * 2.0 * math.Pi
-		dist := 850.0 + w.rand.Float64()*250.0
+		dist := mobsCfg.SpawnDistMin + w.rand.Float64()*(mobsCfg.SpawnDistMax-mobsCfg.SpawnDistMin)
 		rx = targetPlayer.Pos.X + math.Cos(angle)*dist
 		ry = targetPlayer.Pos.Y + math.Sin(angle)*dist
-		if rx < 10 {
-			rx = 10
-		} else if rx > w.Width-10 {
-			rx = w.Width - 10
+		if rx < mobsCfg.BorderPadding {
+			rx = mobsCfg.BorderPadding
+		} else if rx > w.Width-mobsCfg.BorderPadding {
+			rx = w.Width - mobsCfg.BorderPadding
 		}
-		if ry < 10 {
-			ry = 10
-		} else if ry > w.Height-10 {
-			ry = w.Height - 10
+		if ry < mobsCfg.BorderPadding {
+			ry = mobsCfg.BorderPadding
+		} else if ry > w.Height-mobsCfg.BorderPadding {
+			ry = w.Height - mobsCfg.BorderPadding
 		}
 	} else {
 		side := w.rand.Intn(4)
@@ -65,114 +69,61 @@ func (w *GameWorld) spawnSingleMob() {
 		}
 	}
 
-	var mobType uint8
-	roll := w.rand.Float64()
+	waveKey := strconv.Itoa(int(w.WaveNumber))
+	spawnTable, ok := spawnCfg.WaveSpawnTables[waveKey]
+	if !ok {
+		spawnTable = spawnCfg.WaveSpawnTables["default"]
+	}
 
-	if w.WaveNumber == 1 {
-		if roll < 0.7 {
-			mobType = 3
-		} else {
-			mobType = 0
-		}
-	} else if w.WaveNumber == 2 {
-		if roll < 0.4 {
-			mobType = 3
-		} else if roll < 0.8 {
-			mobType = 0
-		} else {
-			mobType = 1
-		}
-	} else if w.WaveNumber == 3 {
-		if roll < 0.3 {
-			mobType = 0
-		} else if roll < 0.7 {
-			mobType = 1
-		} else {
-			mobType = 2
-		}
-	} else {
-		if roll < 0.2 {
-			mobType = 3
-		} else if roll < 0.4 {
-			mobType = 0
-		} else if roll < 0.7 {
-			mobType = 1
-		} else {
-			mobType = 2
+	roll := w.rand.Float64()
+	var mobType uint8
+	cumWeight := 0.0
+	for _, entry := range spawnTable {
+		cumWeight += entry.Weight
+		if roll < cumWeight {
+			mobType = entry.Type
+			break
 		}
 	}
 
+	rarityCfg := GetRarityConfig()
 	rarity := uint8(0)
 	rarityRoll := w.rand.Float64()
-	if rarityRoll < 0.18 {
-		if rarityRoll < 0.01 {
-			rarity = 3
-		} else if rarityRoll < 0.05 {
-			rarity = 2
-		} else {
-			rarity = 1
+	for i := len(rarityCfg.Chances) - 1; i >= 0; i-- {
+		if rarityRoll < rarityCfg.Chances[i].MaxRoll {
+			rarity = rarityCfg.Chances[i].Rarity
+			break
 		}
 	}
 
 	id := w.GenerateID()
-	var hp, rad, dmg float64
-	var xpVal uint32
-	switch mobType {
-	case 0:
-		hp = 20 * w.WaveDifficulty
-		rad = 16
-		dmg = 5 * w.WaveDifficulty
-		xpVal = 15
-	case 1:
-		hp = 40 * w.WaveDifficulty
-		rad = 22
-		dmg = 8 * w.WaveDifficulty
-		xpVal = 35
-	case 2:
-		hp = 15 * w.WaveDifficulty
-		rad = 12
-		dmg = 10 * w.WaveDifficulty
-		xpVal = 25
-	case 3:
-		hp = 5 * w.WaveDifficulty
-		rad = 10
-		dmg = 2.5 * w.WaveDifficulty
-		xpVal = 10
+	mobCfg, hasCfg := GetMobTypeConfig(mobType)
+	if !hasCfg {
+		mobCfg, _ = GetMobTypeConfig(0)
 	}
 
-	hpMultiplier := 1.0
-	dmgMultiplier := 1.0
-	xpMultiplier := 1.0
-	radiusMultiplier := 1.0
+	hp := mobCfg.BaseHP * w.WaveDifficulty
+	rad := mobCfg.Radius
+	dmg := mobCfg.BaseDamage * w.WaveDifficulty
+	xpVal := mobCfg.BaseXP
+
+	rm := GetRarityMultiplier(rarity)
+	hp *= rm.HP
+	dmg *= rm.Damage
+	xpVal = uint32(float64(xpVal) * rm.XP * w.WaveDifficulty)
+	rad *= rm.Radius
+
 	var modifiers uint32 = 0
-
-	if rarity == 1 {
-		hpMultiplier = 2.0
-		dmgMultiplier = 1.3
-		xpMultiplier = 2.5
-		radiusMultiplier = 1.15
-		modRoll := w.rand.Intn(4)
-		modifiers |= (1 << modRoll)
-	} else if rarity == 2 {
-		hpMultiplier = 4.5
-		dmgMultiplier = 1.8
-		xpMultiplier = 6.0
-		radiusMultiplier = 1.35
+	if rm.ModifierCount == 4 {
+		modifiers = 0x0F
+	} else if rm.ModifierCount > 0 {
 		mod1 := w.rand.Intn(4)
-		mod2 := (mod1 + 1 + w.rand.Intn(3)) % 4
-		modifiers |= (1 << mod1) | (1 << mod2)
-	} else if rarity == 3 {
-		hpMultiplier = 10.0
-		dmgMultiplier = 2.5
-		xpMultiplier = 15.0
-		radiusMultiplier = 1.6
-		modifiers |= 0x0F
+		modifiers |= (1 << mod1)
+		for j := 1; j < rm.ModifierCount; j++ {
+			mod := (mod1 + 1 + w.rand.Intn(3)) % 4
+			modifiers |= (1 << mod)
+		}
 	}
-
-	hp *= hpMultiplier
-	dmg *= dmgMultiplier
-	xpVal = uint32(float64(xpVal) * xpMultiplier * w.WaveDifficulty)
-	rad *= radiusMultiplier
 
 	m := w.mobPool.Get().(*Mob)
 	*m = Mob{}
@@ -190,19 +141,24 @@ func (w *GameWorld) spawnSingleMob() {
 }
 
 func (w *GameWorld) updateMobs(dt float64) {
+	rarityCfg := GetRarityConfig()
+	worldCfg := GetWorldConfig()
+
 	for id, m := range w.Mobs {
 		var target *Player
 		var minDist float64 = -1
-		c := int(m.Pos.X / 100.0)
-		r := int(m.Pos.Y / 100.0)
+		cellSize := worldCfg.CellSize
+		c := int(m.Pos.X / cellSize)
+		r := int(m.Pos.Y / cellSize)
+		gridSize := worldCfg.GridSize
 		for dr := -1; dr <= 1; dr++ {
 			nr := r + dr
-			if nr < 0 || nr >= 60 {
+			if nr < 0 || nr >= gridSize {
 				continue
 			}
 			for dc := -1; dc <= 1; dc++ {
 				nc := c + dc
-				if nc < 0 || nc >= 60 {
+				if nc < 0 || nc >= gridSize {
 					continue
 				}
 				for _, item := range w.grid[nr][nc] {
@@ -221,12 +177,12 @@ func (w *GameWorld) updateMobs(dt float64) {
 		}
 		needsFallback := true
 		if target != nil {
-			distToEdgeX := m.Pos.X - float64((c-1)*100)
-			if rightEdge := float64((c+2)*100) - m.Pos.X; rightEdge < distToEdgeX {
+			distToEdgeX := m.Pos.X - float64((c-1)*int(cellSize))
+			if rightEdge := float64((c+2)*int(cellSize)) - m.Pos.X; rightEdge < distToEdgeX {
 				distToEdgeX = rightEdge
 			}
-			distToEdgeY := m.Pos.Y - float64((r-1)*100)
-			if bottomEdge := float64((r+2)*100) - m.Pos.Y; bottomEdge < distToEdgeY {
+			distToEdgeY := m.Pos.Y - float64((r-1)*int(cellSize))
+			if bottomEdge := float64((r+2)*int(cellSize)) - m.Pos.Y; bottomEdge < distToEdgeY {
 				distToEdgeY = bottomEdge
 			}
 			minDistToEdgeSq := distToEdgeX * distToEdgeX
@@ -252,97 +208,69 @@ func (w *GameWorld) updateMobs(dt float64) {
 		if target != nil {
 			dist := math.Sqrt(minDist)
 			dir := target.Pos.Sub(m.Pos).Normalize()
-			speedMul := 1.0
-			if m.Rarity == 1 {
-				speedMul = 1.1
-			} else if m.Rarity == 2 {
-				speedMul = 1.25
-			} else if m.Rarity == 3 {
-				speedMul = 1.4
+
+			rm := GetRarityMultiplier(m.Rarity)
+			speedMul := rm.Speed
+
+			if speedMod, ok := rarityCfg.Modifiers["speed"]; ok {
+				if m.Modifiers&(1<<speedMod.Bit) != 0 {
+					speedMul *= speedMod.SpeedMultiplier
+				}
 			}
-			if m.Modifiers&1 != 0 {
-				speedMul *= 1.5
-			}
+
 			if m.Type < 10 {
 				speedMul *= math.Pow(w.WaveDifficulty, CurrentWaveConfig.SpeedDifficultyExponent)
 			}
 
-			if m.Type == 0 {
-				m.Vel = m.Vel.Add(dir.Mul(0.2)).Normalize().Mul(1.8 * speedMul)
-			} else if m.Type == 1 {
-				if dist > 260 {
-					m.Vel = m.Vel.Add(dir.Mul(0.2)).Normalize().Mul(2.0 * speedMul)
-				} else if dist < 180 {
-					m.Vel = m.Vel.Add(dir.Mul(-0.25)).Normalize().Mul(2.2 * speedMul)
-				} else {
-					m.Vel = m.Vel.Mul(0.9)
+			mobCfg, hasCfg := GetMobTypeConfig(m.Type)
+			if !hasCfg {
+				bossCfg, hasBoss := GetBossTypeConfig(m.Type)
+				if hasBoss {
+					w.updateBossMob(m, bossCfg, dir, dist, dt, speedMul)
 				}
-				m.ShootCooldown -= dt
-				if m.ShootCooldown <= 0 && dist < 450 {
-					m.ShootCooldown = 3.5
-					bID := w.GenerateID()
-					b := w.bulletPool.Get().(*Bullet)
-					*b = Bullet{}
-					b.ID = bID
-					b.OwnerID = m.ID
-					b.OwnerType = 1
-					b.Subtype = 5
-					b.Pos = m.Pos.Add(dir.Mul(m.Radius + 5))
-					b.PrevPos = b.Pos
-					b.Vel = dir.Mul(7.0)
-					b.Radius = 7
-					b.Damage = 4
-					b.Lifetime = 3.0
-					b.Pierce = 1
-					w.Bullets[bID] = b
-				}
-			} else if m.Type == 2 {
-				m.Vel = m.Vel.Add(dir.Mul(0.3)).Normalize().Mul(3.2 * speedMul)
-			} else if m.Type == 3 {
-				m.Vel = m.Vel.Add(dir.Mul(0.25)).Normalize().Mul(2.5 * speedMul)
-			} else if m.Type == 10 {
-				m.Vel = m.Vel.Add(dir.Mul(0.15)).Normalize().Mul(1.4 * speedMul)
-				m.ShootCooldown -= dt
-				if m.ShootCooldown <= 0 && dist < 500 {
-					m.ShootCooldown = 2.5
-					for i := 0; i < 8; i++ {
-						angle := (float64(i) / 8.0) * 2.0 * math.Pi
-						bDir := physics.Vector2D{X: math.Cos(angle), Y: math.Sin(angle)}
+			} else {
+				if mobCfg.ShootCooldown > 0 {
+					if dist > mobCfg.PreferredMaxDist {
+						m.Vel = m.Vel.Add(dir.Mul(mobCfg.Acceleration)).Normalize().Mul(mobCfg.BaseSpeed * speedMul)
+					} else if dist < mobCfg.PreferredMinDist {
+						m.Vel = m.Vel.Add(dir.Mul(mobCfg.RetreatAccel)).Normalize().Mul(mobCfg.RetreatSpeed * speedMul)
+					} else {
+						m.Vel = m.Vel.Mul(mobCfg.IdleFriction)
+					}
+					m.ShootCooldown -= dt
+					if m.ShootCooldown <= 0 && dist < mobCfg.ShootRange {
+						m.ShootCooldown = mobCfg.ShootCooldown
 						bID := w.GenerateID()
 						b := w.bulletPool.Get().(*Bullet)
 						*b = Bullet{}
 						b.ID = bID
 						b.OwnerID = m.ID
 						b.OwnerType = 1
-						b.Subtype = 5
-						b.Pos = m.Pos.Add(bDir.Mul(m.Radius + 5))
+						b.Subtype = mobCfg.BulletSubtype
+						b.Pos = m.Pos.Add(dir.Mul(m.Radius + 5))
 						b.PrevPos = b.Pos
-						b.Vel = bDir.Mul(5.0)
-						b.Radius = 9
-						b.Damage = m.Damage * 0.5
-						b.Lifetime = 4.0
-						b.Pierce = 1
+						b.Vel = dir.Mul(mobCfg.BulletSpeed)
+						b.Radius = mobCfg.BulletRadius
+						b.Damage = mobCfg.BulletDamage
+						b.Lifetime = mobCfg.BulletLifetime
+						b.Pierce = mobCfg.BulletPierce
 						w.Bullets[bID] = b
 					}
-				}
-			} else if m.Type == 11 {
-				m.ShootCooldown -= dt
-				if m.ShootCooldown <= 0 {
-					m.ShootCooldown = 3.2
-					m.Vel = dir.Mul(9.0)
-				} else if m.ShootCooldown > 2.0 {
-					m.Vel = m.Vel.Normalize().Mul(9.0)
 				} else {
-					m.Vel = m.Vel.Add(dir.Mul(0.1)).Normalize().Mul(1.8 * speedMul)
+					m.Vel = m.Vel.Add(dir.Mul(mobCfg.Acceleration)).Normalize().Mul(mobCfg.BaseSpeed * speedMul)
 				}
 			}
 		}
-		if m.Modifiers&4 != 0 && m.Health < m.MaxHealth {
-			m.Health += m.MaxHealth * 0.03 * dt
-			if m.Health > m.MaxHealth {
-				m.Health = m.MaxHealth
+
+		if regenMod, ok := rarityCfg.Modifiers["regen"]; ok {
+			if m.Modifiers&(1<<regenMod.Bit) != 0 && m.Health < m.MaxHealth {
+				m.Health += m.MaxHealth * regenMod.RegenPercent * dt
+				if m.Health > m.MaxHealth {
+					m.Health = m.MaxHealth
+				}
 			}
 		}
+
 		for _, f := range w.Fields {
 			distSq := m.Pos.Sub(f.Pos).LengthSq()
 			radSum := f.Radius + m.Radius
@@ -361,10 +289,14 @@ func (w *GameWorld) updateMobs(dt float64) {
 					break
 				}
 			}
-			if m.Modifiers&16 != 0 && w.rand.Float64() < 0.30 && owner != nil {
-				w.spawnDrone(owner.ID, m.Pos)
+			if droneSpawnMod, ok := rarityCfg.Modifiers["droneSpawn"]; ok {
+				if m.Modifiers&(1<<droneSpawnMod.Bit) != 0 && w.rand.Float64() < droneSpawnMod.SpawnChance && owner != nil {
+					w.spawnDrone(owner.ID, m.Pos)
+				}
 			}
-			if m.Type == 12 {
+
+			bossCfg, isBoss := GetBossTypeConfig(m.Type)
+			if isBoss && bossCfg.KillAllPlayersOnDeath {
 				for _, p := range w.Players {
 					p.Alive = false
 					p.StateFlags |= 0x10000
@@ -388,24 +320,64 @@ func (w *GameWorld) updateMobs(dt float64) {
 	}
 }
 
+func (w *GameWorld) updateBossMob(m *Mob, cfg BossTypeConfig, dir physics.Vector2D, dist float64, dt float64, speedMul float64) {
+	if cfg.BulletCount > 0 {
+		m.Vel = m.Vel.Add(dir.Mul(cfg.Acceleration)).Normalize().Mul(cfg.BaseSpeed * speedMul)
+		m.ShootCooldown -= dt
+		if m.ShootCooldown <= 0 && dist < cfg.ShootRange {
+			m.ShootCooldown = cfg.ShootCooldown
+			for i := 0; i < cfg.BulletCount; i++ {
+				angle := (float64(i) / float64(cfg.BulletCount)) * 2.0 * math.Pi
+				bDir := physics.Vector2D{X: math.Cos(angle), Y: math.Sin(angle)}
+				bID := w.GenerateID()
+				b := w.bulletPool.Get().(*Bullet)
+				*b = Bullet{}
+				b.ID = bID
+				b.OwnerID = m.ID
+				b.OwnerType = 1
+				b.Subtype = cfg.BulletSubtype
+				b.Pos = m.Pos.Add(bDir.Mul(m.Radius + 5))
+				b.PrevPos = b.Pos
+				b.Vel = bDir.Mul(cfg.BulletSpeed)
+				b.Radius = cfg.BulletRadius
+				b.Damage = m.Damage * cfg.BulletDamageMultiplier
+				b.Lifetime = cfg.BulletLifetime
+				b.Pierce = cfg.BulletPierce
+				w.Bullets[bID] = b
+			}
+		}
+	} else if cfg.ChargeCooldown > 0 {
+		m.ShootCooldown -= dt
+		if m.ShootCooldown <= 0 {
+			m.ShootCooldown = cfg.ChargeCooldown
+			m.Vel = dir.Mul(cfg.ChargeSpeed)
+		} else if m.ShootCooldown > cfg.ChargeCooldown-cfg.ChargeDuration {
+			m.Vel = m.Vel.Normalize().Mul(cfg.ChargeSpeed)
+		} else {
+			m.Vel = m.Vel.Add(dir.Mul(cfg.IdleAcceleration)).Normalize().Mul(cfg.IdleSpeed * speedMul)
+		}
+	}
+}
+
 func (w *GameWorld) spawnDrone(ownerID uint16, pos physics.Vector2D) {
 	owner, ok := w.Players[ownerID]
 	if !ok {
 		return
 	}
+	mCfg := GetMinionConfig()
 	mID := w.GenerateID()
-	minionMaxHP := 35.0 + float64(owner.StatMinionHP)*10.0
+	minionMaxHP := mCfg.BaseHP + float64(owner.StatMinionHP)*mCfg.HPPerLevel
 	minion := &Minion{
 		ID:          mID,
 		OwnerID:     ownerID,
 		Pos:         pos,
-		Radius:      12,
+		Radius:      mCfg.Radius,
 		Health:      minionMaxHP,
 		MaxHealth:   minionMaxHP,
-		Damage:      10.0 + float64(owner.StatMinionDmg)*3.0,
+		Damage:      mCfg.BaseDamage + float64(owner.StatMinionDmg)*mCfg.DamagePerLevel,
 		OrbitIndex:  len(owner.MinionIDs),
-		Lifetime:    15.0,
-		HasLifetime: true,
+		Lifetime:    mCfg.DroneLifetime,
+		HasLifetime: mCfg.DroneHasLifetime,
 	}
 	w.Minions[mID] = minion
 	owner.MinionIDs = append(owner.MinionIDs, mID)
@@ -428,9 +400,10 @@ func (w *GameWorld) dropLoot(pos physics.Vector2D, rarity uint8, mobType uint8, 
 		return
 	}
 
+	combatCfg := GetCombatConfig()
 	chanceLimit := table.LootChance
 	if killer, okK := w.Players[killerID]; okK && killer.Alive {
-		chanceLimit += chanceLimit * float64(killer.StatLootQuantity) * 0.05
+		chanceLimit += chanceLimit * float64(killer.StatLootQuantity) * combatCfg.LootQuantityPerLevel
 	}
 
 	roll := w.rand.Float64()
@@ -477,6 +450,7 @@ func (w *GameWorld) dropLoot(pos physics.Vector2D, rarity uint8, mobType uint8, 
 func (w *GameWorld) spawnBoss(bossType uint8) {
 	var rx, ry float64
 	var targetPlayer *Player
+	bossesCfg := GetBossesConfig()
 	for _, p := range w.Players {
 		if p.Alive {
 			targetPlayer = p
@@ -485,7 +459,7 @@ func (w *GameWorld) spawnBoss(bossType uint8) {
 	}
 	if targetPlayer != nil {
 		angle := w.rand.Float64() * 2.0 * math.Pi
-		dist := 900.0
+		dist := bossesCfg.SpawnDistance
 		rx = targetPlayer.Pos.X + math.Cos(angle)*dist
 		ry = targetPlayer.Pos.Y + math.Sin(angle)*dist
 	} else {
@@ -494,25 +468,16 @@ func (w *GameWorld) spawnBoss(bossType uint8) {
 	}
 
 	id := w.GenerateID()
-	var hp, rad, dmg float64
-	var xpVal uint32
 
-	if bossType == 10 {
-		hp = 600 * w.WaveDifficulty
-		rad = 48
-		dmg = 18 * w.WaveDifficulty
-		xpVal = uint32(500 * w.WaveDifficulty)
-	} else if bossType == 11 {
-		hp = 900 * w.WaveDifficulty
-		rad = 56
-		dmg = 28 * w.WaveDifficulty
-		xpVal = uint32(800 * w.WaveDifficulty)
-	} else {
-		hp = 2500 * w.WaveDifficulty
-		rad = 72
-		dmg = 45 * w.WaveDifficulty
-		xpVal = uint32(2000 * w.WaveDifficulty)
+	cfg, ok := GetBossTypeConfig(bossType)
+	if !ok {
+		return
 	}
+
+	hp := cfg.BaseHP * w.WaveDifficulty
+	rad := cfg.Radius
+	dmg := cfg.BaseDamage * w.WaveDifficulty
+	xpVal := uint32(cfg.BaseXP * w.WaveDifficulty)
 
 	m := w.mobPool.Get().(*Mob)
 	*m = Mob{}
@@ -530,14 +495,21 @@ func (w *GameWorld) spawnBoss(bossType uint8) {
 }
 
 func (w *GameWorld) spawnBossesForWave() {
-	if w.WaveNumber == 50 {
-		w.spawnBoss(12)
-	} else if w.WaveNumber == 5 {
-		w.spawnBoss(10)
-	} else if w.WaveNumber == 10 {
-		w.spawnBoss(11)
-	} else if w.WaveNumber%5 == 0 && w.WaveNumber < 50 {
-		w.spawnBoss(10)
-		w.spawnBoss(11)
+	bossesCfg := GetBossesConfig()
+
+	for _, entry := range bossesCfg.Schedule {
+		if w.WaveNumber == entry.Wave {
+			for _, bossType := range entry.Bosses {
+				w.spawnBoss(bossType)
+			}
+			return
+		}
+	}
+
+	rule := bossesCfg.RecurringRule
+	if rule.Interval > 0 && w.WaveNumber >= rule.MinWave && w.WaveNumber <= rule.MaxWave && w.WaveNumber%uint32(rule.Interval) == 0 {
+		for _, bossType := range rule.Bosses {
+			w.spawnBoss(bossType)
+		}
 	}
 }

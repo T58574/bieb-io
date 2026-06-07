@@ -64,18 +64,19 @@ func (p *Player) GetInventoryArray() []uint8 {
 		return p.invCache
 	}
 
+	pCfg := GetPlayerConfig()
 	var keys []int
 	for k := range p.Inventory {
 		keys = append(keys, int(k))
 	}
 	sort.Ints(keys)
 
-	invList := make([]uint8, 200)
+	invList := make([]uint8, pCfg.InventorySize)
 	idx := 0
 	for _, k := range keys {
 		id := uint16(k)
 		count := p.Inventory[id]
-		if count > 0 && idx < 200 {
+		if count > 0 && idx < pCfg.InventorySize {
 			invList[idx] = uint8(id)
 			cVal := count
 			if cVal > 255 {
@@ -123,16 +124,17 @@ func (p *Player) GetUpgradeLevels() []uint8 {
 func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	pCfg := GetPlayerConfig()
 	p := &Player{
 		ID:             id,
 		Username:       username,
 		Pos:            physics.Vector2D{X: w.Width / 2, Y: w.Height / 2},
-		Radius:         24,
-		Health:         100,
-		MaxHealth:      100,
+		Radius:         pCfg.Radius,
+		Health:         pCfg.StartHP,
+		MaxHealth:      pCfg.StartMaxHP,
 		XP:             0,
-		MaxXP:          60,
-		Level:          1,
+		MaxXP:          pCfg.StartMaxXP,
+		Level:          pCfg.StartLevel,
 		Score:          0,
 		Alive:          true,
 		ClassID:        0,
@@ -147,7 +149,7 @@ func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 		p.Mass = classCfg.Mass
 	}
 	w.Players[id] = p
-	w.spawnMinion(id, p.Pos.Add(physics.Vector2D{X: 40, Y: 0}))
+	w.spawnMinion(id, p.Pos.Add(physics.Vector2D{X: pCfg.InitialMinionOffset, Y: 0}))
 	return p
 }
 
@@ -174,7 +176,11 @@ func (w *GameWorld) UpdateInput(id uint16, keys uint8, angle float32, upgradeSel
 }
 
 func (w *GameWorld) rollUpgradeCards(p *Player) {
-	available := []uint8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21}
+	upgCfg := GetUpgradesConfig()
+	available := make([]uint8, 0, len(upgCfg.Cards))
+	for _, card := range upgCfg.Cards {
+		available = append(available, card.ID)
+	}
 	w.rand.Shuffle(len(available), func(i, j int) {
 		available[i], available[j] = available[j], available[i]
 	})
@@ -283,9 +289,7 @@ func (w *GameWorld) applyCardUpgrade(p *Player, choiceIndex uint8) {
 				p.StatLootQuantity++
 			}
 		case "StatLootQuality":
-			// Handled externally if needed, or by a new field later.
 		case "PickupItemRadius":
-			// Handled externally if needed, or by a new field later.
 		case "FlagUnlock":
 			p.StateFlags |= uint32(cardCfg.Value)
 		}
@@ -328,6 +332,8 @@ func (w *GameWorld) processInputs() {
 }
 
 func (w *GameWorld) updatePlayers(dt float64) {
+	pCfg := GetPlayerConfig()
+	combatCfg := GetCombatConfig()
 	for _, p := range w.Players {
 		if !p.Alive {
 			continue
@@ -387,29 +393,30 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		speedMul *= (1.0 + itemSpeedMul)
 
 		var ax, ay float64
+		accel := pCfg.MoveAcceleration
 		if p.Keys&0x01 != 0 {
-			ay -= 0.6 * speedMul
+			ay -= accel * speedMul
 		}
 		if p.Keys&0x02 != 0 {
-			ax -= 0.6 * speedMul
+			ax -= accel * speedMul
 		}
 		if p.Keys&0x04 != 0 {
-			ay += 0.6 * speedMul
+			ay += accel * speedMul
 		}
 		if p.Keys&0x08 != 0 {
-			ax += 0.6 * speedMul
+			ax += accel * speedMul
 		}
 		p.Vel = p.Vel.Add(physics.Vector2D{X: ax, Y: ay})
-		p.Vel = p.Vel.Mul(0.88)
+		p.Vel = p.Vel.Mul(pCfg.Friction)
 
 		numShields := (p.StateFlags >> 4) & 0xF
 		if numShields > 0 {
 			for i := uint32(0); i < numShields; i++ {
 				orbitAngle := w.ElapsedTime*3.0 + (float64(i)/float64(numShields))*2.0*math.Pi
-				shieldPos := p.Pos.Add(physics.Vector2D{X: math.Cos(orbitAngle) * 55.0, Y: math.Sin(orbitAngle) * 55.0})
+				shieldPos := p.Pos.Add(physics.Vector2D{X: math.Cos(orbitAngle) * combatCfg.ShieldOrbitRadius, Y: math.Sin(orbitAngle) * combatCfg.ShieldOrbitRadius})
 				for _, mob := range w.Mobs {
 					distSq := mob.Pos.Sub(shieldPos).LengthSq()
-					radSum := mob.Radius + 8.0
+					radSum := mob.Radius + combatCfg.ShieldBallRadius
 					if distSq < radSum*radSum {
 						dmg := upgCfg.GlobalMultipliers.ShieldDamagePerSecond * dt
 						mob.Health -= dmg
@@ -434,10 +441,10 @@ func (w *GameWorld) updatePlayers(dt float64) {
 				classCfg, _ = GetClassConfig(0)
 			}
 
-			p.ShootCooldown = classCfg.ShootCooldown * (1.0 + float64(p.StatCooldownMod)*(-0.01))
+			p.ShootCooldown = classCfg.ShootCooldown * (1.0 + float64(p.StatCooldownMod)*pCfg.CooldownReductionPerLevel)
 			bSpeed = classCfg.BulletSpeed
 			bRadius = classCfg.BulletRadius
-			bDamage = classCfg.BulletDamage * (1.0 + float64(p.StatMinionDmg)*upgCfg.GlobalMultipliers.MinionDamagePerLevel + float64(p.StatDamageMod)*0.05)
+			bDamage = classCfg.BulletDamage * (1.0 + float64(p.StatMinionDmg)*upgCfg.GlobalMultipliers.MinionDamagePerLevel + float64(p.StatDamageMod)*pCfg.DamageModPerLevel)
 			bLifetime = classCfg.BulletLifetime
 			bPierce = classCfg.BulletPierce + int(p.StatPierceCount)
 			bSubtype = classCfg.BulletSubtype
@@ -459,7 +466,7 @@ func (w *GameWorld) updatePlayers(dt float64) {
 			bDamage = (bDamage + totalFlatDmg) * (1.0 + totalPercentDmg)
 
 			totalProjectiles := 1 + addProjectiles
-			angleStep := 0.15 + float64(p.StatSpread)*0.05
+			angleStep := pCfg.AngleStep + float64(p.StatSpread)*pCfg.AngleSpreadPerLevel
 			startAngle := p.MouseAngle - angleStep*float64(totalProjectiles-1)/2.0
 
 			for i := 0; i < totalProjectiles; i++ {
@@ -501,11 +508,12 @@ func (w *GameWorld) UpgradePlayerClass(id uint16, classID uint8) {
 }
 
 func (w *GameWorld) AwardXP(playerID uint16, xpValue uint32) {
+	combatCfg := GetCombatConfig()
 	p, ok := w.Players[playerID]
 	if !ok || !p.Alive {
 		return
 	}
-	gainedXP := uint32(float64(xpValue) * 0.75 * (1.0 + float64(p.StatExpMod)*0.01))
+	gainedXP := uint32(float64(xpValue) * combatCfg.XPGainMultiplier * (1.0 + float64(p.StatExpMod)*combatCfg.XPPerLevelMultiplier))
 	if gainedXP == 0 && xpValue > 0 {
 		gainedXP = 1
 	}
@@ -514,7 +522,7 @@ func (w *GameWorld) AwardXP(playerID uint16, xpValue uint32) {
 	for p.XP >= p.MaxXP {
 		p.XP -= p.MaxXP
 		p.Level++
-		p.MaxXP = uint32(float64(p.MaxXP) * 1.3)
+		p.MaxXP = uint32(float64(p.MaxXP) * combatCfg.LevelUpXPMultiplier)
 		p.Health = p.MaxHealth
 		p.UpgradePoints++
 	}

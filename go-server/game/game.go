@@ -58,6 +58,8 @@ type GameWorld struct {
 }
 
 func NewGameWorld() *GameWorld {
+	worldCfg := GetWorldConfig()
+	spawnCfg := GetSpawnConfig()
 	w := &GameWorld{
 		Players:          make(map[uint16]*Player),
 		Mobs:             make(map[uint16]*Mob),
@@ -65,17 +67,17 @@ func NewGameWorld() *GameWorld {
 		Minions:          make(map[uint16]*Minion),
 		Fields:           make(map[uint16]*ChronoField),
 		LootDrops:        make(map[uint16]*LootDrop),
-		nextID:           100,
-		Width:            6000.0,
-		Height:           6000.0,
+		nextID:           worldCfg.NextIDStart,
+		Width:            worldCfg.ArenaWidth,
+		Height:           worldCfg.ArenaHeight,
 		rand:             rand.New(rand.NewSource(time.Now().UnixNano())),
 		WaveNumber:       0,
 		WaveActive:       false,
-		WavePauseTimer:   2.0,
+		WavePauseTimer:   spawnCfg.WavePauseTime,
 		WaveDuration:     CurrentWaveConfig.BaseDuration,
 		WaveTimeLeft:     0.0,
 		WaveDifficulty:   1.0,
-		inputChan:        make(chan InputEvent, 4096),
+		inputChan:        make(chan InputEvent, worldCfg.InputBufferSize),
 		RemovedEntityIDs: make([]uint16, 0, 128),
 	}
 	w.bulletPool = sync.Pool{
@@ -93,8 +95,9 @@ func NewGameWorld() *GameWorld {
 			return &ChronoField{}
 		},
 	}
-	for r := 0; r < 60; r++ {
-		for c := 0; c < 60; c++ {
+	gridSize := worldCfg.GridSize
+	for r := 0; r < gridSize; r++ {
+		for c := 0; c < gridSize; c++ {
 			w.grid[r][c] = make([]HashItem, 0, 32)
 		}
 	}
@@ -102,9 +105,10 @@ func NewGameWorld() *GameWorld {
 }
 
 func (w *GameWorld) GenerateID() uint16 {
+	worldCfg := GetWorldConfig()
 	w.nextID++
 	if w.nextID == 0 {
-		w.nextID = 100
+		w.nextID = worldCfg.NextIDStart
 	}
 	return w.nextID
 }

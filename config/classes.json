@@ -1,0 +1,13 @@
+[
+  {
+    "ID": 0,
+    "ShootCooldown": 0.3,
+    "BulletSpeed": 10.0,
+    "BulletRadius": 5.0,
+    "BulletDamage": 10.0,
+    "BulletLifetime": 1.5,
+    "BulletPierce": 1,
+    "BulletSubtype": 0,
+    "Mass": 1.0
+  }
+]

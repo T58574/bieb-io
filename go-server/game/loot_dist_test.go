@@ -8,7 +8,7 @@ import (
 func TestLootDistribution(t *testing.T) {
 	err := LoadLootConfig("../config/loot_tables.json")
 	if err != nil {
-		err = LoadLootConfig("config/loot_tables.json")
+		err = LoadLootConfig("../../config/loot_tables.json")
 	}
 	if err != nil {
 		t.Fatalf("Failed to load loot tables: %v", err)

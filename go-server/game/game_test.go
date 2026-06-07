@@ -1,9 +1,29 @@
 package game
 
 import (
+	"log"
+	"os"
 	"testing"
 )
 
+func TestMain(m *testing.M) {
+	configDir := "../../config/"
+	_ = LoadWorldConfig(configDir + "world.json")
+	_ = LoadItemsConfig(configDir + "items.json")
+	_ = LoadClassesConfig(configDir + "classes.json")
+	_ = LoadUpgradesConfig(configDir + "upgrades.json")
+	_ = LoadWaveConfig(configDir + "waves.json")
+	_ = LoadLootConfig(configDir + "loot_tables.json")
+	_ = LoadMobsConfig(configDir + "mobs.json")
+	_ = LoadBossesConfig(configDir + "bosses.json")
+	_ = LoadRarityConfig(configDir + "rarity.json")
+	_ = LoadMinionConfig(configDir + "minions.json")
+	_ = LoadCombatConfig(configDir + "combat.json")
+	_ = LoadPlayerConfig(configDir + "player.json")
+	_ = LoadSpawnConfig(configDir + "spawn.json")
+	log.Println("Test configs loaded from", configDir)
+	os.Exit(m.Run())
+}
 func TestGameWorld(t *testing.T) {
 	w := NewGameWorld()
 	p := w.AddPlayer(1, "test")
@@ -60,7 +80,8 @@ func TestWaveSpawning(t *testing.T) {
 	}
 
 	w.Tick(0.016)
-	expectedPackSize := 4 + 2*1
+	spawnCfg := GetSpawnConfig()
+	expectedPackSize := spawnCfg.PackSize.Base + 1*spawnCfg.PackSize.PerWave
 	if len(w.Mobs) != expectedPackSize {
 		t.Fatalf("expected %d mobs spawned on tick 1, got %d", expectedPackSize, len(w.Mobs))
 	}

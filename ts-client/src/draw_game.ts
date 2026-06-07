@@ -1,6 +1,6 @@
 import { state, renderEntities } from "./state";
 import { drawAndUpdateParticles } from "./particles";
-import localizationData from "./items_localization.json";
+import localizationData from "../../config/items_localization.json";
 import {
   GRID_CONFIG,
   RARITY_COLORS
