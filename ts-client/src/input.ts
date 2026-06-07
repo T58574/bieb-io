@@ -1,6 +1,7 @@
 import { state, renderEntities } from "./state";
 import { socket, sendPauseToggle, sendClassUpgrade, connectToServer } from "./network";
 import { serializeInput } from "./protocol";
+import localizationData from "./items_localization.json";
 
 export const keys = { w: false, a: false, s: false, d: false, space: false, mouseLeft: false };
 
@@ -103,10 +104,12 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
       const cardW = 180 * uiScale;
       const cardH = 200 * uiScale;
       const gap = 20 * uiScale;
-      const startX = cx - 290 * uiScale;
+      const numClasses = localizationData.classes.length;
+      const totalWidth = numClasses * cardW + (numClasses - 1) * gap;
+      const startX = cx - totalWidth / 2;
       const startY = cy - 130 * uiScale;
 
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < numClasses; i++) {
         const x = startX + i * (cardW + gap);
         if (e.clientX >= x && e.clientX <= x + cardW && e.clientY >= startY && e.clientY <= startY + cardH) {
           state.selectedClass = i + 1;
@@ -143,14 +146,17 @@ export function setupInputListeners(canvas: HTMLCanvasElement) {
       if (state.playerId !== null) {
         const me = renderEntities.get(state.playerId);
         if (me && me.subtype === 0 && state.currentLevel >= 10) {
+          const uiScale = Math.min(canvas.width / 1920, canvas.height / 1080);
           const cx = canvas.width / 2;
           const cy = canvas.height / 2;
-          const cardW = 180;
-          const cardH = 240;
-          const gap = 20;
-          const startX = cx - 290;
-          const startY = cy - 120;
-          for (let i = 0; i < 3; i++) {
+          const cardW = 200 * uiScale;
+          const cardH = 260 * uiScale;
+          const gap = 24 * uiScale;
+          const numClasses = localizationData.classes.length;
+          const totalWidth = numClasses * cardW + (numClasses - 1) * gap;
+          const startX = cx - totalWidth / 2;
+          const startY = cy - 120 * uiScale;
+          for (let i = 0; i < numClasses; i++) {
             const x = startX + i * (cardW + gap);
             if (e.clientX >= x && e.clientX <= x + cardW && e.clientY >= startY && e.clientY <= startY + cardH) {
               sendClassUpgrade(i + 1);
