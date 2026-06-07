@@ -1,6 +1,11 @@
 package game
 
-import "sync"
+import (
+	"encoding/json"
+	"log"
+	"os"
+	"sync"
+)
 
 type OnKillEffectTrigger uint8
 
@@ -37,37 +42,28 @@ func init() {
 	itemRegistryMu.Lock()
 	defer itemRegistryMu.Unlock()
 	itemRegistry = make(map[uint16]ItemModifier)
+}
 
-	itemRegistry[1] = ItemModifier{
-		ID:     1,
-		Rarity: 1,
-		StatModifiers: ItemStatModifiers{
-			PercentSpeed: 0.10,
-		},
+func LoadItemsConfig(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
 	}
 
-	itemRegistry[2] = ItemModifier{
-		ID:     2,
-		Rarity: 2,
-		StatModifiers: ItemStatModifiers{
-			PercentDamage: 0.15,
-			Vampirism:     0.05,
-		},
+	var items []ItemModifier
+	if err := json.Unmarshal(data, &items); err != nil {
+		return err
 	}
 
-	itemRegistry[3] = ItemModifier{
-		ID:     3,
-		Rarity: 3,
-		OnKillEffectTrigger: TRIGGER_AREA_EXPLOSION,
+	itemRegistryMu.Lock()
+	defer itemRegistryMu.Unlock()
+	itemRegistry = make(map[uint16]ItemModifier)
+	for _, item := range items {
+		itemRegistry[item.ID] = item
 	}
 
-	itemRegistry[4] = ItemModifier{
-		ID:     4,
-		Rarity: 3,
-		StatModifiers: ItemStatModifiers{
-			AddProjectiles: 1,
-		},
-	}
+	log.Printf("Loaded %d items from %s", len(items), path)
+	return nil
 }
 
 func GetItemModifier(id uint16) (ItemModifier, bool) {

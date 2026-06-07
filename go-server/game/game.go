@@ -45,6 +45,9 @@ type GameWorld struct {
 	WavePauseTimer   float64
 	WaveMobsLeft     int
 	WaveSpawnTimer   float64
+	WaveDuration     float64
+	WaveTimeLeft     float64
+	WaveDifficulty   float64
 	Paused           bool
 	bulletPool       sync.Pool
 	mobPool          sync.Pool
@@ -71,6 +74,9 @@ func NewGameWorld() *GameWorld {
 		WaveNumber:       0,
 		WaveActive:       false,
 		WavePauseTimer:   2.0,
+		WaveDuration:     CurrentWaveConfig.BaseDuration,
+		WaveTimeLeft:     0.0,
+		WaveDifficulty:   1.0,
 		inputChan:        make(chan InputEvent, 4096),
 		RemovedEntityIDs: make([]uint16, 0, 128),
 	}

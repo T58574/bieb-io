@@ -25,14 +25,14 @@ type Player struct {
 	MinionIDs        []uint16
 	Alive            bool
 	UpgradePoints    uint8
-	StatRegen        uint8
-	StatMaxHP        uint8
-	StatSpeed        uint8
-	StatMinionDmg    uint8
-	StatMinionSpeed  uint8
-	StatMinionHP     uint8
-	StatMinionPierce uint8
-	StatMinionRegen  uint8
+	StatRegen        uint16
+	StatMaxHP        uint16
+	StatSpeed        uint16
+	StatMinionDmg    uint16
+	StatMinionSpeed  uint16
+	StatMinionHP     uint16
+	StatMinionPierce uint16
+	StatMinionRegen  uint16
 	RegenAccum       float64
 	ClassID          uint8
 	Mass             float64
@@ -103,8 +103,8 @@ func (w *GameWorld) AddPlayer(id uint16, username string) *Player {
 		Inventory:      make(map[uint16]int),
 		invDirty:       true,
 	}
-	if p.ClassID == 1 {
-		p.Mass = 2.5
+	if classCfg, ok := GetClassConfig(p.ClassID); ok {
+		p.Mass = classCfg.Mass
 	}
 	w.Players[id] = p
 	w.spawnMinion(id, p.Pos.Add(physics.Vector2D{X: 40, Y: 0}))
@@ -148,52 +148,89 @@ func (w *GameWorld) applyCardUpgrade(p *Player, choiceIndex uint8) {
 		return
 	}
 	cardID := p.CardChoices[choiceIndex-1]
-	switch cardID {
-	case 1:
-		if p.StatSpeed < 7 {
-			p.StatSpeed++
+
+	upgCfg := GetUpgradesConfig()
+	var cardCfg *UpgradeCardConfig
+	for _, c := range upgCfg.Cards {
+		if c.ID == cardID {
+			cardCfg = &c
+			break
 		}
-	case 2:
-		p.Vampirism += 0.05
-	case 3:
-		if p.StatMaxHP < 7 {
-			p.StatMaxHP++
-			p.MaxHealth = 100 + float64(p.StatMaxHP)*25
-			p.Health = math.Min(p.MaxHealth, p.Health+25)
-		}
-	case 4:
-		if p.StatRegen < 7 {
-			p.StatRegen++
-		}
-	case 5:
-		if p.StatMinionDmg < 7 {
-			p.StatMinionDmg++
-		}
-	case 6:
-		if p.StatMinionSpeed < 7 {
-			p.StatMinionSpeed++
-		}
-	case 7:
-		if p.StatMinionHP < 7 {
-			p.StatMinionHP++
-		}
-	case 8:
-		if p.StatMinionPierce < 7 {
-			p.StatMinionPierce++
-		}
-	case 9:
-		if p.StatMinionRegen < 7 {
-			p.StatMinionRegen++
-		}
-	case 10:
-		shields := (p.StateFlags >> 4) & 0xF
-		if shields < 4 {
-			shields++
-		}
-		p.StateFlags = (p.StateFlags & 0xFFFFFF0F) | (shields << 4)
-	case 11:
-		p.StateFlags |= 1 << 8
 	}
+
+	if cardCfg != nil {
+		switch cardCfg.Type {
+		case "StatSpeed":
+			if p.StatSpeed < cardCfg.MaxLevel {
+				p.StatSpeed++
+			}
+		case "Vampirism":
+			p.Vampirism += cardCfg.Value
+		case "StatMaxHP":
+			if p.StatMaxHP < cardCfg.MaxLevel {
+				p.StatMaxHP++
+				p.MaxHealth = upgCfg.GlobalMultipliers.BaseMaxHP + float64(p.StatMaxHP)*upgCfg.GlobalMultipliers.HPPerLevel
+				p.Health = math.Min(p.MaxHealth, p.Health+upgCfg.GlobalMultipliers.HPPerLevel)
+			}
+		case "StatRegen":
+			if p.StatRegen < cardCfg.MaxLevel {
+				p.StatRegen++
+			}
+		case "StatMinionDmg":
+			if p.StatMinionDmg < cardCfg.MaxLevel {
+				p.StatMinionDmg++
+			}
+		case "StatMinionSpeed":
+			if p.StatMinionSpeed < cardCfg.MaxLevel {
+				p.StatMinionSpeed++
+			}
+		case "StatMinionHP":
+			if p.StatMinionHP < cardCfg.MaxLevel {
+				p.StatMinionHP++
+			}
+		case "StatMinionPierce":
+			if p.StatMinionPierce < cardCfg.MaxLevel {
+				p.StatMinionPierce++
+			}
+		case "StatMinionRegen":
+			if p.StatMinionRegen < cardCfg.MaxLevel {
+				p.StatMinionRegen++
+			}
+		case "OrbitShield":
+			shields := (p.StateFlags >> 4) & 0xF
+			if shields < uint32(cardCfg.MaxLevel) {
+				shields++
+			}
+			p.StateFlags = (p.StateFlags & 0xFFFFFF0F) | (shields << 4)
+		case "StatDamageMod":
+			// Handled externally if needed, or by a new field later.
+		case "StatCooldownMod":
+			// Handled externally if needed, or by a new field later.
+		case "StatCritChance":
+			// Handled externally if needed, or by a new field later.
+		case "StatCritDamage":
+			// Handled externally if needed, or by a new field later.
+		case "StatCritDefiance":
+			// Handled externally if needed, or by a new field later.
+		case "StatAddProjectiles":
+			// Handled externally if needed, or by a new field later.
+		case "StatPierceCount":
+			// Handled externally if needed, or by a new field later.
+		case "StatSpread":
+			// Handled externally if needed, or by a new field later.
+		case "StatExpMod":
+			// Handled externally if needed, or by a new field later.
+		case "StatLootQuantity":
+			// Handled externally if needed, or by a new field later.
+		case "StatLootQuality":
+			// Handled externally if needed, or by a new field later.
+		case "PickupItemRadius":
+			// Handled externally if needed, or by a new field later.
+		case "FlagUnlock":
+			p.StateFlags |= uint32(cardCfg.Value)
+		}
+	}
+
 	p.UpgradePoints--
 	if p.UpgradePoints > 0 {
 		w.rollUpgradeCards(p)
@@ -258,7 +295,10 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		if p.UpgradePoints > 0 && p.CardChoices[0] == 0 {
 			w.rollUpgradeCards(p)
 		}
-		baseMaxHP := 100.0 + float64(p.StatMaxHP)*25.0
+
+		upgCfg := GetUpgradesConfig()
+
+		baseMaxHP := upgCfg.GlobalMultipliers.BaseMaxHP + float64(p.StatMaxHP)*upgCfg.GlobalMultipliers.HPPerLevel
 		var totalFlatHP, totalPercentHP float64
 		for itemID, count := range p.Inventory {
 			if count <= 0 {
@@ -274,12 +314,17 @@ func (w *GameWorld) updatePlayers(dt float64) {
 			p.Health = p.MaxHealth
 		}
 
-		speedMul := 1.0 + float64(p.StatSpeed)*0.08
-		itemSpeedMul := 1.0
-		if count, ok := p.Inventory[1]; ok {
-			itemSpeedMul += 0.05 * float64(count)
+		speedMul := 1.0 + float64(p.StatSpeed)*upgCfg.GlobalMultipliers.SpeedPerLevel
+		var itemSpeedMul float64
+		for itemID, count := range p.Inventory {
+			if count <= 0 {
+				continue
+			}
+			if mod, ok := GetItemModifier(itemID); ok {
+				itemSpeedMul += mod.StatModifiers.PercentSpeed * float64(count)
+			}
 		}
-		speedMul *= itemSpeedMul
+		speedMul *= (1.0 + itemSpeedMul)
 
 		var ax, ay float64
 		if p.Keys&0x01 != 0 {
@@ -306,7 +351,7 @@ func (w *GameWorld) updatePlayers(dt float64) {
 					distSq := mob.Pos.Sub(shieldPos).LengthSq()
 					radSum := mob.Radius + 8.0
 					if distSq < radSum*radSum {
-						dmg := 30.0 * dt
+						dmg := upgCfg.GlobalMultipliers.ShieldDamagePerSecond * dt
 						mob.Health -= dmg
 						if p.Vampirism > 0 {
 							p.Health = math.Min(p.MaxHealth, p.Health+dmg*p.Vampirism)
@@ -323,55 +368,35 @@ func (w *GameWorld) updatePlayers(dt float64) {
 			var bSpeed, bRadius, bDamage, bLifetime float64
 			var bPierce int
 			var bSubtype uint8
-			switch p.ClassID {
-			case 1:
-				p.ShootCooldown = 0.08
-				bSpeed = 22.0
-				bRadius = 3.0
-				bDamage = 5.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
-				bLifetime = 0.8
-				bPierce = 1
-				bSubtype = 1
-			case 2:
-				p.ShootCooldown = 0.7
-				bSpeed = 5.0
-				bRadius = 12.0
-				bDamage = 25.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
-				bLifetime = 2.0
-				bPierce = 99
-				bSubtype = 2
-			case 3:
-				p.ShootCooldown = 0.4
-				bSpeed = 14.0
-				bRadius = 6.0
-				bDamage = 18.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
-				bLifetime = 0.5
-				bPierce = 2
-				bSubtype = 3
-			default:
-				p.ShootCooldown = 0.3
-				bSpeed = 10.0
-				bRadius = 5.0
-				bDamage = 10.0 * (1.0 + float64(p.StatMinionDmg)*0.15)
-				bLifetime = 1.5
-				bPierce = 1
-				bSubtype = 0
+
+			classCfg, ok := GetClassConfig(p.ClassID)
+			if !ok {
+				classCfg, _ = GetClassConfig(0)
 			}
 
-			dmgMul := 1.0
-			if count, ok := p.Inventory[2]; ok {
-				dmgMul += 0.10 * float64(count)
-			}
-			bDamage *= dmgMul
+			p.ShootCooldown = classCfg.ShootCooldown
+			bSpeed = classCfg.BulletSpeed
+			bRadius = classCfg.BulletRadius
+			bDamage = classCfg.BulletDamage * (1.0 + float64(p.StatMinionDmg)*upgCfg.GlobalMultipliers.MinionDamagePerLevel)
+			bLifetime = classCfg.BulletLifetime
+			bPierce = classCfg.BulletPierce
+			bSubtype = classCfg.BulletSubtype
 
-			if count, ok := p.Inventory[3]; ok {
-				bPierce += count + (count * count) / 2
-			}
-
+			var totalFlatDmg, totalPercentDmg float64
 			addProjectiles := 0
-			if count, ok := p.Inventory[4]; ok {
-				addProjectiles = count
+			for itemID, count := range p.Inventory {
+				if count <= 0 {
+					continue
+				}
+				if mod, ok := GetItemModifier(itemID); ok {
+					totalFlatDmg += mod.StatModifiers.FlatDamage * float64(count)
+					totalPercentDmg += mod.StatModifiers.PercentDamage * float64(count)
+					bSpeed += mod.StatModifiers.BulletSpeed * float64(count)
+					bPierce += mod.StatModifiers.PierceCount * count
+					addProjectiles += mod.StatModifiers.AddProjectiles * count
+				}
 			}
+			bDamage = (bDamage + totalFlatDmg) * (1.0 + totalPercentDmg)
 
 			totalProjectiles := 1 + addProjectiles
 			angleStep := 0.15
@@ -400,7 +425,7 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		p.Pos = p.Pos.Add(p.Vel)
 		physics.ResolveCircleBox(&p.Pos, p.Radius, &p.Vel, 0, 0, w.Width, w.Height, 0.2)
 		if p.StatRegen > 0 && p.Health < p.MaxHealth {
-			regenRate := float64(p.StatRegen) * 0.8
+			regenRate := float64(p.StatRegen) * upgCfg.GlobalMultipliers.RegenPerLevel
 			p.RegenAccum += regenRate * dt
 			if p.RegenAccum >= 1.0 {
 				heal := math.Floor(p.RegenAccum)
@@ -420,8 +445,8 @@ func (w *GameWorld) UpgradePlayerClass(id uint16, classID uint8) {
 	}
 	if (p.Level >= 10 || p.Level == 1) && p.ClassID == 0 && classID >= 1 && classID <= 3 {
 		p.ClassID = classID
-		if classID == 1 {
-			p.Mass = 2.5
+		if classCfg, ok := GetClassConfig(classID); ok {
+			p.Mass = classCfg.Mass
 		}
 	}
 }
