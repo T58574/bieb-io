@@ -234,6 +234,10 @@ func main() {
 		log.Fatalf("Failed to load upgrades config: %v", err)
 	}
 
+	if err := game.LoadWaveConfig("config/waves.json"); err != nil {
+		log.Fatalf("Failed to load wave config: %v", err)
+	}
+
 	server := NewGameServer()
 	go server.startLoop()
 	http.HandleFunc("/ws", server.handleConnection)
