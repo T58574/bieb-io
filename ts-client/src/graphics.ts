@@ -150,24 +150,24 @@ export function drawUpgradePanel(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = "#fbbf24";
     ctx.font = "bold 12px 'JetBrains Mono', monospace";
     ctx.textAlign = "left";
-    ctx.fillText(`UPGRADE_POINTS: ${state.upgradePoints}`, panelX, panelY - 14);
+    ctx.fillText(`ОЧКИ УЛУЧШЕНИЙ: ${state.upgradePoints}`, panelX, panelY - 14);
   } else {
     ctx.fillStyle = "#64748b";
     ctx.font = "bold 11px 'JetBrains Mono', monospace";
     ctx.textAlign = "left";
-    ctx.fillText("SYS_KERNEL_METRICS", panelX, panelY - 14);
+    ctx.fillText("МЕТРИКИ ЯДРА СИСТЕМЫ", panelX, panelY - 14);
   }
 
   const barX = panelX + labelW;
 
-  drawStatBar(ctx, "REGEN", state.statRegen, barX, panelY, "#10b981", "1");
-  drawStatBar(ctx, "CORE_MAX", state.statMaxHP, barX, panelY + rowH, "#22c55e", "2");
-  drawStatBar(ctx, "VELOCITY", state.statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3");
-  drawStatBar(ctx, "DRN_DMG", state.statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4");
-  drawStatBar(ctx, "DRN_VEL", state.statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5");
-  drawStatBar(ctx, "DRN_HP", state.statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6");
-  drawStatBar(ctx, "DRN_PRC", state.statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7");
-  drawStatBar(ctx, "DRN_REG", state.statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8");
+  drawStatBar(ctx, "РЕГЕНЕРАЦИЯ", state.statRegen, barX, panelY, "#10b981", "1");
+  drawStatBar(ctx, "ХП ЯДРА", state.statMaxHP, barX, panelY + rowH, "#22c55e", "2");
+  drawStatBar(ctx, "СКОРОСТЬ", state.statSpeed, barX, panelY + 2 * rowH, "#3b82f6", "3");
+  drawStatBar(ctx, "УРОН ДРОНОВ", state.statMinionDmg, barX, panelY + 3 * rowH, "#ef4444", "4");
+  drawStatBar(ctx, "СКОР. ДРОНОВ", state.statMinionSpeed, barX, panelY + 4 * rowH, "#f97316", "5");
+  drawStatBar(ctx, "ХП ДРОНОВ", state.statMinionHP, barX, panelY + 5 * rowH, "#06b6d4", "6");
+  drawStatBar(ctx, "ПРОБИВ. ДР.", state.statMinionPierce, barX, panelY + 6 * rowH, "#8b5cf6", "7");
+  drawStatBar(ctx, "РЕГЕН. ДР.", state.statMinionRegen, barX, panelY + 7 * rowH, "#a3e635", "8");
 }
 
 export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
@@ -217,12 +217,12 @@ export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canv
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 13px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  ctx.fillText(`CORE_REV: ${state.currentLevel}`, centerX, bottomY - 28);
+  ctx.fillText(`ВЕРСИЯ ЯДРА: ${state.currentLevel}`, centerX, bottomY - 28);
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = "bold 16px 'JetBrains Mono', monospace";
   ctx.textAlign = "left";
-  ctx.fillText(`DATA_HARVESTED: ${state.currentScore}`, 20, canvasHeight - 25);
+  ctx.fillText(`СОБРАНО ДАННЫХ: ${state.currentScore}`, 20, canvasHeight - 25);
 
   let activeMinions = 0;
   for (const ent of renderEntities.values()) {
@@ -230,12 +230,12 @@ export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canv
   }
   ctx.textAlign = "right";
   ctx.font = "bold 16px 'JetBrains Mono', monospace";
-  ctx.fillText(`THREAD_SLOTS: ${activeMinions}`, canvasWidth - 20, 35);
+  ctx.fillText(`ПОТОКИ ДРОНОВ: ${activeMinions}`, canvasWidth - 20, 35);
 
   ctx.fillStyle = "#64748b";
   ctx.font = "bold 13px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  ctx.fillText(`SECTOR: ${state.waveNumber}`, centerX, bottomY - 54);
+  ctx.fillText(`СЕКТОР: ${state.waveNumber}`, centerX, bottomY - 54);
 }
 
 export function drawMenuShape(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, sides: number, angle: number, color: string) {
@@ -288,7 +288,7 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
 
   ctx.fillStyle = "#64748b";
   ctx.font = "bold 13px 'JetBrains Mono', monospace";
-  ctx.fillText("[COGNITIVE CORE SYNC // ACTIVE]", cx, cy - 85);
+  ctx.fillText("[СИНХРОНИЗАЦИЯ КОГНИТИВНОГО ЯДРА // АКТИВНО]", cx, cy - 85);
 
   const inputW = 320;
   const inputH = 44;
@@ -306,7 +306,7 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.fillStyle = state.usernameInput.length > 0 ? "#ffffff" : "#64748b";
   ctx.font = "bold 13px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  const displayText = state.usernameInput.length > 0 ? `>> ID: ${state.usernameInput}` : ">> ENTER_IDENTIFIER...";
+  const displayText = state.usernameInput.length > 0 ? `>> ID: ${state.usernameInput}` : ">> ВВЕДИТЕ ИДЕНТИФИКАТОР...";
   const blink = Math.floor(Date.now() / 500) % 2 === 0 && state.usernameInput.length > 0 ? "|" : "";
   ctx.fillText(displayText + blink, cx, inputY + 27);
 
@@ -328,11 +328,11 @@ export function renderMenu(ctx: CanvasRenderingContext2D, canvasWidth: number, c
   ctx.fillStyle = hovered ? "#00f0ff" : "#ffffff";
   ctx.font = "bold 15px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  ctx.fillText("[INITIALIZE_KERNEL]", cx, btnY + 32);
+  ctx.fillText("[ЗАПУСТИТЬ ЯДРО]", cx, btnY + 32);
 
   ctx.fillStyle = "#475569";
   ctx.font = "bold 11px 'JetBrains Mono', monospace";
-  ctx.fillText("WASD/MOVE | MOUSE/AIM | CLICK/FIRE | SPACE/SUMMON", cx, canvasHeight - 40);
+  ctx.fillText("WASD/ДВИЖЕНИЕ | МЫШЬ/ПРИЦЕЛ | ЛКМ/СТРЕЛЬБА | ПРОБЕЛ/ПРИЗЫВ", cx, canvasHeight - 40);
 }
 
 export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
@@ -345,19 +345,19 @@ export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: numbe
   ctx.fillStyle = "#ff2a5f";
   ctx.font = "bold 40px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  ctx.fillText("CRITICAL CORE FAILURE", cx, cy - 100);
+  ctx.fillText("КРИТИЧЕСКИЙ СБОЙ ЯДРА", cx, cy - 100);
 
   ctx.fillStyle = "#64748b";
   ctx.font = "bold 13px 'JetBrains Mono', monospace";
-  ctx.fillText("SECTOR METRICS REPORT // EXCEPTION COLLAPSE", cx, cy - 65);
+  ctx.fillText("ОТЧЕТ МЕТРИК СЕКТОРА // АВАРИЙНЫЙ КОЛЛАПС", cx, cy - 65);
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 18px 'JetBrains Mono', monospace";
-  ctx.fillText(`DATA_HARVESTED: ${state.gameOverScore}`, cx, cy - 10);
+  ctx.fillText(`СОБРАНО ДАННЫХ: ${state.gameOverScore}`, cx, cy - 10);
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = "16px 'JetBrains Mono', monospace";
-  ctx.fillText(`CYCLES_STABLE: ${state.gameOverWave}`, cx, cy + 25);
+  ctx.fillText(`СТАБИЛЬНЫХ ЦИКЛОВ: ${state.gameOverWave}`, cx, cy + 25);
 
   const btnW = 260;
   const btnH = 52;
@@ -376,11 +376,11 @@ export function renderGameOver(ctx: CanvasRenderingContext2D, canvasWidth: numbe
 
   ctx.fillStyle = hovered ? "#00f0ff" : "#ffffff";
   ctx.font = "bold 15px 'JetBrains Mono', monospace";
-  ctx.fillText("[REBOOT_CORE]", cx, btnY + 32);
+  ctx.fillText("[ПЕРЕЗАПУСК ЯДРА]", cx, btnY + 32);
 
   ctx.fillStyle = "#475569";
   ctx.font = "bold 11px 'JetBrains Mono', monospace";
-  ctx.fillText("Press ENTER to reboot kernel", cx, canvasHeight - 40);
+  ctx.fillText("Нажмите ENTER для перезапуска ядра", cx, canvasHeight - 40);
 }
 
 export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
@@ -393,7 +393,7 @@ export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth:
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 24px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  ctx.fillText("CHOOSE YOUR EVOLUTION", cx, cy - 180);
+  ctx.fillText("ВЫБЕРИТЕ ЭВОЛЮЦИЮ", cx, cy - 180);
 
   const cardW = 180;
   const cardH = 240;
@@ -402,10 +402,10 @@ export function drawClassSelectionUI(ctx: CanvasRenderingContext2D, canvasWidth:
   const startY = cy - 120;
 
   const classes = [
-    { name: "WARRIOR", color: "#00f0ff", desc: "Kinetic shield & dash", shape: 6 },
-    { name: "ARCHER", color: "#fbbf24", desc: "Charged sniper shot", shape: 3 },
-    { name: "ROGUE", color: "#ff2a5f", desc: "Stealth & crit attacks", shape: 4 },
-    { name: "MAGE", color: "#a855f7", desc: "Chrono-fields slow zone", shape: 8 }
+    { name: "ВОИН", color: "#00f0ff", desc: "Кинетический щит и рывок", shape: 6 },
+    { name: "ЛУЧНИК", color: "#fbbf24", desc: "Заряженный снайперский выстрел", shape: 3 },
+    { name: "РАЗБОЙНИК", color: "#ff2a5f", desc: "Невидимость и крит. атаки", shape: 4 },
+    { name: "МАГ", color: "#a855f7", desc: "Временные зоны замедления", shape: 8 }
   ];
 
   for (let i = 0; i < 4; i++) {
@@ -477,11 +477,11 @@ export function drawPauseUI(ctx: CanvasRenderingContext2D, canvasWidth: number, 
   ctx.fillStyle = "#00f0ff";
   ctx.font = "bold 28px 'JetBrains Mono', monospace";
   ctx.textAlign = "center";
-  ctx.fillText("SYSTEM PAUSED", cx, cy - 20);
+  ctx.fillText("СИСТЕМА НА ПАУЗЕ", cx, cy - 20);
 
   ctx.fillStyle = "#94a3b8";
   ctx.font = "bold 13px 'JetBrains Mono', monospace";
-  ctx.fillText("[PRESS ESC TO RESUME]", cx, cy + 20);
+  ctx.fillText("[НАЖМИТЕ ESC ДЛЯ ПРОДОЛЖЕНИЯ]", cx, cy + 20);
 }
 
 export function renderGame(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
