@@ -43,6 +43,34 @@ func TestRemovePlayer(t *testing.T) {
 		t.Errorf("expected 0 minions after remove, got %d", len(w.Minions))
 	}
 
-	// Test removing a non-existent player (should not panic)
 	w.RemovePlayer(999)
 }
+
+func TestWaveSpawning(t *testing.T) {
+	w := NewGameWorld()
+	_ = w.AddPlayer(1, "tester")
+	w.WavePauseTimer = 0.0
+
+	w.Tick(0.016)
+	if !w.WaveActive {
+		t.Fatal("expected wave to be active")
+	}
+	if w.WaveNumber != 1 {
+		t.Fatalf("expected wave 1, got %d", w.WaveNumber)
+	}
+	if len(w.Mobs) != 0 {
+		t.Fatalf("expected 0 mobs on wave start tick, got %d", len(w.Mobs))
+	}
+
+	w.Tick(0.016)
+	if len(w.Mobs) == 0 {
+		t.Fatal("expected mobs to spawn on tick 1")
+	}
+
+	mobsCountAfterSpawn := len(w.Mobs)
+	w.Tick(0.016)
+	if len(w.Mobs) != mobsCountAfterSpawn {
+		t.Fatalf("expected mob count to stay %d, got %d", mobsCountAfterSpawn, len(w.Mobs))
+	}
+}
+

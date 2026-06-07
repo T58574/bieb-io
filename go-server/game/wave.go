@@ -30,6 +30,7 @@ func (w *GameWorld) startNextWave() {
 	w.WaveMobsLeft = int(targetMobCount)
 
 	w.WaveSpawnTimer = 0
+	w.WaveTicks = 0
 	w.spawnBossesForWave()
 }
 
@@ -58,29 +59,11 @@ func (w *GameWorld) updateWaveSystem(dt float64) {
 		maxAlive = 1000000
 	}
 
-	if w.WaveMobsLeft > 0 && len(w.Mobs) < maxAlive {
-		w.WaveSpawnTimer += dt
-
-		spawnInterval := w.WaveTimeLeft / float64(w.WaveMobsLeft)
-		if spawnInterval > 1.0 {
-			spawnInterval = 1.0
-		}
-		if spawnInterval < 0.1 {
-			spawnInterval = 0.1
-		}
-
-		if w.WaveSpawnTimer >= spawnInterval {
-			w.WaveSpawnTimer = 0
-
-			spawnBatch := 1
-			if spawnInterval <= 0.1 {
-				spawnBatch = 3
-			}
-
-			for i := 0; i < spawnBatch && w.WaveMobsLeft > 0 && len(w.Mobs) < maxAlive; i++ {
-				w.spawnSingleMob()
-				w.WaveMobsLeft--
-			}
+	w.WaveTicks++
+	if w.WaveTicks == w.WaveNumber {
+		for w.WaveMobsLeft > 0 && len(w.Mobs) < maxAlive {
+			w.spawnSingleMob()
+			w.WaveMobsLeft--
 		}
 	}
 }
