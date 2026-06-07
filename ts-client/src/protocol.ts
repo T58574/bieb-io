@@ -89,7 +89,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       arenaHeight: view.getFloat32(7, true),
     };
   } else if (opcode === 2) {
-    if (view.byteLength < 73) return null;
+    if (view.byteLength < 241) return null;
     const tick = view.getUint32(1, true);
     const xp = view.getUint32(5, true);
     const maxXp = view.getUint32(9, true);
@@ -106,10 +106,10 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
     const card2 = view.getUint8(37);
     const card3 = view.getUint8(38);
     const inventory: number[] = [];
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; i < 200; i++) {
       inventory.push(view.getUint8(39 + i));
     }
-    const removedCount = view.getUint16(71, true);
+    const removedCount = view.getUint16(239, true);
 
     const statRegen = statsPack1 & 0xFF;
     const statMaxHP = (statsPack1 >> 8) & 0xFF;
@@ -121,7 +121,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
     const statMinionRegen = (statsPack2 >> 24) & 0xFF;
 
     const entities: EntityState[] = [];
-    let offset = 73;
+    let offset = 241;
     for (let i = 0; i < entitiesCount; i++) {
       if (offset + 26 > view.byteLength) break;
       entities.push({

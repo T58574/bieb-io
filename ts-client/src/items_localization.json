@@ -6,27 +6,144 @@
     "stats_title": "ХАРАКТЕРИСТИКИ ПЕРСОНАЖА",
     "restart_prompt": "Нажмите ENTER для перезапуска",
     "stats": {
-      "hp": "МАКС. ЗДОРОВЬЕ",
-      "speed": "СКОРОСТЬ ПЕРЕДВИЖЕНИЯ",
-      "damage": "МНОЖИТЕЛЬ УРОНА",
-      "regen": "РЕГЕНЕРАЦИЯ ЗДОРОВЬЯ",
-      "minion_dmg": "УРОН ПРИЗВАННЫХ",
-      "minion_speed": "СКОРОСТЬ ПРИЗВАННЫХ",
-      "minion_hp": "ЗДОРОВЬЕ ПРИЗВАННЫХ",
-      "minion_pierce": "ПРОБИВАНИЕ ПРИЗВ.",
-      "minion_regen": "РЕГЕНЕРАЦИЯ ПРИЗВ."
+      "hp": "ЗДОРОВЬЕ",
+      "speed": "СКОРОСТЬ",
+      "damage": "УРОН",
+      "regen": "ВОССТАНОВЛЕНИЕ",
+      "minion_dmg": "УРОН ДРОНОВ",
+      "minion_hp": "ХП ДРОНОВ",
+      "minion_pierce": "ПРОБИВ. ДР.",
+      "minion_regen": "РЕГЕН. ДР."
     }
   },
   "items": {
-    "1": { "name": "БОТИНОК", "color": "#10b981", "desc": "+10% к Скорости", "abbrev": "Boot", "rarity": "Common" },
-    "2": { "name": "КИНЖАЛ", "color": "#fbbf24", "desc": "+15% к Урону\n+5% Вамп", "abbrev": "Dagg", "rarity": "Rare" },
-    "3": { "name": "ВЗРЫВНАЯ СФЕРА", "color": "#d946ef", "desc": "Взрывы при\nубийстве", "abbrev": "Expl\nOrba", "rarity": "Unique" },
-    "4": { "name": "МУЛЬТИВЫСТРЕЛ", "color": "#ef4444", "desc": "+1 снаряд при стрельбе", "abbrev": "Mult\nShot", "rarity": "Unique" }
+    "1": {
+      "name": "КОНДЕНСАТОР",
+      "color": "#10b981",
+      "desc": "+10% Скорость",
+      "abbrev": "Opt\nCap",
+      "rarity": "Common"
+    },
+    "2": {
+      "name": "СОПРОЦЕССОР",
+      "color": "#fbbf24",
+      "desc": "+15% Урон\n+5% Вамп",
+      "abbrev": "Over\nProc",
+      "rarity": "Rare"
+    },
+    "3": {
+      "name": "ЯДРО НЕКРОЗА",
+      "color": "#d946ef",
+      "desc": "Взрывы на\nубийстве",
+      "abbrev": "Necr\nCore",
+      "rarity": "Unique"
+    },
+    "4": {
+      "name": "МУЛЬТИСПЛИТ",
+      "color": "#ef4444",
+      "desc": "+1 снаряд при стрельбе",
+      "abbrev": "Multi\nSplit",
+      "rarity": "Unique"
+    },
+    "5": {
+      "name": "ПЛАСТИНА ХП",
+      "color": "#10b981",
+      "desc": "+10 ХП",
+      "abbrev": "HP\nPlat",
+      "rarity": "Common"
+    },
+    "6": {
+      "name": "РЕАКТОР",
+      "color": "#10b981",
+      "desc": "+10% Макс ХП",
+      "abbrev": "Max\nHP",
+      "rarity": "Common"
+    },
+    "7": {
+      "name": "РАДИАТОР",
+      "color": "#fbbf24",
+      "desc": "+2 Урон\n+5% Скор",
+      "abbrev": "Rad\nIat",
+      "rarity": "Rare"
+    },
+    "8": {
+      "name": "УСКОРИТЕЛЬ",
+      "color": "#fbbf24",
+      "desc": "+1.5 СкорСнар\n+10% Урон",
+      "abbrev": "Acc\nEl",
+      "rarity": "Rare"
+    },
+    "9": {
+      "name": "КРОВОПИЙЦА",
+      "color": "#d946ef",
+      "desc": "+10% Вамп\n+15% ХП\n-5% Скор",
+      "abbrev": "Vamp\nBat",
+      "rarity": "Unique"
+    },
+    "10": {
+      "name": "БУР",
+      "color": "#d946ef",
+      "desc": "+1 Пробитие\n+20% Урон\n+2 СкорСнар",
+      "abbrev": "Dril\nEr",
+      "rarity": "Unique"
+    },
+    "11": {
+      "name": "ДВУСТВОЛ",
+      "color": "#d946ef",
+      "desc": "+1 Снаряд\n+5 Урон\n+1 Пробитие",
+      "abbrev": "Duo\nGun",
+      "rarity": "Unique"
+    },
+    "12": {
+      "name": "ТРИСТВОЛ",
+      "color": "#f97316",
+      "desc": "+2 Снаряда\n+2 Пробитие\n+25% Урон\n-10% Скор",
+      "abbrev": "Tri\nGun",
+      "rarity": "Legendary"
+    },
+    "13": {
+      "name": "АЭГИС",
+      "color": "#f97316",
+      "desc": "+15% Вамп\n+30% Макс ХП\n+50 ХП\n+15% Скор",
+      "abbrev": "Aeg\nIs",
+      "rarity": "Legendary"
+    },
+    "14": {
+      "name": "АННИГИЛЯТОР",
+      "color": "#f97316",
+      "desc": "+3 СкорСнар\n+50% Урон\n+1 Снаряд\n+1 Пробитие",
+      "abbrev": "Ann\nIhi",
+      "rarity": "Legendary"
+    }
   },
   "classes": [
-    { "id": 1, "name": "ВОИН", "color": "#ef4444", "desc": "Увеличенная масса и кинетический урон.", "shape": 6 },
-    { "id": 2, "name": "СТРЕЛОК", "color": "#00f0ff", "desc": "Заряжаемый выстрел и повышенная дальность.", "shape": 3 },
-    { "id": 3, "name": "РАЗБОЙНИК", "color": "#10b981", "desc": "Невидимость при рывке и низкий кулдаун.", "shape": 4 },
-    { "id": 4, "name": "МАГ", "color": "#a855f7", "desc": "Контроль дронов и АоЕ поля при ударе.", "shape": 8 }
+    {
+      "id": 1,
+      "name": "ВОИН",
+      "color": "#ef4444",
+      "desc": "Увеличенная масса и кинетический урон.",
+      "shape": 6
+    },
+    {
+      "id": 2,
+      "name": "СТРЕЛОК",
+      "color": "#00f0ff",
+      "desc": "Заряжаемый выстрел и повышенная дальность.",
+      "shape": 3
+    },
+    {
+      "id": 3,
+      "name": "РАЗБОЙНИК",
+      "color": "#10b981",
+      "desc": "Невидимость при рывке и низкий кулдаун.",
+      "shape": 4
+    },
+    {
+      "id": 4,
+      "name": "МАГ",
+      "color": "#a855f7",
+      "desc": "Контроль дронов и АоЕ поля при ударе.",
+      "shape": 8
+    }
   ]
 }

@@ -41,7 +41,7 @@ func EncodeWelcome(playerID uint16, arenaWidth, arenaHeight float32) []byte {
 func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32, health, maxHealth uint16, upgradePoints uint8, statsPack1, statsPack2 uint32, waveNumber uint16, card1, card2, card3 uint8, inventory []uint8, entities []EntityState, removedIDs []uint16) []byte {
 	count := len(entities)
 	removedCount := len(removedIDs)
-	bufSize := 73 + count*26 + removedCount*2
+	bufSize := 241 + count*26 + removedCount*2
 	buf := make([]byte, bufSize)
 	buf[0] = 2
 	binary.LittleEndian.PutUint32(buf[1:5], tick)
@@ -59,16 +59,16 @@ func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32,
 	buf[36] = card1
 	buf[37] = card2
 	buf[38] = card3
-	for i := 0; i < 32; i++ {
+	for i := 0; i < 200; i++ {
 		if i < len(inventory) {
 			buf[39+i] = inventory[i]
 		} else {
 			buf[39+i] = 0
 		}
 	}
-	binary.LittleEndian.PutUint16(buf[71:73], uint16(removedCount))
+	binary.LittleEndian.PutUint16(buf[239:241], uint16(removedCount))
 
-	offset := 73
+	offset := 241
 	for i := 0; i < count; i++ {
 		ent := &entities[i]
 		binary.LittleEndian.PutUint16(buf[offset:offset+2], ent.ID)

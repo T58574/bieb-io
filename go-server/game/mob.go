@@ -20,6 +20,7 @@ type Mob struct {
 	ShootCooldown float64
 	Rarity        uint8
 	Modifiers     uint32
+	KillerID      uint16
 }
 
 func (w *GameWorld) spawnSingleMob() {
@@ -66,6 +67,7 @@ func (w *GameWorld) spawnSingleMob() {
 
 	var mobType uint8
 	roll := w.rand.Float64()
+
 	if w.WaveNumber == 1 {
 		if roll < 0.7 {
 			mobType = 3
@@ -366,7 +368,7 @@ func (w *GameWorld) updateMobs(dt float64) {
 					p.StateFlags |= 0x10000
 				}
 			}
-			w.dropLoot(m.Pos, m.Rarity, m.Type)
+			w.dropLoot(m.Pos, m.Rarity, m.Type, m.KillerID)
 			w.spawnOrb(m.Pos, m.XPValue)
 			w.mobPool.Put(m)
 			w.RemovedEntityIDs = append(w.RemovedEntityIDs, id)
@@ -398,28 +400,60 @@ func (w *GameWorld) spawnDrone(ownerID uint16, pos physics.Vector2D) {
 	owner.MinionIDs = append(owner.MinionIDs, mID)
 }
 
-func (w *GameWorld) dropLoot(pos physics.Vector2D, rarity uint8, mobType uint8) {
+func (w *GameWorld) dropLoot(pos physics.Vector2D, rarity uint8, mobType uint8, killerID uint16) {
 	roll := w.rand.Float64()
+
+	if killer, ok := w.Players[killerID]; ok && killer.Alive {
+		roll += roll * float64(killer.StatLootQuantity) * 0.05
+	}
+
 	var itemID uint8
 
+	commonItems := []uint8{1, 5, 6}
+	rareItems := []uint8{2, 7, 8}
+	uniqueItems := []uint8{3, 4, 9, 10, 11}
+	legendaryItems := []uint8{12, 13, 14}
+
 	if mobType == 10 || mobType == 11 || mobType == 12 {
-		if w.rand.Float64() < 0.5 {
-			if roll < 0.5 {
-				itemID = 3
-			} else {
-				itemID = 4
-			}
+		// Bosses drop rare, unique, or legendary
+		if roll < 0.2 {
+			itemID = rareItems[w.rand.Intn(len(rareItems))]
+		} else if roll < 0.8 {
+			itemID = uniqueItems[w.rand.Intn(len(uniqueItems))]
+		} else {
+			itemID = legendaryItems[w.rand.Intn(len(legendaryItems))]
 		}
 	} else {
-		if roll < 0.05 {
-			itemID = 1
-		} else if roll < 0.055 {
-			itemID = 2
-		} else if roll < 0.07 {
-			if w.rand.Float64() < 0.5 {
-				itemID = 3
+		// Normal mobs
+		if rarity == 3 {
+			if roll < 0.5 {
+				itemID = uniqueItems[w.rand.Intn(len(uniqueItems))]
+			} else if roll < 0.95 {
+				itemID = rareItems[w.rand.Intn(len(rareItems))]
 			} else {
-				itemID = 4
+				itemID = legendaryItems[w.rand.Intn(len(legendaryItems))]
+			}
+		} else if rarity == 2 {
+			if roll < 0.1 {
+				itemID = uniqueItems[w.rand.Intn(len(uniqueItems))]
+			} else if roll < 0.4 {
+				itemID = rareItems[w.rand.Intn(len(rareItems))]
+			} else if roll < 0.8 {
+				itemID = commonItems[w.rand.Intn(len(commonItems))]
+			}
+		} else if rarity == 1 {
+			if roll < 0.05 {
+				itemID = rareItems[w.rand.Intn(len(rareItems))]
+			} else if roll < 0.25 {
+				itemID = commonItems[w.rand.Intn(len(commonItems))]
+			}
+		} else {
+			if roll < 0.08 {
+				itemID = commonItems[w.rand.Intn(len(commonItems))]
+			} else if roll < 0.09 {
+				itemID = rareItems[w.rand.Intn(len(rareItems))]
+			} else if roll < 0.095 {
+				itemID = uniqueItems[w.rand.Intn(len(uniqueItems))]
 			}
 		}
 	}

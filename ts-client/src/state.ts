@@ -52,7 +52,7 @@ export const state = {
   card1: 0,
   card2: 0,
   card3: 0,
-  inventory: Array(32).fill(0) as number[],
+  inventory: Array(200).fill(0) as number[],
   selectedDeleteChoice: 0,
   cameraZoom: 1.0,
   selectedClass: 1,

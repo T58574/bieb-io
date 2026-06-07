@@ -137,17 +137,27 @@ export function drawUpgradeCardsOverlay(ctx: CanvasRenderingContext2D, canvasWid
   const startY = cy - 140 * uiScale;
 
   const cardDetails: Record<number, { title: string; color: string; desc: string; rarity: string }> = {
-    1: { title: "ОПТИМИЗАЦИЯ СКОРОСТИ", color: "#10b981", desc: "Увеличение тактовой частоты на +10%", rarity: "Common" },
+    1: { title: "ОПТИМИЗАЦИЯ СКОРОСТИ", color: "#10b981", desc: "Увеличение скорости на +10%", rarity: "Common" },
     2: { title: "СОПРОЦЕССОР", color: "#fbbf24", desc: "Увеличение мощности и +5% вампиризм", rarity: "Rare" },
-    3: { title: "СТАБИЛИЗАТОР ЯДРА", color: "#22c55e", desc: "Увеличение стабильности ядра на +25", rarity: "Common" },
-    4: { title: "РЕГЕНЕРАЦИЯ", color: "#10b981", desc: "Увеличение регенерации ядра", rarity: "Common" },
+    3: { title: "СТАБИЛИЗАТОР ЯДРА", color: "#22c55e", desc: "Увеличение макс здоровья на +25", rarity: "Common" },
+    4: { title: "РЕГЕНЕРАЦИЯ", color: "#10b981", desc: "Увеличение регенерации здоровья", rarity: "Common" },
     5: { title: "ДРОНЫ: ВЫЧИСЛЕНИЯ", color: "#06b6d4", desc: "Увеличение урона дронов на +15%", rarity: "Common" },
     6: { title: "ДРОНЫ: ЧАСТОТА", color: "#8b5cf6", desc: "Увеличение скорости дронов на +15%", rarity: "Common" },
     7: { title: "ДРОНЫ: СТАБИЛЬНОСТЬ", color: "#3b82f6", desc: "Увеличение макс. ХП дронов на +15%", rarity: "Common" },
     8: { title: "ДРОНЫ: ПРОБИТИЕ", color: "#ef4444", desc: "Дроны пробивают на +1 цель больше", rarity: "Common" },
     9: { title: "ДРОНЫ: РЕГЕНЕРАЦИЯ", color: "#a3e635", desc: "Увеличение регенерации дронов на +15%", rarity: "Common" },
     10: { title: "МИКРО-ЩИТЫ", color: "#00f0ff", desc: "Запуск защитного орбитального щита (макс 4)", rarity: "Rare" },
-    11: { title: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Все ваши снаряды взрывают убитые вирусы", rarity: "Unique" }
+    11: { title: "ЯДРО НЕКРОЗА", color: "#d946ef", desc: "Все ваши снаряды взрывают убитые вирусы", rarity: "Unique" },
+    12: { title: "УСИЛИТЕЛЬ УРОНА", color: "#ef4444", desc: "Увеличение урона снарядов на +5%", rarity: "Common" },
+    13: { title: "РАЗГОН ОРУЖИЯ", color: "#f97316", desc: "Снижение задержки выстрела на 1%", rarity: "Common" },
+    14: { title: "ВЕРОЯТНОСТЬ КРИТА", color: "#f59e0b", desc: "Шанс крит. урона +5%", rarity: "Common" },
+    15: { title: "СИЛА КРИТА", color: "#eab308", desc: "Множитель крит. урона +5%", rarity: "Common" },
+    16: { title: "КИНЕТИЧЕСКИЙ БАРЬЕР", color: "#84cc16", desc: "Снижение получаемого урона на 5%", rarity: "Common" },
+    17: { title: "МНОЖИТЕЛЬ СНАРЯДОВ", color: "#22c55e", desc: "+1 доп. снаряд", rarity: "Rare" },
+    18: { title: "БРОНЕБОЙНОСТЬ", color: "#10b981", desc: "+1 пробитие снарядов", rarity: "Rare" },
+    19: { title: "УГОЛ АТАКИ", color: "#14b8a6", desc: "Увеличение разброса на +5%", rarity: "Common" },
+    20: { title: "ОБУЧЕНИЕ НЕЙРОСЕТИ", color: "#0ea5e9", desc: "Получаемый опыт +1%", rarity: "Common" },
+    21: { title: "КВАНТОВЫЙ АНАЛИЗАТОР", color: "#6366f1", desc: "Шанс дропа предметов +5%", rarity: "Common" }
   };
 
   const cards = [state.card1, state.card2, state.card3];
@@ -253,7 +263,7 @@ export function drawInventoryHUD(ctx: CanvasRenderingContext2D, canvasWidth: num
   const itemDetails: Record<string, { name: string; color: string; desc: string; abbrev: string; rarity: string }> = localizationData.items;
 
   const itemCounts = new Map<number, number>();
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 100; i++) {
     const itemID = state.inventory[2 * i];
     const count = state.inventory[2 * i + 1];
     if (itemID && itemID !== 0 && count > 0) {

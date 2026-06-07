@@ -119,12 +119,13 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 				}
 				m.Health -= dmgMelee
 				if m.Health <= 0 {
+					m.KillerID = p.ID
 					w.triggerOnKillEffects(p.ID, m)
 				}
 				if m.Type == 2 {
 					m.Health = 0
 				}
-				dmgToPlayer := m.Damage * 0.12
+				dmgToPlayer := m.Damage * 0.12 * (1.0 - math.Min(0.5, float64(p.StatCritDefiance)*0.05))
 				if len(p.MinionIDs) > 0 {
 					droneID := p.MinionIDs[0]
 					if drone, okD := w.Minions[droneID]; okD {
@@ -147,12 +148,20 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 					dmg *= 0.7
 				}
 				isCrit := false
-				if bullet.Subtype == 2 && w.rand.Float64() < 0.20 {
+				critChance := 0.20
+				critMultiplier := 2.0
+				if p, okP := w.Players[bullet.OwnerID]; okP && p.Alive {
+					critChance += float64(p.StatCritChance) * 0.05
+					critMultiplier += float64(p.StatCritDamage) * 0.05
+				}
+
+				if bullet.Subtype == 2 && w.rand.Float64() < critChance {
 					isCrit = true
-					dmg *= 2.0
+					dmg *= critMultiplier
 				}
 				m.Health -= dmg
 				if m.Health <= 0 && bullet.OwnerType == 0 {
+					m.KillerID = bullet.OwnerID
 					w.triggerOnKillEffects(bullet.OwnerID, m)
 				}
 				m.Vel = m.Vel.Add(bullet.Vel.Normalize().Mul(1.8))
@@ -218,7 +227,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		p, ok2 := w.Players[b.ID]
 		if ok1 && ok2 && p.Alive {
 			if bullet.OwnerType == 1 {
-				dmgToPlayer := bullet.Damage
+				dmgToPlayer := bullet.Damage * (1.0 - math.Min(0.5, float64(p.StatCritDefiance)*0.05))
 				if len(p.MinionIDs) > 0 {
 					droneID := p.MinionIDs[0]
 					if drone, okD := w.Minions[droneID]; okD {
@@ -268,6 +277,7 @@ func (w *GameWorld) handleCollisionPair(a, b HashItem) {
 		o, ok2 := w.Orbs[b.ID]
 		if ok1 && ok2 && p.Alive {
 			if !(p.Level >= 10 && p.ClassID == 0) {
+				gainedXP := uint32(float64(o.XPValue) * 0.75 * (1.0 + float64(p.StatExpMod)*0.01))
 				gainedXP := uint32(float64(o.XPValue) * 0.375)
 				if gainedXP == 0 && o.XPValue > 0 {
 					gainedXP = 1

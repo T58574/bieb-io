@@ -33,6 +33,16 @@ type Player struct {
 	StatMinionHP     uint16
 	StatMinionPierce uint16
 	StatMinionRegen  uint16
+	StatDamageMod    uint16
+	StatCooldownMod  uint16
+	StatCritChance   uint16
+	StatCritDamage   uint16
+	StatCritDefiance uint16
+	StatAddProjectiles uint16
+	StatPierceCount  uint16
+	StatSpread       uint16
+	StatExpMod       uint16
+	StatLootQuantity uint16
 	RegenAccum       float64
 	ClassID          uint8
 	Mass             float64
@@ -60,12 +70,12 @@ func (p *Player) GetInventoryArray() []uint8 {
 	}
 	sort.Ints(keys)
 
-	invList := make([]uint8, 32)
+	invList := make([]uint8, 200)
 	idx := 0
 	for _, k := range keys {
 		id := uint16(k)
 		count := p.Inventory[id]
-		if count > 0 && idx < 32 {
+		if count > 0 && idx < 200 {
 			invList[idx] = uint8(id)
 			cVal := count
 			if cVal > 255 {
@@ -134,7 +144,7 @@ func (w *GameWorld) UpdateInput(id uint16, keys uint8, angle float32, upgradeSel
 }
 
 func (w *GameWorld) rollUpgradeCards(p *Player) {
-	available := []uint8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}
+	available := []uint8{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21}
 	w.rand.Shuffle(len(available), func(i, j int) {
 		available[i], available[j] = available[j], available[i]
 	})
@@ -202,26 +212,46 @@ func (w *GameWorld) applyCardUpgrade(p *Player, choiceIndex uint8) {
 				shields++
 			}
 			p.StateFlags = (p.StateFlags & 0xFFFFFF0F) | (shields << 4)
-		case "StatDamageMod":
-			// Handled externally if needed, or by a new field later.
+				case "StatDamageMod":
+			if p.StatDamageMod < cardCfg.MaxLevel {
+				p.StatDamageMod++
+			}
 		case "StatCooldownMod":
-			// Handled externally if needed, or by a new field later.
+			if p.StatCooldownMod < cardCfg.MaxLevel {
+				p.StatCooldownMod++
+			}
 		case "StatCritChance":
-			// Handled externally if needed, or by a new field later.
+			if p.StatCritChance < cardCfg.MaxLevel {
+				p.StatCritChance++
+			}
 		case "StatCritDamage":
-			// Handled externally if needed, or by a new field later.
+			if p.StatCritDamage < cardCfg.MaxLevel {
+				p.StatCritDamage++
+			}
 		case "StatCritDefiance":
-			// Handled externally if needed, or by a new field later.
+			if p.StatCritDefiance < cardCfg.MaxLevel {
+				p.StatCritDefiance++
+			}
 		case "StatAddProjectiles":
-			// Handled externally if needed, or by a new field later.
+			if p.StatAddProjectiles < cardCfg.MaxLevel {
+				p.StatAddProjectiles++
+			}
 		case "StatPierceCount":
-			// Handled externally if needed, or by a new field later.
+			if p.StatPierceCount < cardCfg.MaxLevel {
+				p.StatPierceCount++
+			}
 		case "StatSpread":
-			// Handled externally if needed, or by a new field later.
+			if p.StatSpread < cardCfg.MaxLevel {
+				p.StatSpread++
+			}
 		case "StatExpMod":
-			// Handled externally if needed, or by a new field later.
+			if p.StatExpMod < cardCfg.MaxLevel {
+				p.StatExpMod++
+			}
 		case "StatLootQuantity":
-			// Handled externally if needed, or by a new field later.
+			if p.StatLootQuantity < cardCfg.MaxLevel {
+				p.StatLootQuantity++
+			}
 		case "StatLootQuality":
 			// Handled externally if needed, or by a new field later.
 		case "PickupItemRadius":
@@ -374,16 +404,16 @@ func (w *GameWorld) updatePlayers(dt float64) {
 				classCfg, _ = GetClassConfig(0)
 			}
 
-			p.ShootCooldown = classCfg.ShootCooldown
+			p.ShootCooldown = classCfg.ShootCooldown * (1.0 + float64(p.StatCooldownMod)*(-0.01))
 			bSpeed = classCfg.BulletSpeed
 			bRadius = classCfg.BulletRadius
-			bDamage = classCfg.BulletDamage * (1.0 + float64(p.StatMinionDmg)*upgCfg.GlobalMultipliers.MinionDamagePerLevel)
+			bDamage = classCfg.BulletDamage * (1.0 + float64(p.StatMinionDmg)*upgCfg.GlobalMultipliers.MinionDamagePerLevel + float64(p.StatDamageMod)*0.05)
 			bLifetime = classCfg.BulletLifetime
-			bPierce = classCfg.BulletPierce
+			bPierce = classCfg.BulletPierce + int(p.StatPierceCount)
 			bSubtype = classCfg.BulletSubtype
 
 			var totalFlatDmg, totalPercentDmg float64
-			addProjectiles := 0
+			addProjectiles := int(p.StatAddProjectiles)
 			for itemID, count := range p.Inventory {
 				if count <= 0 {
 					continue
@@ -399,7 +429,7 @@ func (w *GameWorld) updatePlayers(dt float64) {
 			bDamage = (bDamage + totalFlatDmg) * (1.0 + totalPercentDmg)
 
 			totalProjectiles := 1 + addProjectiles
-			angleStep := 0.15
+			angleStep := 0.15 + float64(p.StatSpread)*0.05
 			startAngle := p.MouseAngle - angleStep*float64(totalProjectiles-1)/2.0
 
 			for i := 0; i < totalProjectiles; i++ {
