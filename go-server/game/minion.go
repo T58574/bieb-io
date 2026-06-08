@@ -180,7 +180,7 @@ func (w *GameWorld) spawnMinion(ownerID uint16, pos physics.Vector2D) {
 		return
 	}
 	mCfg := GetMinionConfig()
-	if len(owner.MinionIDs) >= mCfg.MaxLimit {
+	if owner.ClassID != 2 && len(owner.MinionIDs) >= mCfg.MaxLimit {
 		oldID := owner.MinionIDs[0]
 		w.removeMinionFromPlayer(owner, oldID)
 		w.RemovedEntityIDs = append(w.RemovedEntityIDs, oldID)
@@ -209,7 +209,7 @@ func (w *GameWorld) spawnSpecialDrone(ownerID uint16, pos physics.Vector2D, subt
 		return
 	}
 	mCfg := GetMinionConfig()
-	if len(owner.MinionIDs) >= mCfg.MaxLimit {
+	if owner.ClassID != 2 && len(owner.MinionIDs) >= mCfg.MaxLimit {
 		oldID := owner.MinionIDs[0]
 		w.removeMinionFromPlayer(owner, oldID)
 		w.RemovedEntityIDs = append(w.RemovedEntityIDs, oldID)

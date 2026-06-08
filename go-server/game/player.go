@@ -603,7 +603,7 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		if p.ShootCooldown > 0 {
 			p.ShootCooldown -= dt
 		}
-		if p.Keys&0x20 != 0 && p.ShootCooldown <= 0 {
+		if p.Keys&0x20 != 0 && p.ShootCooldown <= 0 && p.ClassID != 2 {
 			var bSpeed, bRadius, bDamage, bLifetime float64
 			var bPierce int
 			var bSubtype uint8

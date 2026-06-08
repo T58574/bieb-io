@@ -397,7 +397,7 @@ export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canv
     "МУТАЦИЯ: РЕГЕНЕРАЦИЯ (+2%/сек ХП врагов)",
     "МУТАЦИЯ: КВАНТОВЫЙ СДВИГ (+размер, +50% кол. лута, -10% скор.)"
   ];
-  const activeMutation = state.waveNumber > 1 ? mutations[(state.waveNumber - 2) % 6 + 1] : "";
+  const activeMutation = state.activeMutationIndex ? mutations[state.activeMutationIndex] : "";
   if (activeMutation) {
     TextRenderer.draw(ctx, activeMutation, centerX, bottomY - 70 * uiScale, "#ef4444", { fontSize: 10, align: "center", bold: true }, canvasWidth, canvasHeight);
   }

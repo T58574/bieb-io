@@ -363,9 +363,19 @@ func (w *GameWorld) handleBulletMobCollision(a, b HashItem) {
 				dmg *= critMultiplier
 			}
 			m.Health -= dmg
-			if m.Health <= 0 && bullet.OwnerType == 0 {
-				m.KillerID = bullet.OwnerID
-				w.triggerOnKillEffects(bullet.OwnerID, m)
+			if m.Health <= 0 {
+				if bullet.OwnerType == 0 {
+					m.KillerID = bullet.OwnerID
+					w.triggerOnKillEffects(bullet.OwnerID, m)
+				} else if bullet.OwnerType == 2 {
+					m.KillerID = bullet.OwnerID
+					w.triggerOnKillEffects(bullet.OwnerID, m)
+					if owner, ok := w.Players[bullet.OwnerID]; ok && owner.Alive && owner.ClassID == 2 {
+						if w.rand.Float64() < 0.50 {
+							w.spawnDrone(owner.ID, m.Pos)
+						}
+					}
+				}
 			}
 			m.Vel = m.Vel.Add(bullet.Vel.Normalize().Mul(combatCfg.BulletKnockback))
 			if bullet.OwnerType == 0 {
@@ -524,6 +534,15 @@ func (w *GameWorld) handleMinionMobCollision(a, b HashItem) {
 				}
 			}
 			m.Health -= dmg
+			if m.Health <= 0 {
+				m.KillerID = minion.OwnerID
+				w.triggerOnKillEffects(minion.OwnerID, m)
+				if owner, ok := w.Players[minion.OwnerID]; ok && owner.Alive && owner.ClassID == 2 {
+					if w.rand.Float64() < 0.50 {
+						w.spawnDrone(owner.ID, m.Pos)
+					}
+				}
+			}
 			minion.Health -= m.Damage * combatCfg.MinionContactDamageMultiplier
 			if m.Type == 2 {
 				minion.Health = 0

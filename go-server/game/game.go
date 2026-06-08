@@ -48,6 +48,7 @@ type GameWorld struct {
 	WaveDuration     float64
 	WaveTimeLeft     float64
 	WaveDifficulty   float64
+	WaveMutation     uint8
 	Paused           bool
 	bulletPool       sync.Pool
 	mobPool          sync.Pool
@@ -77,6 +78,7 @@ func NewGameWorld() *GameWorld {
 		WaveDuration:     CurrentWaveConfig.BaseDuration,
 		WaveTimeLeft:     0.0,
 		WaveDifficulty:   1.0,
+		WaveMutation:     0,
 		inputChan:        make(chan InputEvent, worldCfg.InputBufferSize),
 		RemovedEntityIDs: make([]uint16, 0, 128),
 	}
@@ -123,6 +125,7 @@ func (w *GameWorld) resetLocked() {
 	w.WaveDuration = CurrentWaveConfig.BaseDuration
 	w.WaveTimeLeft = 0.0
 	w.WaveDifficulty = 1.0
+	w.WaveMutation = 0
 	w.Paused = false
 	w.RemovedEntityIDs = w.RemovedEntityIDs[:0]
 	gridSize := worldCfg.GridSize

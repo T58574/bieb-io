@@ -16,9 +16,15 @@ func (w *GameWorld) startNextWave() {
 	if w.WaveNumber > 1 {
 		w.WaveDuration *= CurrentWaveConfig.DurationMultiplier
 		w.WaveDifficulty *= CurrentWaveConfig.DifficultyMultiplier
+		if w.rand.Float64() < 0.15 {
+			w.WaveMutation = uint8(w.rand.Intn(6)) + 1
+		} else {
+			w.WaveMutation = 0
+		}
 	} else {
 		w.WaveDuration = CurrentWaveConfig.BaseDuration
 		w.WaveDifficulty = 1.0
+		w.WaveMutation = 0
 	}
 
 	w.WaveTimeLeft = w.WaveDuration
@@ -56,8 +62,12 @@ func (w *GameWorld) updateWaveSystem(dt float64) {
 	w.WaveTimeLeft -= dt
 
 	if w.WaveTimeLeft <= 0 {
-		w.startNextWave()
-		return
+		if w.hasAliveBoss() {
+			w.WaveTimeLeft = 0
+		} else {
+			w.startNextWave()
+			return
+		}
 	}
 
 	maxAlive := spawnCfg.MaxAlive.Base + int(w.WaveNumber)*spawnCfg.MaxAlive.PerWave
@@ -85,9 +95,17 @@ func (w *GameWorld) updateWaveSystem(dt float64) {
 	}
 }
 
-func (w *GameWorld) GetWaveMutation() uint8 {
-	if w.WaveNumber <= 1 {
-		return 0
+func (w *GameWorld) hasAliveBoss() bool {
+	for _, m := range w.Mobs {
+		if m.Health > 0 {
+			if _, isBoss := GetBossTypeConfig(m.Type); isBoss {
+				return true
+			}
+		}
 	}
-	return uint8((w.WaveNumber-2)%6) + 1
+	return false
+}
+
+func (w *GameWorld) GetWaveMutation() uint8 {
+	return w.WaveMutation
 }

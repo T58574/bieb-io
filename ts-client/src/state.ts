@@ -31,6 +31,7 @@ export const state = {
   playerMaxHealth: 100,
   upgradePoints: 0,
   waveNumber: 0,
+  activeMutationIndex: 0,
   isGamePaused: false,
   selectedUpgradeChoice: 0,
   statRegen: 0,

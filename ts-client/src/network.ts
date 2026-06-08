@@ -38,6 +38,7 @@ export function connectToServer() {
   state.playerMaxHealth = 100;
   state.upgradePoints = 0;
   state.waveNumber = 0;
+  state.activeMutationIndex = 0;
   state.statRegen = 0;
   state.statMaxHP = 0;
   state.statSpeed = 0;
@@ -98,7 +99,8 @@ function handleServerMessage(event: MessageEvent) {
     state.playerMaxHealth = msg.maxHealth;
     state.upgradePoints = msg.upgradePoints;
     state.isGamePaused = (msg.waveNumber & 0x8000) !== 0;
-    state.waveNumber = msg.waveNumber & 0x7FFF;
+    state.waveNumber = msg.waveNumber & 0x07FF;
+    state.activeMutationIndex = (msg.waveNumber >> 11) & 0x0F;
     state.statSpeed = msg.upgrades[1];
     state.statVampirism = msg.upgrades[2];
     state.statMaxHP = msg.upgrades[3];

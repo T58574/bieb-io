@@ -197,7 +197,8 @@ func (s *GameServer) broadcastState(tick uint32) {
 				UpgradePoints: p.UpgradePoints,
 				UpgradeLevels: upgradeLevels,
 				WaveNumber: func() uint16 {
-					wv := uint16(s.world.WaveNumber)
+					wv := uint16(s.world.WaveNumber & 0x07FF)
+					wv |= uint16(s.world.WaveMutation) << 11
 					hasUpgrades := false
 					for _, player := range s.world.Players {
 						if player.Alive && player.UpgradePoints > 0 {

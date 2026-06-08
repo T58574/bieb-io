@@ -441,6 +441,11 @@ func (w *GameWorld) spawnDrone(ownerID uint16, pos physics.Vector2D) {
 	minionMaxHP := (mCfg.BaseHP + float64(owner.StatMinionHP)*mCfg.HPPerLevel) * (1.0 + itemMinionHP)
 	minionDamage := (mCfg.BaseDamage + float64(owner.StatMinionDmg)*mCfg.DamagePerLevel) * (1.0 + itemMinionDmg)
 
+	hasLifetime := mCfg.DroneHasLifetime
+	if owner.ClassID == 2 {
+		hasLifetime = false
+	}
+
 	minion := &Minion{
 		ID:          mID,
 		OwnerID:     ownerID,
@@ -451,7 +456,7 @@ func (w *GameWorld) spawnDrone(ownerID uint16, pos physics.Vector2D) {
 		Damage:      minionDamage,
 		OrbitIndex:  len(owner.MinionIDs),
 		Lifetime:    mCfg.DroneLifetime,
-		HasLifetime: mCfg.DroneHasLifetime,
+		HasLifetime: hasLifetime,
 	}
 	w.Minions[mID] = minion
 	owner.MinionIDs = append(owner.MinionIDs, mID)
