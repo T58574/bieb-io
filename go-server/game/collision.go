@@ -268,6 +268,15 @@ func (w *GameWorld) handlePlayerMobCollision(a, b HashItem) {
 			if p.ClassID == 0 && p.SkillDuration > 0 {
 				dmgToPlayer = 0
 			}
+			if (p.StateFlags & 8) != 0 {
+				dmgToPlayer = 0
+			}
+			if p.Inventory[13] > 0 && p.AegisCooldown <= 0 && p.Health - dmgToPlayer < p.MaxHealth * 0.3 {
+				dmgToPlayer = math.Max(0, p.Health - p.MaxHealth*0.3)
+				p.AegisCooldown = 20.0
+				p.AegisShieldTimer = 2.0
+				p.StateFlags |= 8
+			}
 
 			if len(p.MinionIDs) > 0 {
 				droneID := p.MinionIDs[0]
@@ -410,6 +419,15 @@ func (w *GameWorld) handleBulletPlayerCollision(a, b HashItem) {
 
 			if p.ClassID == 0 && p.SkillDuration > 0 {
 				dmgToPlayer = 0
+			}
+			if (p.StateFlags & 8) != 0 {
+				dmgToPlayer = 0
+			}
+			if p.Inventory[13] > 0 && p.AegisCooldown <= 0 && p.Health - dmgToPlayer < p.MaxHealth * 0.3 {
+				dmgToPlayer = math.Max(0, p.Health - p.MaxHealth*0.3)
+				p.AegisCooldown = 20.0
+				p.AegisShieldTimer = 2.0
+				p.StateFlags |= 8
 			}
 
 			if len(p.MinionIDs) > 0 {

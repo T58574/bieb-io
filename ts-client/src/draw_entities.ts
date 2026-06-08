@@ -109,6 +109,17 @@ function drawPlayerEntity(ctx: CanvasRenderingContext2D, ent: Entity) {
     ctx.drawImage(sc, -sc.width / 2, -sc.height / 2);
   }
 
+  if ((ent.stateFlags & 8) !== 0) {
+    ctx.strokeStyle = "rgba(251, 191, 36, 0.8)";
+    ctx.shadowColor = "#fbbf24";
+    ctx.shadowBlur = 15;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, ent.radius + 10, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
   const numShields = (ent.stateFlags >> 4) & 0xF;
   if (numShields > 0) {
     for (let i = 0; i < numShields; i++) {

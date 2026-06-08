@@ -61,6 +61,8 @@ type Player struct {
 	LaserHitsCount   map[uint16]uint8
 	SkillCooldown    float64
 	SkillDuration    float64
+	AegisCooldown    float64
+	AegisShieldTimer float64
 }
 
 
@@ -400,6 +402,15 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		if p.SkillCooldown > 0 {
 			p.SkillCooldown -= dt
 		}
+		if p.AegisCooldown > 0 {
+			p.AegisCooldown -= dt
+		}
+		if p.AegisShieldTimer > 0 {
+			p.AegisShieldTimer -= dt
+			if p.AegisShieldTimer <= 0 {
+				p.StateFlags &^= 8
+			}
+		}
 		if p.SkillDuration > 0 {
 			p.SkillDuration -= dt
 			if p.ClassID == 0 && (p.StateFlags&4096) != 0 && int(p.SkillDuration*60.0)%3 == 0 {
@@ -429,6 +440,32 @@ func (w *GameWorld) updatePlayers(dt float64) {
 				itemCDMod -= 0.15 * float64(count)
 			}
 			cdReduction := (1.0 + float64(p.StatCooldownMod)*pCfg.CooldownReductionPerLevel) * (1.0 + itemCDMod)
+
+			if p.Inventory[27] > 0 {
+				dir := physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
+				p.Pos = p.Pos.Add(dir.Mul(150.0))
+			}
+			if p.Inventory[15] > 0 {
+				for i := 0; i < 12; i++ {
+					angle := (float64(i) / 12.0) * 2.0 * math.Pi
+					bID := w.GenerateID()
+					b := w.bulletPool.Get().(*Bullet)
+					*b = Bullet{}
+					b.ID = bID
+					b.OwnerID = p.ID
+					b.OwnerType = 0
+					b.Subtype = 0
+					dir := physics.Vector2D{X: math.Cos(angle), Y: math.Sin(angle)}
+					b.Pos = p.Pos.Add(dir.Mul(p.Radius + 5))
+					b.PrevPos = b.Pos
+					b.Vel = dir.Mul(12.0)
+					b.Radius = 5.0
+					b.Damage = 15.0
+					b.Lifetime = 1.5
+					b.Pierce = 1
+					w.Bullets[bID] = b
+				}
+			}
 			switch p.ClassID {
 			case 0:
 				p.SkillDuration = 0.25
