@@ -59,6 +59,8 @@ type Player struct {
 	invDirty         bool
 	Vampirism        float64
 	LaserHitsCount   map[uint16]uint8
+	SkillCooldown    float64
+	SkillDuration    float64
 }
 
 
@@ -378,8 +380,72 @@ func (w *GameWorld) updatePlayers(dt float64) {
 				p.StateFlags |= 2
 			}
 		} else {
-			p.StateFlags &^= 2
+			if p.ClassID != 0 || p.SkillDuration <= 0 {
+				p.StateFlags &^= 2
+			}
 		}
+
+		if p.SkillCooldown > 0 {
+			p.SkillCooldown -= dt
+		}
+		if p.SkillDuration > 0 {
+			p.SkillDuration -= dt
+			if p.SkillDuration <= 0 {
+				if p.ClassID == 0 {
+					p.StateFlags &^= 2
+				}
+			}
+		}
+
+		if p.Keys&0x10 != 0 && p.SkillCooldown <= 0 && p.SkillDuration <= 0 {
+			var itemCDMod float64
+			if count, ok := p.Inventory[23]; ok {
+				itemCDMod -= 0.10 * float64(count)
+			}
+			cdReduction := (1.0 + float64(p.StatCooldownMod)*pCfg.CooldownReductionPerLevel) * (1.0 + itemCDMod)
+			switch p.ClassID {
+			case 0:
+				p.SkillDuration = 0.25
+				p.SkillCooldown = 3.0 * cdReduction
+				p.StateFlags |= 2
+				dir := physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
+				p.Vel = dir.Mul(22.0)
+			case 1:
+				p.SkillDuration = 2.0
+				p.SkillCooldown = 8.0 * cdReduction
+			case 2:
+				p.SkillDuration = 0.1
+				p.SkillCooldown = 7.0 * cdReduction
+				fID := w.GenerateID()
+				f := w.fieldPool.Get().(*ChronoField)
+				*f = ChronoField{}
+				f.ID = fID
+				f.OwnerID = p.ID
+				f.Pos = p.Pos
+				f.Radius = 200.0
+				f.Duration = 5.0
+				w.Fields[fID] = f
+			case 3:
+				p.SkillDuration = 0.1
+				p.SkillCooldown = 10.0 * cdReduction
+				for i := 0; i < 3; i++ {
+					angle := (float64(i) / 3.0) * 2.0 * math.Pi
+					offsetPos := p.Pos.Add(physics.Vector2D{X: math.Cos(angle) * 50.0, Y: math.Sin(angle) * 50.0})
+					w.spawnDrone(p.ID, offsetPos)
+				}
+			case 4:
+				p.SkillDuration = 3.0
+				p.SkillCooldown = 6.0 * cdReduction
+				for _, mob := range w.Mobs {
+					distSq := mob.Pos.Sub(p.Pos).LengthSq()
+					if distSq < 250.0*250.0 {
+						dir := mob.Pos.Sub(p.Pos).Normalize()
+						mob.Vel = mob.Vel.Add(dir.Mul(15.0))
+					}
+				}
+			}
+		}
+
 		if p.UpgradePoints > 0 && p.CardChoices[0] == 0 {
 			w.rollUpgradeCards(p)
 		}
@@ -431,6 +497,11 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		p.Vel = p.Vel.Add(physics.Vector2D{X: ax, Y: ay})
 		p.Vel = p.Vel.Mul(pCfg.Friction)
 
+		if p.ClassID == 0 && p.SkillDuration > 0 {
+			dir := physics.Vector2D{X: math.Cos(p.MouseAngle), Y: math.Sin(p.MouseAngle)}
+			p.Vel = dir.Mul(22.0)
+		}
+
 		numShields := (p.StateFlags >> 4) & 0xF
 		if numShields > 0 {
 			for i := uint32(0); i < numShields; i++ {
@@ -467,7 +538,11 @@ func (w *GameWorld) updatePlayers(dt float64) {
 				}
 			}
 
-			p.ShootCooldown = classCfg.ShootCooldown * (1.0 + float64(p.StatCooldownMod)*pCfg.CooldownReductionPerLevel)
+			shootCooldown := classCfg.ShootCooldown * (1.0 + float64(p.StatCooldownMod)*pCfg.CooldownReductionPerLevel)
+			if p.ClassID == 1 && p.SkillDuration > 0 {
+				shootCooldown = 0.05
+			}
+			p.ShootCooldown = shootCooldown
 			bSpeed = classCfg.BulletSpeed
 			bRadius = classCfg.BulletRadius
 			bDamage = classCfg.BulletDamage * (1.0 + float64(p.StatMinionDmg)*upgCfg.GlobalMultipliers.MinionDamagePerLevel + float64(p.StatDamageMod)*pCfg.DamageModPerLevel)

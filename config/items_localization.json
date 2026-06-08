@@ -164,6 +164,41 @@
       "desc": "+25% Опыта\n+Радиус Сбора",
       "abbrev": "Exp\nMag",
       "rarity": "Rare"
+    },
+    "21": {
+      "name": "ТЯЖЕЛЫЙ КАТАЛИЗАТОР",
+      "color": "#d946ef",
+      "desc": "+25% ХП\n-10% Скорость",
+      "abbrev": "Hvy\nCat",
+      "rarity": "Unique"
+    },
+    "22": {
+      "name": "ФОТОННЫЙ РАЗРЯДНИК",
+      "color": "#fbbf24",
+      "desc": "+5 СкорСнар\n+10% Урон",
+      "abbrev": "Phot\nDis",
+      "rarity": "Rare"
+    },
+    "23": {
+      "name": "ХРОНО-КОНТРОЛЛЕР",
+      "color": "#d946ef",
+      "desc": "+15% Скорость\n-10% Откат Умений",
+      "abbrev": "Chr\nCtrl",
+      "rarity": "Unique"
+    },
+    "24": {
+      "name": "КВАНТОВЫЙ ДЕЛИТЕЛЬ",
+      "color": "#f97316",
+      "desc": "+1 Снаряд\n-15% Урон",
+      "abbrev": "Quant\nSplit",
+      "rarity": "Legendary"
+    },
+    "25": {
+      "name": "НАНО-УСИЛИТЕЛЬ",
+      "color": "#d946ef",
+      "desc": "+8 Урон\n+10% Шанс Крита",
+      "abbrev": "Nano\nAmp",
+      "rarity": "Unique"
     }
   },
   "classes": []

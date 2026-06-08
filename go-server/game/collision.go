@@ -258,8 +258,15 @@ func (w *GameWorld) handlePlayerMobCollision(a, b HashItem) {
 					}
 				}
 			}
+			if p.ClassID == 4 && p.SkillDuration > 0 {
+				armor += 150.0
+			}
 			if armor > 0 {
 				dmgToPlayer *= (100.0 / (100.0 + armor))
+			}
+
+			if p.ClassID == 0 && p.SkillDuration > 0 {
+				dmgToPlayer = 0
 			}
 
 			if len(p.MinionIDs) > 0 {
@@ -394,8 +401,15 @@ func (w *GameWorld) handleBulletPlayerCollision(a, b HashItem) {
 					}
 				}
 			}
+			if p.ClassID == 4 && p.SkillDuration > 0 {
+				armor += 150.0
+			}
 			if armor > 0 {
 				dmgToPlayer *= (100.0 / (100.0 + armor))
+			}
+
+			if p.ClassID == 0 && p.SkillDuration > 0 {
+				dmgToPlayer = 0
 			}
 
 			if len(p.MinionIDs) > 0 {

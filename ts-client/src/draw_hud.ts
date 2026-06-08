@@ -321,6 +321,63 @@ export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canv
 
   TextRenderer.draw(ctx, `ПРОШИВКА ЯДРА: v${state.currentLevel}`, centerX, bottomY - 28 * uiScale, HUD_LAYOUT.textWhite, { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
+  const playerEntity = state.playerId !== null ? renderEntities.get(state.playerId) : null;
+  if (playerEntity) {
+    const classId = playerEntity.subtype;
+    const skillCd = ((playerEntity.stateFlags >> 16) & 0xFF) / 10.0;
+    const skillDur = ((playerEntity.stateFlags >> 24) & 0xFF) / 10.0;
+
+    const skillNames = ["РЫВОК", "ФОРСАЖ", "КУПОЛ", "ОРДА", "БАРЬЕР"];
+    const skillColors = ["#00f0ff", "#ef4444", "#fbbf24", "#a855f7", "#22c55e"];
+    const sName = skillNames[classId] || "УМЕНИЕ";
+    const sColor = skillColors[classId] || "#ffffff";
+
+    const boxSize = 44 * uiScale;
+    const bx = centerX - barWidth / 2 - boxSize - 15 * uiScale;
+    const by = bottomY - 20 * uiScale;
+
+    ctx.fillStyle = "rgba(10, 30, 43, 0.8)";
+    ctx.strokeStyle = skillDur > 0 ? "#ffffff" : (skillCd > 0 ? "rgba(255, 255, 255, 0.2)" : sColor);
+    ctx.lineWidth = skillDur > 0 ? 3 : 1.5;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, boxSize, boxSize, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    if (skillDur > 0) {
+      ctx.shadowColor = sColor;
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = sColor;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    TextRenderer.draw(ctx, sName, bx + boxSize / 2, by + 18 * uiScale, "#ffffff", { fontSize: 8, align: "center", bold: true }, canvasWidth, canvasHeight);
+    TextRenderer.draw(ctx, "[SPACE]", bx + boxSize / 2, by + 32 * uiScale, "rgba(255, 255, 255, 0.6)", { fontSize: 7, align: "center", bold: true }, canvasWidth, canvasHeight);
+
+    if (skillCd > 0) {
+      const maxCds = [3.0, 8.0, 7.0, 10.0, 6.0];
+      const maxCd = maxCds[classId] || 5.0;
+      const pct = Math.min(1.0, skillCd / maxCd);
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+      ctx.beginPath();
+      ctx.moveTo(bx + boxSize / 2, by + boxSize / 2);
+      ctx.arc(
+        bx + boxSize / 2,
+        by + boxSize / 2,
+        boxSize / 2,
+        -Math.PI / 2,
+        -Math.PI / 2 + Math.PI * 2 * pct,
+        false
+      );
+      ctx.lineTo(bx + boxSize / 2, by + boxSize / 2);
+      ctx.fill();
+
+      TextRenderer.draw(ctx, skillCd.toFixed(1) + "s", bx + boxSize / 2, by + boxSize / 2 + 4 * uiScale, "#ff3b30", { fontSize: 10, align: "center", bold: true }, canvasWidth, canvasHeight);
+    }
+  }
+
   TextRenderer.draw(ctx, `ПАКЕТОВ ДАННЫХ: ${state.currentScore}`, 20 * uiScale, canvasHeight - 25 * uiScale, HUD_LAYOUT.textMuted, { fontSize: 16, align: "left", bold: true }, canvasWidth, canvasHeight);
 
   let activeMinions = 0;

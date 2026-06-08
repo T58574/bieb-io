@@ -198,6 +198,16 @@ func (w *GameWorld) appendPlayerStates(states []protocol.EntityState) []protocol
 		if !p.Alive {
 			continue
 		}
+		cdVal := uint32(math.Ceil(p.SkillCooldown * 10.0))
+		if cdVal > 255 {
+			cdVal = 255
+		}
+		durVal := uint32(math.Ceil(p.SkillDuration * 10.0))
+		if durVal > 255 {
+			durVal = 255
+		}
+		stateFlags := (p.StateFlags & 0x0000FFFF) | (cdVal << 16) | (durVal << 24)
+
 		states = append(states, protocol.EntityState{
 			ID:         p.ID,
 			Type:       0,
@@ -208,7 +218,7 @@ func (w *GameWorld) appendPlayerStates(states []protocol.EntityState) []protocol
 			Health:     uint16(math.Max(0, p.Health)),
 			MaxHealth:  uint16(p.MaxHealth),
 			Radius:     uint16(p.Radius),
-			StateFlags: p.StateFlags,
+			StateFlags: stateFlags,
 		})
 	}
 	return states
