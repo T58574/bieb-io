@@ -234,6 +234,48 @@
       "desc": "+6 СкорСнар\n+15% Скорость",
       "abbrev": "Agrav\nCore",
       "rarity": "Legendary"
+    },
+    "31": {
+      "name": "АМОРТИЗАТОР",
+      "color": "#10b981",
+      "desc": "+8 Броня",
+      "abbrev": "Damp\nShk",
+      "rarity": "Common"
+    },
+    "32": {
+      "name": "ФОКУСИРОВКА",
+      "color": "#10b981",
+      "desc": "+5% Шанс Крита",
+      "abbrev": "Foc\nLens",
+      "rarity": "Common"
+    },
+    "33": {
+      "name": "ЗАПАСНОЙ БЛОК",
+      "color": "#10b981",
+      "desc": "+1 Регенерация",
+      "abbrev": "Spr\nBat",
+      "rarity": "Common"
+    },
+    "34": {
+      "name": "ГИБРИДНЫЙ ЧИП",
+      "color": "#fbbf24",
+      "desc": "+8% Шанс Крита\n+20% Крит Урон",
+      "abbrev": "Hybr\nChip",
+      "rarity": "Rare"
+    },
+    "35": {
+      "name": "УСИЛЕННЫЙ ПРИВОД",
+      "color": "#fbbf24",
+      "desc": "+8% Скорость\n+12 Броня",
+      "abbrev": "Reinf\nDrv",
+      "rarity": "Rare"
+    },
+    "36": {
+      "name": "ВЕКТОРНЫЙ СКАНЕР",
+      "color": "#fbbf24",
+      "desc": "+10% Опыта\n+30 Радиус Сбора",
+      "abbrev": "Vect\nScan",
+      "rarity": "Rare"
     }
   },
   "classes": []

@@ -245,5 +245,50 @@
       "BulletSpeed": 6.0,
       "PercentSpeed": 0.15
     }
+  },
+  {
+    "ID": 31,
+    "Rarity": 1,
+    "StatModifiers": {
+      "Armor": 8.0
+    }
+  },
+  {
+    "ID": 32,
+    "Rarity": 1,
+    "StatModifiers": {
+      "CritChance": 0.05
+    }
+  },
+  {
+    "ID": 33,
+    "Rarity": 1,
+    "StatModifiers": {
+      "Regen": 1.0
+    }
+  },
+  {
+    "ID": 34,
+    "Rarity": 2,
+    "StatModifiers": {
+      "CritChance": 0.08,
+      "CritDamage": 0.2
+    }
+  },
+  {
+    "ID": 35,
+    "Rarity": 2,
+    "StatModifiers": {
+      "PercentSpeed": 0.08,
+      "Armor": 12.0
+    }
+  },
+  {
+    "ID": 36,
+    "Rarity": 2,
+    "StatModifiers": {
+      "ExpMod": 0.1,
+      "PickupRadius": 30.0
+    }
   }
 ]
