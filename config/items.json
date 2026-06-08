@@ -11,7 +11,8 @@
     "Rarity": 2,
     "StatModifiers": {
       "PercentDamage": 0.15,
-      "Vampirism": 0.05
+      "Vampirism": 0.05,
+      "DoubleDamage": 0.05
     }
   },
   {
@@ -30,7 +31,8 @@
     "ID": 5,
     "Rarity": 1,
     "StatModifiers": {
-      "FlatHP": 10.0
+      "FlatHP": 10.0,
+      "CritDefiance": 0.02
     }
   },
   {
@@ -71,7 +73,8 @@
     "StatModifiers": {
       "PierceCount": 1,
       "PercentDamage": 0.2,
-      "BulletSpeed": 2.0
+      "BulletSpeed": 2.0,
+      "MinionPierce": 1
     }
   },
   {
@@ -90,7 +93,8 @@
       "AddProjectiles": 2,
       "PierceCount": 2,
       "PercentDamage": 0.25,
-      "PercentSpeed": -0.1
+      "PercentSpeed": -0.1,
+      "DoubleDamage": 0.15
     }
   },
   {
@@ -100,7 +104,8 @@
       "Vampirism": 0.15,
       "PercentHP": 0.3,
       "FlatHP": 50.0,
-      "PercentSpeed": 0.15
+      "PercentSpeed": 0.15,
+      "BlockChance": 0.25
     }
   },
   {
@@ -110,7 +115,8 @@
       "BulletSpeed": 3.0,
       "PercentDamage": 0.5,
       "AddProjectiles": 1,
-      "PierceCount": 1
+      "PierceCount": 1,
+      "DoubleDamage": 0.10
     }
   },
   {
@@ -120,7 +126,9 @@
       "AddProjectiles": 1,
       "PercentDamage": 0.2,
       "PercentSpeed": 0.1,
-      "BulletSpeed": 1.0
+      "BulletSpeed": 1.0,
+      "LootQuantity": 0.20,
+      "LootQuality": 0.20
     }
   },
   {
@@ -129,7 +137,8 @@
     "StatModifiers": {
       "FlatHP": 100.0,
       "Armor": 20.0,
-      "BulletSpeed": 0.5
+      "BulletSpeed": 0.5,
+      "CritDefiance": 0.15
     }
   },
   {
@@ -158,7 +167,9 @@
     "Rarity": 3,
     "StatModifiers": {
       "MinionDamage": 0.3,
-      "MinionHP": 0.5
+      "MinionHP": 0.5,
+      "MinionSpeed": 0.20,
+      "MinionRegen": 2.0
     }
   },
   {
@@ -166,7 +177,8 @@
     "Rarity": 2,
     "StatModifiers": {
       "ExpMod": 0.25,
-      "PickupRadius": 50.0
+      "PickupRadius": 50.0,
+      "LootQuantity": 0.10
     }
   },
   {
@@ -189,7 +201,8 @@
     "ID": 23,
     "Rarity": 3,
     "StatModifiers": {
-      "PercentSpeed": 0.15
+      "PercentSpeed": 0.15,
+      "CooldownMod": -0.10
     }
   },
   {
@@ -197,7 +210,8 @@
     "Rarity": 4,
     "StatModifiers": {
       "AddProjectiles": 1,
-      "PercentDamage": -0.15
+      "PercentDamage": -0.15,
+      "MinionPierce": 2
     }
   },
   {
@@ -220,7 +234,8 @@
     "ID": 27,
     "Rarity": 4,
     "StatModifiers": {
-      "PercentSpeed": 0.1
+      "PercentSpeed": 0.1,
+      "CooldownMod": -0.15
     }
   },
   {
@@ -228,14 +243,16 @@
     "Rarity": 4,
     "StatModifiers": {
       "PercentDamage": 0.2,
-      "FlatDamage": 10.0
+      "FlatDamage": 10.0,
+      "DoubleDamage": 0.20
     }
   },
   {
     "ID": 29,
     "Rarity": 4,
     "StatModifiers": {
-      "Regen": 2.0
+      "Regen": 2.0,
+      "MinionRegen": 5.0
     }
   },
   {
@@ -250,7 +267,8 @@
     "ID": 31,
     "Rarity": 1,
     "StatModifiers": {
-      "Armor": 8.0
+      "Armor": 8.0,
+      "Thorns": 1.0
     }
   },
   {
@@ -264,7 +282,8 @@
     "ID": 33,
     "Rarity": 1,
     "StatModifiers": {
-      "Regen": 1.0
+      "Regen": 1.0,
+      "MinionRegen": 0.5
     }
   },
   {
@@ -280,7 +299,8 @@
     "Rarity": 2,
     "StatModifiers": {
       "PercentSpeed": 0.08,
-      "Armor": 12.0
+      "Armor": 12.0,
+      "BlockChance": 0.05
     }
   },
   {
@@ -288,7 +308,8 @@
     "Rarity": 2,
     "StatModifiers": {
       "ExpMod": 0.1,
-      "PickupRadius": 30.0
+      "PickupRadius": 30.0,
+      "LootQuality": 0.10
     }
   }
 ]

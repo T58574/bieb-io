@@ -84,3 +84,10 @@ func (w *GameWorld) updateWaveSystem(dt float64) {
 		}
 	}
 }
+
+func (w *GameWorld) GetWaveMutation() uint8 {
+	if w.WaveNumber <= 1 {
+		return 0
+	}
+	return uint8((w.WaveNumber-2)%6) + 1
+}

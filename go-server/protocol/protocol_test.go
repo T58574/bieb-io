@@ -149,8 +149,8 @@ func TestWorldState(t *testing.T) {
 	if buf[0] != 2 {
 		t.Errorf("expected opcode 2")
 	}
-	if len(buf) != 258+26+4 {
-		t.Errorf("expected len %d, got %d", 258+26+4, len(buf))
+	if len(buf) != 262+26+4 {
+		t.Errorf("expected len %d, got %d", 262+26+4, len(buf))
 	}
 }
 

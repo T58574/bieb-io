@@ -50,6 +50,17 @@ func (w *GameWorld) spawnSingleMob() {
 	dmg := mobCfg.BaseDamage * w.WaveDifficulty
 	xpVal := mobCfg.BaseXP
 
+	mutation := w.GetWaveMutation()
+	switch mutation {
+	case 2: // Savage Wave
+		dmg *= 1.40
+	case 3: // Armored Wave
+		hp *= 1.50
+	case 6: // Quantum Wave
+		rad *= 1.25
+		hp *= 1.25
+	}
+
 	rm := GetRarityMultiplier(rarity)
 	hp *= rm.HP
 	dmg *= rm.Damage
@@ -246,6 +257,13 @@ func (w *GameWorld) updateMobs(dt float64) {
 				speedMul *= math.Pow(w.WaveDifficulty, CurrentWaveConfig.SpeedDifficultyExponent)
 			}
 
+			switch w.GetWaveMutation() {
+			case 1: // Hyper Speed
+				speedMul *= 1.35
+			case 6: // Quantum
+				speedMul *= 0.90
+			}
+
 			mobCfg, hasCfg := GetMobTypeConfig(m.Type)
 			if !hasCfg {
 				bossCfg, hasBoss := GetBossTypeConfig(m.Type)
@@ -263,7 +281,11 @@ func (w *GameWorld) updateMobs(dt float64) {
 					}
 					m.ShootCooldown -= dt
 					if m.ShootCooldown <= 0 && dist < mobCfg.ShootRange {
-						m.ShootCooldown = mobCfg.ShootCooldown
+						cooldown := mobCfg.ShootCooldown
+						if w.GetWaveMutation() == 4 {
+							cooldown *= 0.70 // 30% faster shooting
+						}
+						m.ShootCooldown = cooldown
 						bID := w.GenerateID()
 						b := w.bulletPool.Get().(*Bullet)
 						*b = Bullet{}
@@ -292,6 +314,13 @@ func (w *GameWorld) updateMobs(dt float64) {
 				if m.Health > m.MaxHealth {
 					m.Health = m.MaxHealth
 				}
+			}
+		}
+
+		if w.GetWaveMutation() == 5 && m.Health < m.MaxHealth {
+			m.Health += m.MaxHealth * 0.02 * dt
+			if m.Health > m.MaxHealth {
+				m.Health = m.MaxHealth
 			}
 		}
 
@@ -353,7 +382,11 @@ func (w *GameWorld) updateBossMob(m *Mob, cfg BossTypeConfig, dir physics.Vector
 		m.Vel = m.Vel.Add(dir.Mul(cfg.Acceleration)).Normalize().Mul(cfg.BaseSpeed * speedMul)
 		m.ShootCooldown -= dt
 		if m.ShootCooldown <= 0 && dist < cfg.ShootRange {
-			m.ShootCooldown = cfg.ShootCooldown
+			cooldown := cfg.ShootCooldown
+			if w.GetWaveMutation() == 4 {
+				cooldown *= 0.70
+			}
+			m.ShootCooldown = cooldown
 			for i := 0; i < cfg.BulletCount; i++ {
 				angle := (float64(i) / float64(cfg.BulletCount)) * 2.0 * math.Pi
 				bDir := physics.Vector2D{X: math.Cos(angle), Y: math.Sin(angle)}
@@ -443,8 +476,23 @@ func (w *GameWorld) dropLoot(pos physics.Vector2D, rarity uint8, mobType uint8, 
 
 	combatCfg := GetCombatConfig()
 	chanceLimit := table.LootChance
+	var qualityBonus float64
 	if killer, okK := w.Players[killerID]; okK && killer.Alive {
-		chanceLimit += chanceLimit * float64(killer.StatLootQuantity) * combatCfg.LootQuantityPerLevel
+		var itemQty, itemQual float64
+		for itemID, count := range killer.Inventory {
+			if count > 0 {
+				if mod, ok := GetItemModifier(itemID); ok {
+					itemQty += mod.StatModifiers.LootQuantity * float64(count)
+					itemQual += mod.StatModifiers.LootQuality * float64(count)
+				}
+			}
+		}
+		chanceLimit += chanceLimit * (float64(killer.StatLootQuantity)*combatCfg.LootQuantityPerLevel + itemQty)
+		qualityBonus = float64(killer.StatLootQuality)*combatCfg.LootQualityPerLevel + itemQual
+	}
+
+	if w.GetWaveMutation() == 6 {
+		chanceLimit *= 1.50
 	}
 
 	roll := w.rand.Float64()
@@ -452,21 +500,34 @@ func (w *GameWorld) dropLoot(pos physics.Vector2D, rarity uint8, mobType uint8, 
 		return
 	}
 
-	totalWeight := 0
-	for _, g := range table.Groups {
-		totalWeight += g.Weight
+	modifiedWeights := make([]float64, len(table.Groups))
+	var totalWeight float64
+	for idx, g := range table.Groups {
+		rarity := uint8(0)
+		if len(g.Items) > 0 {
+			if mod, ok := GetItemModifier(uint16(g.Items[0])); ok {
+				rarity = mod.Rarity
+			}
+		}
+		weight := float64(g.Weight)
+		if qualityBonus > 0 && rarity > 0 {
+			weight *= (1.0 + qualityBonus*float64(rarity))
+		}
+		modifiedWeights[idx] = weight
+		totalWeight += weight
 	}
+
 	if totalWeight <= 0 {
 		return
 	}
 
-	weightRoll := w.rand.Intn(totalWeight)
-	currentWeight := 0
+	weightRoll := w.rand.Float64() * totalWeight
+	var currentWeight float64
 	var selectedGroup *LootGroup
-	for _, g := range table.Groups {
-		currentWeight += g.Weight
+	for idx := range table.Groups {
+		currentWeight += modifiedWeights[idx]
 		if weightRoll < currentWeight {
-			selectedGroup = &g
+			selectedGroup = &table.Groups[idx]
 			break
 		}
 	}

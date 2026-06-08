@@ -238,8 +238,17 @@ func (w *GameWorld) handlePlayerMobCollision(a, b HashItem) {
 			}
 			_ = dmgKinetic
 			m.Health -= dmgMelee
-			if p.StatThorns > 0 {
-				m.Health -= float64(p.StatThorns) * 10.0
+			var itemThorns float64
+			for itemID, count := range p.Inventory {
+				if count > 0 {
+					if mod, ok := GetItemModifier(itemID); ok {
+						itemThorns += mod.StatModifiers.Thorns * float64(count)
+					}
+				}
+			}
+			totalThorns := float64(p.StatThorns)*10.0 + itemThorns
+			if totalThorns > 0 {
+				m.Health -= totalThorns
 			}
 			if m.Health <= 0 {
 				m.KillerID = p.ID
@@ -248,7 +257,21 @@ func (w *GameWorld) handlePlayerMobCollision(a, b HashItem) {
 			if m.Type == 2 {
 				m.Health = 0
 			}
-			dmgToPlayer := m.Damage * combatCfg.MeleeContactDamageMultiplier * (1.0 - math.Min(combatCfg.MaxDefianceReduction, float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel))
+			var itemDefiance float64
+			var itemBlockChance float64
+			for itemID, count := range p.Inventory {
+				if count > 0 {
+					if mod, ok := GetItemModifier(itemID); ok {
+						itemDefiance += mod.StatModifiers.CritDefiance * float64(count)
+						itemBlockChance += mod.StatModifiers.BlockChance * float64(count)
+					}
+				}
+			}
+			totalDefiance := float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel + itemDefiance
+			dmgToPlayer := m.Damage * combatCfg.MeleeContactDamageMultiplier * (1.0 - math.Min(combatCfg.MaxDefianceReduction, totalDefiance))
+			if w.rand.Float64() < math.Min(0.75, itemBlockChance) {
+				dmgToPlayer = 0
+			}
 
 			var armor float64
 			for itemID, count := range p.Inventory {
@@ -305,6 +328,19 @@ func (w *GameWorld) handleBulletMobCollision(a, b HashItem) {
 				if m.Modifiers&(1<<armorMod.Bit) != 0 {
 					dmg *= armorMod.DamageReduction
 				}
+			}
+			var itemDoubleDamage float64
+			if p, okP := w.Players[bullet.OwnerID]; okP && p.Alive {
+				for itemID, count := range p.Inventory {
+					if count > 0 {
+						if mod, ok := GetItemModifier(itemID); ok {
+							itemDoubleDamage += mod.StatModifiers.DoubleDamage * float64(count)
+						}
+					}
+				}
+			}
+			if w.rand.Float64() < itemDoubleDamage {
+				dmg *= 2.0
 			}
 			isCrit := false
 			critChance := combatCfg.BaseCritChance
@@ -400,7 +436,21 @@ func (w *GameWorld) handleBulletPlayerCollision(a, b HashItem) {
 			return
 		}
 		if bullet.OwnerType == 1 {
-			dmgToPlayer := bullet.Damage * (1.0 - math.Min(combatCfg.MaxDefianceReduction, float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel))
+			var itemDefiance float64
+			var itemBlockChance float64
+			for itemID, count := range p.Inventory {
+				if count > 0 {
+					if mod, ok := GetItemModifier(itemID); ok {
+						itemDefiance += mod.StatModifiers.CritDefiance * float64(count)
+						itemBlockChance += mod.StatModifiers.BlockChance * float64(count)
+					}
+				}
+			}
+			totalDefiance := float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel + itemDefiance
+			dmgToPlayer := bullet.Damage * (1.0 - math.Min(combatCfg.MaxDefianceReduction, totalDefiance))
+			if w.rand.Float64() < math.Min(0.75, itemBlockChance) {
+				dmgToPlayer = 0
+			}
 
 			var armor float64
 			for itemID, count := range p.Inventory {

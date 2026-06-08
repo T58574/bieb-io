@@ -58,7 +58,15 @@ func (w *GameWorld) updateMinions(dt float64) {
 			X: math.Cos(orbitAngle) * orbitRadius,
 			Y: math.Sin(orbitAngle) * orbitRadius,
 		})
-		speedMul := 1.0 + float64(owner.StatMinionSpeed)*mCfg.SpeedPerLevel
+		var itemMinionSpeed float64
+		for itemID, count := range owner.Inventory {
+			if count > 0 {
+				if mod, ok := GetItemModifier(itemID); ok {
+					itemMinionSpeed += mod.StatModifiers.MinionSpeed * float64(count)
+				}
+			}
+		}
+		speedMul := (1.0 + float64(owner.StatMinionSpeed)*mCfg.SpeedPerLevel) * (1.0 + itemMinionSpeed)
 		diff := targetPos.Sub(m.Pos)
 		m.Vel = diff.Mul(mCfg.FollowSpeed * speedMul)
 		m.Pos = m.Pos.Add(m.Vel)
@@ -87,8 +95,16 @@ func (w *GameWorld) updateMinions(dt float64) {
 				w.minionShoot(m, owner)
 			}
 		}
-		if owner.StatMinionRegen > 0 && m.Health < m.MaxHealth {
-			regenRate := float64(owner.StatMinionRegen) * mCfg.RegenPerLevel
+		var itemMinionRegen float64
+		for itemID, count := range owner.Inventory {
+			if count > 0 {
+				if mod, ok := GetItemModifier(itemID); ok {
+					itemMinionRegen += mod.StatModifiers.MinionRegen * float64(count)
+				}
+			}
+		}
+		if (owner.StatMinionRegen > 0 || itemMinionRegen > 0) && m.Health < m.MaxHealth {
+			regenRate := float64(owner.StatMinionRegen)*mCfg.RegenPerLevel + itemMinionRegen
 			m.RegenAccum += regenRate * dt
 			if m.RegenAccum >= 1.0 {
 				heal := math.Floor(m.RegenAccum)
@@ -131,7 +147,15 @@ func (w *GameWorld) minionShoot(m *Minion, owner *Player) {
 		b.Radius = mCfg.BulletRadius
 		b.Damage = m.Damage
 		b.Lifetime = mCfg.BulletLifetime
-		b.Pierce = 1 + int(owner.StatMinionPierce)
+		var itemMinionPierce int
+		for itemID, count := range owner.Inventory {
+			if count > 0 {
+				if mod, ok := GetItemModifier(itemID); ok {
+					itemMinionPierce += mod.StatModifiers.MinionPierce * count
+				}
+			}
+		}
+		b.Pierce = 1 + int(owner.StatMinionPierce) + itemMinionPierce
 		w.Bullets[bID] = b
 	}
 }

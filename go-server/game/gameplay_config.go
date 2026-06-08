@@ -162,6 +162,7 @@ type CombatConfig struct {
 	XPPerLevelMultiplier        float64 `json:"xpPerLevelMultiplier"`
 	LevelUpXPMultiplier         float64 `json:"levelUpXPMultiplier"`
 	LootQuantityPerLevel        float64 `json:"lootQuantityPerLevel"`
+	LootQualityPerLevel         float64 `json:"lootQualityPerLevel"`
 }
 
 type PlayerConfig struct {
@@ -263,6 +264,7 @@ func init() {
 		XPPerLevelMultiplier:        0.01,
 		LevelUpXPMultiplier:         1.3,
 		LootQuantityPerLevel:        0.05,
+		LootQualityPerLevel:         0.05,
 	}
 	currentPlayerConfig = PlayerConfig{
 		Radius:              24,

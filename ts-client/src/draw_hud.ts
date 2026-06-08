@@ -388,6 +388,20 @@ export function drawHUD(ctx: CanvasRenderingContext2D, canvasWidth: number, canv
 
   TextRenderer.draw(ctx, `${localizationData.ui.sector_prefix}${state.waveNumber}`, centerX, bottomY - 54 * uiScale, HUD_LAYOUT.textMuted2, { fontSize: 13, align: "center", bold: true }, canvasWidth, canvasHeight);
 
+  const mutations = [
+    "",
+    "МУТАЦИЯ: ГИПЕРСКОРОСТЬ (+35% скор. врагов)",
+    "МУТАЦИЯ: ДИКАЯ ВОЛНА (+40% урон врагов)",
+    "МУТАЦИЯ: БРОНЕПОЕЗД (+50% здоровье врагов)",
+    "МУТАЦИЯ: БЫСТРЫЙ ОГОНЬ (+30% темп стрельбы врагов)",
+    "МУТАЦИЯ: РЕГЕНЕРАЦИЯ (+2%/сек ХП врагов)",
+    "МУТАЦИЯ: КВАНТОВЫЙ СДВИГ (+размер, +50% кол. лута, -10% скор.)"
+  ];
+  const activeMutation = state.waveNumber > 1 ? mutations[(state.waveNumber - 2) % 6 + 1] : "";
+  if (activeMutation) {
+    TextRenderer.draw(ctx, activeMutation, centerX, bottomY - 70 * uiScale, "#ef4444", { fontSize: 10, align: "center", bold: true }, canvasWidth, canvasHeight);
+  }
+
   drawInventoryHUD(ctx, canvasWidth, canvasHeight, uiScale);
 }
 
