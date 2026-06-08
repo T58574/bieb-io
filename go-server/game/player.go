@@ -129,6 +129,16 @@ func (p *Player) GetUpgradeLevels() []uint8 {
 func (w *GameWorld) AddPlayer(id uint16, username string, classID uint8) *Player {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	hasAlive := false
+	for _, p := range w.Players {
+		if p.Alive {
+			hasAlive = true
+			break
+		}
+	}
+	if !hasAlive {
+		w.resetLocked()
+	}
 	pCfg := GetPlayerConfig()
 	p := &Player{
 		ID:             id,

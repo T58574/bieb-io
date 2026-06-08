@@ -92,3 +92,17 @@ func TestWaveSpawning(t *testing.T) {
 	}
 }
 
+func TestResetOnRejoin(t *testing.T) {
+	w := NewGameWorld()
+	p1 := w.AddPlayer(1, "p1", 0)
+	p1.Alive = false
+	w.WaveNumber = 5
+	p2 := w.AddPlayer(2, "p2", 0)
+	if p2 == nil {
+		t.Fatal("failed to add second player")
+	}
+	if w.WaveNumber != 0 {
+		t.Errorf("expected WaveNumber to reset to 0, got %d", w.WaveNumber)
+	}
+}
+

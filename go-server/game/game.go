@@ -104,6 +104,43 @@ func NewGameWorld() *GameWorld {
 	return w
 }
 
+func (w *GameWorld) resetLocked() {
+	w.Players = make(map[uint16]*Player)
+	w.Mobs = make(map[uint16]*Mob)
+	w.Bullets = make(map[uint16]*Bullet)
+	w.Minions = make(map[uint16]*Minion)
+	w.Fields = make(map[uint16]*ChronoField)
+	w.LootDrops = make(map[uint16]*LootDrop)
+	worldCfg := GetWorldConfig()
+	w.nextID = worldCfg.NextIDStart
+	spawnCfg := GetSpawnConfig()
+	w.ElapsedTime = 0.0
+	w.WaveNumber = 0
+	w.WaveActive = false
+	w.WavePauseTimer = spawnCfg.WavePauseTime
+	w.WaveMobsLeft = 0
+	w.WaveSpawnTimer = 0.0
+	w.WaveDuration = CurrentWaveConfig.BaseDuration
+	w.WaveTimeLeft = 0.0
+	w.WaveDifficulty = 1.0
+	w.Paused = false
+	w.RemovedEntityIDs = w.RemovedEntityIDs[:0]
+	gridSize := worldCfg.GridSize
+	for r := 0; r < gridSize; r++ {
+		for c := 0; c < gridSize; c++ {
+			w.grid[r][c] = w.grid[r][c][:0]
+		}
+	}
+	for {
+		select {
+		case <-w.inputChan:
+		default:
+			goto drained
+		}
+	}
+drained:
+}
+
 func (w *GameWorld) GenerateID() uint16 {
 	worldCfg := GetWorldConfig()
 	w.nextID++
