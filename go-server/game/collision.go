@@ -371,7 +371,7 @@ func (w *GameWorld) handleBulletMobCollision(a, b HashItem) {
 					m.KillerID = bullet.OwnerID
 					w.triggerOnKillEffects(bullet.OwnerID, m)
 					if owner, ok := w.Players[bullet.OwnerID]; ok && owner.Alive && owner.ClassID == 2 {
-						if w.rand.Float64() < 0.50 {
+						if w.rand.Float64() < 0.20 {
 							w.spawnDrone(owner.ID, m.Pos)
 						}
 					}
@@ -538,7 +538,7 @@ func (w *GameWorld) handleMinionMobCollision(a, b HashItem) {
 				m.KillerID = minion.OwnerID
 				w.triggerOnKillEffects(minion.OwnerID, m)
 				if owner, ok := w.Players[minion.OwnerID]; ok && owner.Alive && owner.ClassID == 2 {
-					if w.rand.Float64() < 0.50 {
+					if w.rand.Float64() < 0.20 {
 						w.spawnDrone(owner.ID, m.Pos)
 					}
 				}

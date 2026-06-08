@@ -8,7 +8,7 @@ UPGRADES:
 4. PoE Stats Integration & Drop Tuning: Expanded `ItemStatModifiers` to fully support and integrate all character stats on items (Thorns, Defiance, Loot Quantity, Loot Quality, Cooldown Reduction, Minion Speed, Minion Regen, Minion Pierce). Added new PoE-inspired stats: Block Chance (negates damage from hits, capped at 75%) and Double Damage Chance (chance to deal double bullet damage). Tuned drop rates to create a PoE "Divine Orb" feel where legendary items are extremely rare and rewarding.
 5. Wave Mutations System: Implemented a deterministic wave mutation system (6 distinct modifiers: Hyper Speed, Savage, Armored, Rapid Fire, Regenerative, Quantum Shift) that dynamically scales up wave difficulty and displays mutation details on the client HUD in Russian.
 6. Mutation Balancing & Boss Gating: Reduced wave mutation occurrence to a rare 15% chance per wave, packing mutation index into upper bits of WaveNumber. Implemented boss survival gates that prevent the wave system from progressing to the next wave while a boss is alive on the map.
-7. Technomage Balance & Drone Duplicate: Fixed Technomage class (ClassID == 2) to disable basic gun attacks and rely strictly on permanent drones without lifetime limits or quantity caps. Added a 50% chance to duplicate/spawn a new drone when a minion or its bullet kills a monster.
+7. Technomage Balance & Drone Duplicate: Fixed Technomage class (ClassID == 2) to disable basic gun attacks and rely strictly on permanent drones without lifetime limits. Implemented a drone cap of 30 for Technomage, and added a balanced 20% chance to duplicate/spawn a new drone when a minion or its bullet kills a monster.
 
 Tree:
 .ai_docs/             # SSOT Specifications
