@@ -9,6 +9,7 @@ UPGRADES:
 5. Wave Mutations System: Implemented a deterministic wave mutation system (6 distinct modifiers: Hyper Speed, Savage, Armored, Rapid Fire, Regenerative, Quantum Shift) that dynamically scales up wave difficulty and displays mutation details on the client HUD in Russian.
 6. Mutation Balancing & Boss Gating: Reduced wave mutation occurrence to a rare 15% chance per wave, packing mutation index into upper bits of WaveNumber. Implemented boss survival gates that prevent the wave system from progressing to the next wave while a boss is alive on the map.
 7. Technomage Balance & Drone Duplicate: Fixed Technomage class (ClassID == 2) to disable basic gun attacks and rely strictly on permanent drones without lifetime limits. Implemented a drone cap of 30 for Technomage, and added a balanced 20% chance to duplicate/spawn a new drone when a minion or its bullet kills a monster.
+8. Drone Stat Scaling: Applied player's damage modifiers (StatDamageMod, PercentDamage) to drone base damage, and cooldown modifiers (StatCooldownMod) to drone shoot rate. Refactored collision.go to allow minion bullets to trigger crits, vampirism, and crit-chains, eliminating the overhead of dedicated minion stats and standardizing the combat pipeline for OwnerType == 2.
 
 Tree:
 .ai_docs/             # SSOT Specifications

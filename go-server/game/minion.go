@@ -71,17 +71,20 @@ func (w *GameWorld) updateMinions(dt float64) {
 		m.Vel = diff.Mul(mCfg.FollowSpeed * speedMul)
 		m.Pos = m.Pos.Add(m.Vel)
 
-		var itemMinionDmg, itemMinionHP float64
+		var itemMinionDmg, itemMinionHP, itemPercentDmg float64
 		for itemID, count := range owner.Inventory {
 			if count > 0 {
 				if mod, ok := GetItemModifier(itemID); ok {
 					itemMinionDmg += mod.StatModifiers.MinionDamage * float64(count)
 					itemMinionHP += mod.StatModifiers.MinionHP * float64(count)
+					itemPercentDmg += mod.StatModifiers.PercentDamage * float64(count)
 				}
 			}
 		}
 
-		m.Damage = (mCfg.BaseDamage + float64(owner.StatMinionDmg)*mCfg.DamagePerLevel) * (1.0 + itemMinionDmg)
+		pCfg := GetPlayerConfig()
+		dmgMod := 1.0 + float64(owner.StatDamageMod)*pCfg.DamageModPerLevel + itemPercentDmg
+		m.Damage = (mCfg.BaseDamage + float64(owner.StatMinionDmg)*mCfg.DamagePerLevel) * (1.0 + itemMinionDmg) * dmgMod
 		m.MaxHealth = (mCfg.BaseHP + float64(owner.StatMinionHP)*mCfg.HPPerLevel) * (1.0 + itemMinionHP)
 		m.ShootCooldown -= dt
 		if m.ShootCooldown <= 0 {
@@ -90,8 +93,9 @@ func (w *GameWorld) updateMinions(dt float64) {
 				if owner.Health < owner.MaxHealth {
 					owner.Health = math.Min(owner.MaxHealth, owner.Health+5.0)
 				}
-			} else {
-				m.ShootCooldown = mCfg.ShootCooldown
+		} else {
+				cdMul := 1.0 + float64(owner.StatCooldownMod)*GetPlayerConfig().CooldownReductionPerLevel
+				m.ShootCooldown = mCfg.ShootCooldown * cdMul
 				w.minionShoot(m, owner)
 			}
 		}
@@ -133,30 +137,45 @@ func (w *GameWorld) minionShoot(m *Minion, owner *Player) {
 	}
 	shootRangeSq := mCfg.ShootRange * mCfg.ShootRange
 	if target != nil && minDist < shootRangeSq {
-		dir := target.Pos.Sub(m.Pos).Normalize()
-		bID := w.GenerateID()
-		b := w.bulletPool.Get().(*Bullet)
-		*b = Bullet{}
-		b.ID = bID
-		b.OwnerID = m.OwnerID
-		b.OwnerType = 2
-		b.Subtype = mCfg.BulletSubtype
-		b.Pos = m.Pos.Add(dir.Mul(m.Radius + 3))
-		b.PrevPos = b.Pos
-		b.Vel = dir.Mul(mCfg.BulletSpeed)
-		b.Radius = mCfg.BulletRadius
-		b.Damage = m.Damage
-		b.Lifetime = mCfg.BulletLifetime
+		baseDir := target.Pos.Sub(m.Pos).Normalize()
+		baseAngle := math.Atan2(baseDir.Y, baseDir.X)
+
+		addProjectiles := int(owner.StatAddProjectiles)
 		var itemMinionPierce int
 		for itemID, count := range owner.Inventory {
 			if count > 0 {
 				if mod, ok := GetItemModifier(itemID); ok {
 					itemMinionPierce += mod.StatModifiers.MinionPierce * count
+					addProjectiles += mod.StatModifiers.AddProjectiles * count
 				}
 			}
 		}
-		b.Pierce = 1 + int(owner.StatMinionPierce) + itemMinionPierce
-		w.Bullets[bID] = b
+
+		totalProjectiles := 1 + addProjectiles
+		pCfg := GetPlayerConfig()
+		angleStep := pCfg.AngleStep + float64(owner.StatSpread)*pCfg.AngleSpreadPerLevel
+		startAngle := baseAngle - angleStep*float64(totalProjectiles-1)/2.0
+
+		for i := 0; i < totalProjectiles; i++ {
+			angle := startAngle + float64(i)*angleStep
+			dir := physics.Vector2D{X: math.Cos(angle), Y: math.Sin(angle)}
+
+			bID := w.GenerateID()
+			b := w.bulletPool.Get().(*Bullet)
+			*b = Bullet{}
+			b.ID = bID
+			b.OwnerID = m.OwnerID
+			b.OwnerType = 2
+			b.Subtype = mCfg.BulletSubtype
+			b.Pos = m.Pos.Add(dir.Mul(m.Radius + 3))
+			b.PrevPos = b.Pos
+			b.Vel = dir.Mul(mCfg.BulletSpeed)
+			b.Radius = mCfg.BulletRadius
+			b.Damage = m.Damage
+			b.Lifetime = mCfg.BulletLifetime
+			b.Pierce = 1 + int(owner.StatMinionPierce) + itemMinionPierce
+			w.Bullets[bID] = b
+		}
 	}
 }
 
