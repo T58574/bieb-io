@@ -176,250 +176,289 @@ func (w *GameWorld) resolveCollisionsOptimized() {
 }
 
 func (w *GameWorld) handleCollisionPair(a, b HashItem) {
-	combatCfg := GetCombatConfig()
-	rarityCfg := GetRarityConfig()
-
 	if a.Type == 1 && b.Type == 1 {
-		m1, ok1 := w.Mobs[a.ID]
-		m2, ok2 := w.Mobs[b.ID]
-		if ok1 && ok2 {
-			physics.ResolveCircleCircle(&m1.Pos, &m2.Pos, m1.Radius, m2.Radius, &m1.Vel, &m2.Vel, 1.0, 1.0, 0.15)
-		}
+		w.handleMobMobCollision(a, b)
 		return
 	}
 	if a.Type == 0 && b.Type == 1 {
-		p, ok1 := w.Players[a.ID]
-		m, ok2 := w.Mobs[b.ID]
-		if ok1 && ok2 && p.Alive {
-			relVelStart := p.Vel.Sub(m.Vel).Length()
-			if physics.ResolveCircleCircle(&p.Pos, &m.Pos, p.Radius, m.Radius, &p.Vel, &m.Vel, p.Mass, 1.0, 0.3) {
-				dmgKinetic := 0.5 * p.Mass * (relVelStart * relVelStart) * combatCfg.KineticDamageFactor
-				dmgMelee := p.Radius * combatCfg.MeleeDamageRadiusFactor
-				if armorMod, ok := rarityCfg.Modifiers["armor"]; ok {
-					if m.Modifiers&(1<<armorMod.Bit) != 0 {
-						dmgKinetic *= armorMod.DamageReduction
-						dmgMelee *= armorMod.DamageReduction
-					}
-				}
-				_ = dmgKinetic
-				m.Health -= dmgMelee
-				if p.StatThorns > 0 {
-					m.Health -= float64(p.StatThorns) * 10.0
-				}
-				if m.Health <= 0 {
-					m.KillerID = p.ID
-					w.triggerOnKillEffects(p.ID, m)
-				}
-				if m.Type == 2 {
-					m.Health = 0
-				}
-				dmgToPlayer := m.Damage * combatCfg.MeleeContactDamageMultiplier * (1.0 - math.Min(combatCfg.MaxDefianceReduction, float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel))
-
-				var armor float64
-				for itemID, count := range p.Inventory {
-					if count > 0 {
-						if mod, ok := GetItemModifier(itemID); ok {
-							armor += mod.StatModifiers.Armor * float64(count)
-						}
-					}
-				}
-				if armor > 0 {
-					dmgToPlayer *= (100.0 / (100.0 + armor))
-				}
-
-				if len(p.MinionIDs) > 0 {
-					droneID := p.MinionIDs[0]
-					if drone, okD := w.Minions[droneID]; okD {
-						drone.Health -= dmgToPlayer
-						dmgToPlayer = 0
-					}
-				}
-				p.Health -= dmgToPlayer
-			}
-		}
+		w.handlePlayerMobCollision(a, b)
 		return
 	}
 	if a.Type == 2 && b.Type == 1 {
-		bullet, ok1 := w.Bullets[a.ID]
-		m, ok2 := w.Mobs[b.ID]
-		if ok1 && ok2 {
-			if bullet.Lifetime <= 0 || bullet.Pierce <= 0 {
-				return
-			}
-			if bullet.OwnerType == 0 || bullet.OwnerType == 2 {
-				dmg := bullet.Damage
-				if armorMod, ok := rarityCfg.Modifiers["armor"]; ok {
-					if m.Modifiers&(1<<armorMod.Bit) != 0 {
-						dmg *= armorMod.DamageReduction
-					}
-				}
-				isCrit := false
-				critChance := combatCfg.BaseCritChance
-				critMultiplier := combatCfg.BaseCritMultiplier
-				if p, okP := w.Players[bullet.OwnerID]; okP && p.Alive {
-					critChance += float64(p.StatCritChance) * combatCfg.CritChancePerLevel
-					critMultiplier += float64(p.StatCritDamage) * combatCfg.CritDamagePerLevel
-					for itemID, count := range p.Inventory {
-						if count > 0 {
-							if mod, ok := GetItemModifier(itemID); ok {
-								critChance += mod.StatModifiers.CritChance * float64(count)
-								critMultiplier += mod.StatModifiers.CritDamage * float64(count)
-							}
-						}
-					}
-				}
-
-				if bullet.Subtype == 2 && w.rand.Float64() < critChance {
-					isCrit = true
-					dmg *= critMultiplier
-				}
-				m.Health -= dmg
-				if m.Health <= 0 && bullet.OwnerType == 0 {
-					m.KillerID = bullet.OwnerID
-					w.triggerOnKillEffects(bullet.OwnerID, m)
-				}
-				m.Vel = m.Vel.Add(bullet.Vel.Normalize().Mul(combatCfg.BulletKnockback))
-				if bullet.OwnerType == 0 {
-					p, okP := w.Players[bullet.OwnerID]
-					if okP && p.Alive {
-						vampPercent := p.Vampirism
-						if count, ok := p.Inventory[2]; ok {
-							vampPercent += combatCfg.VampirismPerItem * float64(count)
-						}
-						if vampPercent > 0 {
-							p.Health = math.Min(p.MaxHealth, p.Health+dmg*vampPercent)
-						}
-						if bullet.Subtype == 1 {
-							p.LaserHitsCount[m.ID]++
-							if p.LaserHitsCount[m.ID] >= combatCfg.LaserChainThreshold {
-								p.LaserHitsCount[m.ID] = 0
-								chainRadSq := combatCfg.LaserChainRadius * combatCfg.LaserChainRadius
-								for _, otherMob := range w.Mobs {
-									distSq := otherMob.Pos.Sub(m.Pos).LengthSq()
-									if distSq < chainRadSq {
-										otherMob.Health -= combatCfg.LaserChainDamage
-									}
-								}
-							}
-						}
-						if isCrit {
-							var targets []*Mob
-							critRangeSq := combatCfg.CritChainRange * combatCfg.CritChainRange
-							for _, otherMob := range w.Mobs {
-								if otherMob.ID == m.ID {
-									continue
-								}
-								distSq := otherMob.Pos.Sub(m.Pos).LengthSq()
-								if distSq < critRangeSq {
-									targets = append(targets, otherMob)
-								}
-							}
-							w.rand.Shuffle(len(targets), func(i, j int) {
-								targets[i], targets[j] = targets[j], targets[i]
-							})
-							limit := combatCfg.CritChainLimit
-							if len(targets) < limit {
-								limit = len(targets)
-							}
-							for k := 0; k < limit; k++ {
-								targets[k].Health -= combatCfg.CritChainDamage
-							}
-						}
-						if bullet.Subtype == 3 {
-							m.Modifiers |= 16
-						}
-					}
-				}
-				bullet.Pierce--
-				if bullet.Pierce <= 0 {
-					bullet.Lifetime = 0
-				}
-			}
-		}
+		w.handleBulletMobCollision(a, b)
 		return
 	}
 	if a.Type == 2 && b.Type == 0 {
-		bullet, ok1 := w.Bullets[a.ID]
-		p, ok2 := w.Players[b.ID]
-		if ok1 && ok2 && p.Alive {
-			if bullet.Lifetime <= 0 || bullet.Pierce <= 0 {
-				return
-			}
-			if bullet.OwnerType == 1 {
-				dmgToPlayer := bullet.Damage * (1.0 - math.Min(combatCfg.MaxDefianceReduction, float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel))
-
-				var armor float64
-				for itemID, count := range p.Inventory {
-					if count > 0 {
-						if mod, ok := GetItemModifier(itemID); ok {
-							armor += mod.StatModifiers.Armor * float64(count)
-						}
-					}
-				}
-				if armor > 0 {
-					dmgToPlayer *= (100.0 / (100.0 + armor))
-				}
-
-				if len(p.MinionIDs) > 0 {
-					droneID := p.MinionIDs[0]
-					if drone, okD := w.Minions[droneID]; okD {
-						drone.Health -= dmgToPlayer
-						dmgToPlayer = 0
-					}
-				}
-				p.Health -= dmgToPlayer
-				p.Vel = p.Vel.Add(bullet.Vel.Normalize().Mul(combatCfg.PlayerBulletKnockback))
-				bullet.Lifetime = 0
-			}
-		}
+		w.handleBulletPlayerCollision(a, b)
 		return
 	}
 	if a.Type == 2 && b.Type == 4 {
-		bullet, ok1 := w.Bullets[a.ID]
-		minion, ok2 := w.Minions[b.ID]
-		if ok1 && ok2 {
-			if bullet.Lifetime <= 0 || bullet.Pierce <= 0 {
-				return
-			}
-			if bullet.OwnerType == 1 {
-				minion.Health -= bullet.Damage
-				bullet.Lifetime = 0
-			}
-		}
+		w.handleBulletMinionCollision(a, b)
 		return
 	}
 	if a.Type == 4 && b.Type == 1 {
-		minion, ok1 := w.Minions[a.ID]
-		m, ok2 := w.Mobs[b.ID]
-		if ok1 && ok2 {
-			if physics.ResolveCircleCircle(&minion.Pos, &m.Pos, minion.Radius, m.Radius, &minion.Vel, &m.Vel, 1.0, 1.0, 0.25) {
-				dmg := minion.Damage
-				if armorMod, ok := rarityCfg.Modifiers["armor"]; ok {
-					if m.Modifiers&(1<<armorMod.Bit) != 0 {
-						dmg *= armorMod.DamageReduction
-					}
-				}
-				m.Health -= dmg
-				minion.Health -= m.Damage * combatCfg.MinionContactDamageMultiplier
-				if m.Type == 2 {
-					minion.Health = 0
-					m.Health = 0
-				}
-			}
-		}
+		w.handleMinionMobCollision(a, b)
 		return
 	}
-
 	if a.Type == 0 && b.Type == 6 {
-		p, ok1 := w.Players[a.ID]
-		ld, ok2 := w.LootDrops[b.ID]
-		if ok1 && ok2 && p.Alive {
-			p.Inventory[uint16(ld.ItemID)]++
-			p.invDirty = true
-			w.RemovedEntityIDs = append(w.RemovedEntityIDs, b.ID)
-			delete(w.LootDrops, b.ID)
-		}
+		w.handlePlayerLootCollision(a, b)
 		return
+	}
+}
+
+func (w *GameWorld) handleMobMobCollision(a, b HashItem) {
+	m1, ok1 := w.Mobs[a.ID]
+	m2, ok2 := w.Mobs[b.ID]
+	if ok1 && ok2 {
+		physics.ResolveCircleCircle(
+			physics.Circle{Pos: &m1.Pos, Vel: &m1.Vel, Radius: m1.Radius, Mass: 1.0},
+			physics.Circle{Pos: &m2.Pos, Vel: &m2.Vel, Radius: m2.Radius, Mass: 1.0},
+			0.15,
+		)
+	}
+}
+
+func (w *GameWorld) handlePlayerMobCollision(a, b HashItem) {
+	combatCfg := GetCombatConfig()
+	rarityCfg := GetRarityConfig()
+	p, ok1 := w.Players[a.ID]
+	m, ok2 := w.Mobs[b.ID]
+	if ok1 && ok2 && p.Alive {
+		relVelStart := p.Vel.Sub(m.Vel).Length()
+		c1 := physics.Circle{Pos: &p.Pos, Vel: &p.Vel, Radius: p.Radius, Mass: p.Mass}
+		c2 := physics.Circle{Pos: &m.Pos, Vel: &m.Vel, Radius: m.Radius, Mass: 1.0}
+		if physics.ResolveCircleCircle(c1, c2, 0.3) {
+			dmgKinetic := 0.5 * p.Mass * (relVelStart * relVelStart) * combatCfg.KineticDamageFactor
+			dmgMelee := p.Radius * combatCfg.MeleeDamageRadiusFactor
+			if armorMod, ok := rarityCfg.Modifiers["armor"]; ok {
+				if m.Modifiers&(1<<armorMod.Bit) != 0 {
+					dmgKinetic *= armorMod.DamageReduction
+					dmgMelee *= armorMod.DamageReduction
+				}
+			}
+			_ = dmgKinetic
+			m.Health -= dmgMelee
+			if p.StatThorns > 0 {
+				m.Health -= float64(p.StatThorns) * 10.0
+			}
+			if m.Health <= 0 {
+				m.KillerID = p.ID
+				w.triggerOnKillEffects(p.ID, m)
+			}
+			if m.Type == 2 {
+				m.Health = 0
+			}
+			dmgToPlayer := m.Damage * combatCfg.MeleeContactDamageMultiplier * (1.0 - math.Min(combatCfg.MaxDefianceReduction, float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel))
+
+			var armor float64
+			for itemID, count := range p.Inventory {
+				if count > 0 {
+					if mod, ok := GetItemModifier(itemID); ok {
+						armor += mod.StatModifiers.Armor * float64(count)
+					}
+				}
+			}
+			if armor > 0 {
+				dmgToPlayer *= (100.0 / (100.0 + armor))
+			}
+
+			if len(p.MinionIDs) > 0 {
+				droneID := p.MinionIDs[0]
+				if drone, okD := w.Minions[droneID]; okD {
+					drone.Health -= dmgToPlayer
+					dmgToPlayer = 0
+				}
+			}
+			p.Health -= dmgToPlayer
+		}
+	}
+}
+
+func (w *GameWorld) handleBulletMobCollision(a, b HashItem) {
+	combatCfg := GetCombatConfig()
+	rarityCfg := GetRarityConfig()
+	bullet, ok1 := w.Bullets[a.ID]
+	m, ok2 := w.Mobs[b.ID]
+	if ok1 && ok2 {
+		if bullet.Lifetime <= 0 || bullet.Pierce <= 0 {
+			return
+		}
+		if bullet.OwnerType == 0 || bullet.OwnerType == 2 {
+			dmg := bullet.Damage
+			if armorMod, ok := rarityCfg.Modifiers["armor"]; ok {
+				if m.Modifiers&(1<<armorMod.Bit) != 0 {
+					dmg *= armorMod.DamageReduction
+				}
+			}
+			isCrit := false
+			critChance := combatCfg.BaseCritChance
+			critMultiplier := combatCfg.BaseCritMultiplier
+			if p, okP := w.Players[bullet.OwnerID]; okP && p.Alive {
+				critChance += float64(p.StatCritChance) * combatCfg.CritChancePerLevel
+				critMultiplier += float64(p.StatCritDamage) * combatCfg.CritDamagePerLevel
+				for itemID, count := range p.Inventory {
+					if count > 0 {
+						if mod, ok := GetItemModifier(itemID); ok {
+							critChance += mod.StatModifiers.CritChance * float64(count)
+							critMultiplier += mod.StatModifiers.CritDamage * float64(count)
+						}
+					}
+				}
+			}
+
+			if bullet.Subtype == 2 && w.rand.Float64() < critChance {
+				isCrit = true
+				dmg *= critMultiplier
+			}
+			m.Health -= dmg
+			if m.Health <= 0 && bullet.OwnerType == 0 {
+				m.KillerID = bullet.OwnerID
+				w.triggerOnKillEffects(bullet.OwnerID, m)
+			}
+			m.Vel = m.Vel.Add(bullet.Vel.Normalize().Mul(combatCfg.BulletKnockback))
+			if bullet.OwnerType == 0 {
+				p, okP := w.Players[bullet.OwnerID]
+				if okP && p.Alive {
+					vampPercent := p.Vampirism
+					if count, ok := p.Inventory[2]; ok {
+						vampPercent += combatCfg.VampirismPerItem * float64(count)
+					}
+					if vampPercent > 0 {
+						p.Health = math.Min(p.MaxHealth, p.Health+dmg*vampPercent)
+					}
+					if bullet.Subtype == 1 {
+						p.LaserHitsCount[m.ID]++
+						if p.LaserHitsCount[m.ID] >= combatCfg.LaserChainThreshold {
+							p.LaserHitsCount[m.ID] = 0
+							chainRadSq := combatCfg.LaserChainRadius * combatCfg.LaserChainRadius
+							for _, otherMob := range w.Mobs {
+								distSq := otherMob.Pos.Sub(m.Pos).LengthSq()
+								if distSq < chainRadSq {
+									otherMob.Health -= combatCfg.LaserChainDamage
+								}
+							}
+						}
+					}
+					if isCrit {
+						var targets []*Mob
+						critRangeSq := combatCfg.CritChainRange * combatCfg.CritChainRange
+						for _, otherMob := range w.Mobs {
+							if otherMob.ID == m.ID {
+								continue
+							}
+							distSq := otherMob.Pos.Sub(m.Pos).LengthSq()
+							if distSq < critRangeSq {
+								targets = append(targets, otherMob)
+							}
+						}
+						w.rand.Shuffle(len(targets), func(i, j int) {
+							targets[i], targets[j] = targets[j], targets[i]
+						})
+						limit := combatCfg.CritChainLimit
+						if len(targets) < limit {
+							limit = len(targets)
+						}
+						for k := 0; k < limit; k++ {
+							targets[k].Health -= combatCfg.CritChainDamage
+						}
+					}
+					if bullet.Subtype == 3 {
+						m.Modifiers |= 16
+					}
+				}
+			}
+			bullet.Pierce--
+			if bullet.Pierce <= 0 {
+				bullet.Lifetime = 0
+			}
+		}
+	}
+}
+
+func (w *GameWorld) handleBulletPlayerCollision(a, b HashItem) {
+	combatCfg := GetCombatConfig()
+	bullet, ok1 := w.Bullets[a.ID]
+	p, ok2 := w.Players[b.ID]
+	if ok1 && ok2 && p.Alive {
+		if bullet.Lifetime <= 0 || bullet.Pierce <= 0 {
+			return
+		}
+		if bullet.OwnerType == 1 {
+			dmgToPlayer := bullet.Damage * (1.0 - math.Min(combatCfg.MaxDefianceReduction, float64(p.StatCritDefiance)*combatCfg.DefiancePerLevel))
+
+			var armor float64
+			for itemID, count := range p.Inventory {
+				if count > 0 {
+					if mod, ok := GetItemModifier(itemID); ok {
+						armor += mod.StatModifiers.Armor * float64(count)
+					}
+				}
+			}
+			if armor > 0 {
+				dmgToPlayer *= (100.0 / (100.0 + armor))
+			}
+
+			if len(p.MinionIDs) > 0 {
+				droneID := p.MinionIDs[0]
+				if drone, okD := w.Minions[droneID]; okD {
+					drone.Health -= dmgToPlayer
+					dmgToPlayer = 0
+				}
+			}
+			p.Health -= dmgToPlayer
+			p.Vel = p.Vel.Add(bullet.Vel.Normalize().Mul(combatCfg.PlayerBulletKnockback))
+			bullet.Lifetime = 0
+		}
+	}
+}
+
+func (w *GameWorld) handleBulletMinionCollision(a, b HashItem) {
+	bullet, ok1 := w.Bullets[a.ID]
+	minion, ok2 := w.Minions[b.ID]
+	if ok1 && ok2 {
+		if bullet.Lifetime <= 0 || bullet.Pierce <= 0 {
+			return
+		}
+		if bullet.OwnerType == 1 {
+			minion.Health -= bullet.Damage
+			bullet.Lifetime = 0
+		}
+	}
+}
+
+func (w *GameWorld) handleMinionMobCollision(a, b HashItem) {
+	rarityCfg := GetRarityConfig()
+	combatCfg := GetCombatConfig()
+	minion, ok1 := w.Minions[a.ID]
+	m, ok2 := w.Mobs[b.ID]
+	if ok1 && ok2 {
+		c1 := physics.Circle{Pos: &minion.Pos, Vel: &minion.Vel, Radius: minion.Radius, Mass: 1.0}
+		c2 := physics.Circle{Pos: &m.Pos, Vel: &m.Vel, Radius: m.Radius, Mass: 1.0}
+		if physics.ResolveCircleCircle(c1, c2, 0.25) {
+			dmg := minion.Damage
+			if armorMod, ok := rarityCfg.Modifiers["armor"]; ok {
+				if m.Modifiers&(1<<armorMod.Bit) != 0 {
+					dmg *= armorMod.DamageReduction
+				}
+			}
+			m.Health -= dmg
+			minion.Health -= m.Damage * combatCfg.MinionContactDamageMultiplier
+			if m.Type == 2 {
+				minion.Health = 0
+				m.Health = 0
+			}
+		}
+	}
+}
+
+func (w *GameWorld) handlePlayerLootCollision(a, b HashItem) {
+	p, ok1 := w.Players[a.ID]
+	ld, ok2 := w.LootDrops[b.ID]
+	if ok1 && ok2 && p.Alive {
+		p.Inventory[uint16(ld.ItemID)]++
+		p.invDirty = true
+		w.RemovedEntityIDs = append(w.RemovedEntityIDs, b.ID)
+		delete(w.LootDrops, b.ID)
 	}
 }
 

@@ -48,13 +48,26 @@ func (v Vector2D) Dot(o Vector2D) float64 {
 	return v.X*o.X + v.Y*o.Y
 }
 
-func ResolveCircleCircle(p1, p2 *Vector2D, r1, r2 float64, v1, v2 *Vector2D, m1, m2 float64, bounce float64) bool {
-	// Используем локальную переменную на стеке вместо вызова p2.Sub(*p1), который мог бы аллоцировать
+type Circle struct {
+	Pos    *Vector2D
+	Vel    *Vector2D
+	Radius float64
+	Mass   float64
+}
+
+type Box struct {
+	MinX float64
+	MinY float64
+	MaxX float64
+	MaxY float64
+}
+
+func ResolveCircleCircle(c1, c2 Circle, bounce float64) bool {
 	var delta Vector2D
-	delta.SetSub(*p2, *p1)
+	delta.SetSub(*c2.Pos, *c1.Pos)
 
 	distSq := delta.LengthSq()
-	minDist := r1 + r2
+	minDist := c1.Radius + c2.Radius
 	if distSq >= minDist*minDist {
 		return false
 	}
@@ -69,12 +82,12 @@ func ResolveCircleCircle(p1, p2 *Vector2D, r1, r2 float64, v1, v2 *Vector2D, m1,
 	overlap := minDist - dist
 
 	invMass1 := 0.0
-	if m1 > 0 {
-		invMass1 = 1.0 / m1
+	if c1.Mass > 0 {
+		invMass1 = 1.0 / c1.Mass
 	}
 	invMass2 := 0.0
-	if m2 > 0 {
-		invMass2 = 1.0 / m2
+	if c2.Mass > 0 {
+		invMass2 = 1.0 / c2.Mass
 	}
 
 	totalInvMass := invMass1 + invMass2
@@ -86,13 +99,12 @@ func ResolveCircleCircle(p1, p2 *Vector2D, r1, r2 float64, v1, v2 *Vector2D, m1,
 	sep1 := overlap * invMass1 * invMassSum
 	sep2 := overlap * invMass2 * invMassSum
 
-	// Прямая модификация по указателям, никаких копирований
-	p1.X -= normal.X * sep1
-	p1.Y -= normal.Y * sep1
-	p2.X += normal.X * sep2
-	p2.Y += normal.Y * sep2
+	c1.Pos.X -= normal.X * sep1
+	c1.Pos.Y -= normal.Y * sep1
+	c2.Pos.X += normal.X * sep2
+	c2.Pos.Y += normal.Y * sep2
 
-	relVel := Vector2D{v2.X - v1.X, v2.Y - v1.Y}
+	relVel := Vector2D{c2.Vel.X - c1.Vel.X, c2.Vel.Y - c1.Vel.Y}
 	velAlongNormal := relVel.Dot(normal)
 	if velAlongNormal > 0 {
 		return true
@@ -100,27 +112,27 @@ func ResolveCircleCircle(p1, p2 *Vector2D, r1, r2 float64, v1, v2 *Vector2D, m1,
 
 	impulseScalar := -(1.0 + bounce) * velAlongNormal * invMassSum
 
-	v1.X -= normal.X * impulseScalar * invMass1
-	v1.Y -= normal.Y * impulseScalar * invMass1
-	v2.X += normal.X * impulseScalar * invMass2
-	v2.Y += normal.Y * impulseScalar * invMass2
+	c1.Vel.X -= normal.X * impulseScalar * invMass1
+	c1.Vel.Y -= normal.Y * impulseScalar * invMass1
+	c2.Vel.X += normal.X * impulseScalar * invMass2
+	c2.Vel.Y += normal.Y * impulseScalar * invMass2
 
 	return true
 }
 
-func ResolveCircleBox(p *Vector2D, r float64, v *Vector2D, minX, minY, maxX, maxY float64, bounce float64) {
-	if p.X-r < minX {
-		p.X = minX + r
-		v.X = -v.X * bounce
-	} else if p.X+r > maxX {
-		p.X = maxX - r
-		v.X = -v.X * bounce
+func ResolveCircleBox(c Circle, b Box, bounce float64) {
+	if c.Pos.X-c.Radius < b.MinX {
+		c.Pos.X = b.MinX + c.Radius
+		c.Vel.X = -c.Vel.X * bounce
+	} else if c.Pos.X+c.Radius > b.MaxX {
+		c.Pos.X = b.MaxX - c.Radius
+		c.Vel.X = -c.Vel.X * bounce
 	}
-	if p.Y-r < minY {
-		p.Y = minY + r
-		v.Y = -v.Y * bounce
-	} else if p.Y+r > maxY {
-		p.Y = maxY - r
-		v.Y = -v.Y * bounce
+	if c.Pos.Y-c.Radius < b.MinY {
+		c.Pos.Y = b.MinY + c.Radius
+		c.Vel.Y = -c.Vel.Y * bounce
+	} else if c.Pos.Y+c.Radius > b.MaxY {
+		c.Pos.Y = b.MaxY - c.Radius
+		c.Vel.Y = -c.Vel.Y * bounce
 	}
 }

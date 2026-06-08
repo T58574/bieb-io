@@ -1,5 +1,5 @@
 # CONTEXT: Necro-Geometry (Sci-Fi Rogue-like Bullet-Hell)
-STATUS: Completed. Sci-Fi setting (Bio-Shells, AI Architect), 32 slots, auto-pause, Canvas rendering. Protocol upgraded to 25 slots to support all stats including pickup radius and thorns.
+STATUS: Completed. Sci-Fi setting (Bio-Shells, AI Architect), 32 slots, auto-pause, Canvas rendering. Protocol upgraded to 25 slots to support all stats. Refactored code quality: modularized rendering (draw_game.ts split into draw_grid.ts and draw_entities.ts), resolved parameter limits via structs (Circle, Box, WorldStateParams), and decoupled collision/spawn methods.
 
 Tree:
 .ai_docs/             # SSOT Specifications

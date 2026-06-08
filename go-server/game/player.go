@@ -1,6 +1,7 @@
 package game
 
 import (
+	"log"
 	"math"
 	"sort"
 
@@ -449,7 +450,11 @@ func (w *GameWorld) updatePlayers(dt float64) {
 
 			classCfg, ok := GetClassConfig(p.ClassID)
 			if !ok {
-				classCfg, _ = GetClassConfig(0)
+				var okFallback bool
+				classCfg, okFallback = GetClassConfig(0)
+				if !okFallback {
+					log.Println("error: default class config not found")
+				}
 			}
 
 			p.ShootCooldown = classCfg.ShootCooldown * (1.0 + float64(p.StatCooldownMod)*pCfg.CooldownReductionPerLevel)
@@ -502,7 +507,11 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		}
 
 		p.Pos = p.Pos.Add(p.Vel)
-		physics.ResolveCircleBox(&p.Pos, p.Radius, &p.Vel, 0, 0, w.Width, w.Height, 0.2)
+		physics.ResolveCircleBox(
+			physics.Circle{Pos: &p.Pos, Vel: &p.Vel, Radius: p.Radius},
+			physics.Box{MinX: 0, MinY: 0, MaxX: w.Width, MaxY: w.Height},
+			0.2,
+		)
 
 		var itemRegen float64
 		for itemID, count := range p.Inventory {

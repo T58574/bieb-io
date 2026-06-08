@@ -179,33 +179,35 @@ func (s *GameServer) broadcastState(tick uint32) {
 		upgradeLevels := p.GetUpgradeLevels()
 
 		stateBuf := protocol.EncodeWorldState(
-			tick,
-			p.XP,
-			p.MaxXP,
-			p.Level,
-			p.Score,
-			uint16(p.Health),
-			uint16(p.MaxHealth),
-			p.UpgradePoints,
-			upgradeLevels,
-			func() uint16 {
-				wv := uint16(s.world.WaveNumber)
-				hasUpgrades := false
-				for _, player := range s.world.Players {
-					if player.Alive && player.UpgradePoints > 0 {
-						hasUpgrades = true
-						break
+			protocol.WorldStateParams{
+				Tick:          tick,
+				XP:            p.XP,
+				MaxXP:         p.MaxXP,
+				Level:         p.Level,
+				Score:         p.Score,
+				Health:        uint16(p.Health),
+				MaxHealth:     uint16(p.MaxHealth),
+				UpgradePoints: p.UpgradePoints,
+				UpgradeLevels: upgradeLevels,
+				WaveNumber: func() uint16 {
+					wv := uint16(s.world.WaveNumber)
+					hasUpgrades := false
+					for _, player := range s.world.Players {
+						if player.Alive && player.UpgradePoints > 0 {
+							hasUpgrades = true
+							break
+						}
 					}
-				}
-				if s.world.Paused || hasUpgrades {
-					wv |= 0x8000
-				}
-				return wv
-			}(),
-			p.CardChoices[0],
-			p.CardChoices[1],
-			p.CardChoices[2],
-			p.GetInventoryArray(),
+					if s.world.Paused || hasUpgrades {
+						wv |= 0x8000
+					}
+					return wv
+				}(),
+				Card1:     p.CardChoices[0],
+				Card2:     p.CardChoices[1],
+				Card3:     p.CardChoices[2],
+				Inventory: p.GetInventoryArray(),
+			},
 			states,
 			removedIDs,
 		)

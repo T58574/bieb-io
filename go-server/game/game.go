@@ -147,6 +147,16 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 	var states []protocol.EntityState
+	states = w.appendPlayerStates(states)
+	states = w.appendMobStates(states)
+	states = w.appendBulletStates(states)
+	states = w.appendMinionStates(states)
+	states = w.appendFieldStates(states)
+	states = w.appendLootDropStates(states)
+	return states
+}
+
+func (w *GameWorld) appendPlayerStates(states []protocol.EntityState) []protocol.EntityState {
 	for _, p := range w.Players {
 		if !p.Alive {
 			continue
@@ -164,20 +174,28 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 			StateFlags: p.StateFlags,
 		})
 	}
+	return states
+}
+
+func (w *GameWorld) appendMobStates(states []protocol.EntityState) []protocol.EntityState {
 	for _, m := range w.Mobs {
 		states = append(states, protocol.EntityState{
-			ID:        m.ID,
-			Type:      1,
-			Subtype:   m.Type,
-			X:         float32(m.Pos.X),
-			Y:         float32(m.Pos.Y),
-			Angle:     0,
-			Health:    uint16(math.Max(0, m.Health)),
-			MaxHealth: uint16(m.MaxHealth),
-			Radius:    uint16(m.Radius),
+			ID:         m.ID,
+			Type:       1,
+			Subtype:    m.Type,
+			X:          float32(m.Pos.X),
+			Y:          float32(m.Pos.Y),
+			Angle:      0,
+			Health:     uint16(math.Max(0, m.Health)),
+			MaxHealth:  uint16(m.MaxHealth),
+			Radius:     uint16(m.Radius),
 			StateFlags: uint32(m.Rarity) | (uint32(m.Modifiers) << 8),
 		})
 	}
+	return states
+}
+
+func (w *GameWorld) appendBulletStates(states []protocol.EntityState) []protocol.EntityState {
 	for _, b := range w.Bullets {
 		states = append(states, protocol.EntityState{
 			ID:        b.ID,
@@ -191,7 +209,10 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 			Radius:    uint16(b.Radius),
 		})
 	}
+	return states
+}
 
+func (w *GameWorld) appendMinionStates(states []protocol.EntityState) []protocol.EntityState {
 	for _, minion := range w.Minions {
 		states = append(states, protocol.EntityState{
 			ID:        minion.ID,
@@ -205,6 +226,10 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 			Radius:    uint16(minion.Radius),
 		})
 	}
+	return states
+}
+
+func (w *GameWorld) appendFieldStates(states []protocol.EntityState) []protocol.EntityState {
 	for _, f := range w.Fields {
 		states = append(states, protocol.EntityState{
 			ID:        f.ID,
@@ -218,6 +243,10 @@ func (w *GameWorld) ExportState() []protocol.EntityState {
 			Radius:    uint16(f.Radius),
 		})
 	}
+	return states
+}
+
+func (w *GameWorld) appendLootDropStates(states []protocol.EntityState) []protocol.EntityState {
 	for _, ld := range w.LootDrops {
 		states = append(states, protocol.EntityState{
 			ID:        ld.ID,

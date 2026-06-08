@@ -1,4 +1,4 @@
-import { state } from "./state";
+
 
 export interface Particle {
   x: number;

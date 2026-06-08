@@ -43,7 +43,10 @@ func TestResolveCircleCircle(t *testing.T) {
 	v1 := Vector2D{1, 0}
 	v2 := Vector2D{-1, 0}
 
-	collided := ResolveCircleCircle(&p1, &p2, 1.0, 1.0, &v1, &v2, 1.0, 1.0, 0.5)
+	c1 := Circle{Pos: &p1, Vel: &v1, Radius: 1.0, Mass: 1.0}
+	c2 := Circle{Pos: &p2, Vel: &v2, Radius: 1.0, Mass: 1.0}
+
+	collided := ResolveCircleCircle(c1, c2, 0.5)
 	if !collided {
 		t.Errorf("expected collision")
 	}
@@ -58,7 +61,9 @@ func TestResolveCircleCircle(t *testing.T) {
 func TestResolveCircleBox(t *testing.T) {
 	p := Vector2D{5, 5}
 	v := Vector2D{-2, 0}
-	ResolveCircleBox(&p, 6.0, &v, 0, 0, 100, 100, 0.5)
+	c := Circle{Pos: &p, Vel: &v, Radius: 6.0}
+	b := Box{MinX: 0, MinY: 0, MaxX: 100, MaxY: 100}
+	ResolveCircleBox(c, b, 0.5)
 	if p.X != 6.0 {
 		t.Errorf("expected X to be clipped to 6.0, got %f", p.X)
 	}

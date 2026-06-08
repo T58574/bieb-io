@@ -1,6 +1,7 @@
 package game
 
 import (
+	"log"
 	"math"
 	"strconv"
 
@@ -28,6 +29,51 @@ func (w *GameWorld) spawnSingleMob() {
 	mobsCfg := GetMobsConfig()
 	spawnCfg := GetSpawnConfig()
 
+	rx, ry := w.getSpawnPosition(mobsCfg)
+	mobType := w.rollMobType(spawnCfg)
+
+	rarityCfg := GetRarityConfig()
+	rarity := w.rollMobRarity(rarityCfg)
+
+	id := w.GenerateID()
+	mobCfg, hasCfg := GetMobTypeConfig(mobType)
+	if !hasCfg {
+		var ok bool
+		mobCfg, ok = GetMobTypeConfig(0)
+		if !ok {
+			log.Println("error: default mob config not found")
+		}
+	}
+
+	hp := mobCfg.BaseHP * w.WaveDifficulty
+	rad := mobCfg.Radius
+	dmg := mobCfg.BaseDamage * w.WaveDifficulty
+	xpVal := mobCfg.BaseXP
+
+	rm := GetRarityMultiplier(rarity)
+	hp *= rm.HP
+	dmg *= rm.Damage
+	xpVal = uint32(float64(xpVal) * rm.XP * w.WaveDifficulty)
+	rad *= rm.Radius
+
+	modifiers := w.rollMobModifiers(rm, rarityCfg)
+
+	m := w.mobPool.Get().(*Mob)
+	*m = Mob{}
+	m.ID = id
+	m.Type = mobType
+	m.Pos = physics.Vector2D{X: rx, Y: ry}
+	m.Radius = rad
+	m.Health = hp
+	m.MaxHealth = hp
+	m.Damage = dmg
+	m.XPValue = xpVal
+	m.Rarity = rarity
+	m.Modifiers = modifiers
+	w.Mobs[id] = m
+}
+
+func (w *GameWorld) getSpawnPosition(mobsCfg MobsConfig) (float64, float64) {
 	var rx, ry float64
 	var targetPlayer *Player
 	for _, p := range w.Players {
@@ -68,7 +114,10 @@ func (w *GameWorld) spawnSingleMob() {
 			ry = w.rand.Float64() * w.Height
 		}
 	}
+	return rx, ry
+}
 
+func (w *GameWorld) rollMobType(spawnCfg SpawnConfig) uint8 {
 	waveKey := strconv.Itoa(int(w.WaveNumber))
 	spawnTable, ok := spawnCfg.WaveSpawnTables[waveKey]
 	if !ok {
@@ -85,8 +134,10 @@ func (w *GameWorld) spawnSingleMob() {
 			break
 		}
 	}
+	return mobType
+}
 
-	rarityCfg := GetRarityConfig()
+func (w *GameWorld) rollMobRarity(rarityCfg RarityConfig) uint8 {
 	rarity := uint8(0)
 	rarityRoll := w.rand.Float64()
 	for i := len(rarityCfg.Chances) - 1; i >= 0; i-- {
@@ -95,24 +146,10 @@ func (w *GameWorld) spawnSingleMob() {
 			break
 		}
 	}
+	return rarity
+}
 
-	id := w.GenerateID()
-	mobCfg, hasCfg := GetMobTypeConfig(mobType)
-	if !hasCfg {
-		mobCfg, _ = GetMobTypeConfig(0)
-	}
-
-	hp := mobCfg.BaseHP * w.WaveDifficulty
-	rad := mobCfg.Radius
-	dmg := mobCfg.BaseDamage * w.WaveDifficulty
-	xpVal := mobCfg.BaseXP
-
-	rm := GetRarityMultiplier(rarity)
-	hp *= rm.HP
-	dmg *= rm.Damage
-	xpVal = uint32(float64(xpVal) * rm.XP * w.WaveDifficulty)
-	rad *= rm.Radius
-
+func (w *GameWorld) rollMobModifiers(rm RarityMultiplier, rarityCfg RarityConfig) uint32 {
 	var modifiers uint32 = 0
 	if rm.ModifierCount == 4 {
 		modifiers = 0x0F
@@ -124,20 +161,7 @@ func (w *GameWorld) spawnSingleMob() {
 			modifiers |= (1 << mod)
 		}
 	}
-
-	m := w.mobPool.Get().(*Mob)
-	*m = Mob{}
-	m.ID = id
-	m.Type = mobType
-	m.Pos = physics.Vector2D{X: rx, Y: ry}
-	m.Radius = rad
-	m.Health = hp
-	m.MaxHealth = hp
-	m.Damage = dmg
-	m.XPValue = xpVal
-	m.Rarity = rarity
-	m.Modifiers = modifiers
-	w.Mobs[id] = m
+	return modifiers
 }
 
 func (w *GameWorld) updateMobs(dt float64) {
@@ -280,7 +304,11 @@ func (w *GameWorld) updateMobs(dt float64) {
 			}
 		}
 		m.Pos = m.Pos.Add(m.Vel)
-		physics.ResolveCircleBox(&m.Pos, m.Radius, &m.Vel, 0, 0, w.Width, w.Height, 0.2)
+		physics.ResolveCircleBox(
+			physics.Circle{Pos: &m.Pos, Vel: &m.Vel, Radius: m.Radius},
+			physics.Box{MinX: 0, MinY: 0, MaxX: w.Width, MaxY: w.Height},
+			0.2,
+		)
 		if m.Health <= 0 {
 			var owner *Player
 			for _, p := range w.Players {

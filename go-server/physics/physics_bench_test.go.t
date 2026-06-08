@@ -30,7 +30,9 @@ func BenchmarkResolveCircleCircle(b *testing.B) {
 		v1.X, v1.Y = 1, 1
 		v2.X, v2.Y = -1, -1
 
-		sinkB = ResolveCircleCircle(&p1, &p2, r1, r2, &v1, &v2, m1, m2, bounce)
+		c1 := Circle{Pos: &p1, Vel: &v1, Radius: r1, Mass: m1}
+		c2 := Circle{Pos: &p2, Vel: &v2, Radius: r2, Mass: m2}
+		sinkB = ResolveCircleCircle(c1, c2, bounce)
 	}
 
 	sinkP1 = p1

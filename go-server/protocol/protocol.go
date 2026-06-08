@@ -38,35 +38,52 @@ func EncodeWelcome(playerID uint16, arenaWidth, arenaHeight float32) []byte {
 	return buf
 }
 
-func EncodeWorldState(tick uint32, xp, maxXP uint32, level uint16, score uint32, health, maxHealth uint16, upgradePoints uint8, upgradeLevels []uint8, waveNumber uint16, card1, card2, card3 uint8, inventory []uint8, entities []EntityState, removedIDs []uint16) []byte {
+type WorldStateParams struct {
+	Tick          uint32
+	XP            uint32
+	MaxXP         uint32
+	Level         uint16
+	Score         uint32
+	Health        uint16
+	MaxHealth     uint16
+	UpgradePoints uint8
+	UpgradeLevels []uint8
+	WaveNumber    uint16
+	Card1         uint8
+	Card2         uint8
+	Card3         uint8
+	Inventory     []uint8
+}
+
+func EncodeWorldState(params WorldStateParams, entities []EntityState, removedIDs []uint16) []byte {
 	count := len(entities)
 	removedCount := len(removedIDs)
 	bufSize := 258 + count*26 + removedCount*2
 	buf := make([]byte, bufSize)
 	buf[0] = 2
-	binary.LittleEndian.PutUint32(buf[1:5], tick)
-	binary.LittleEndian.PutUint32(buf[5:9], xp)
-	binary.LittleEndian.PutUint32(buf[9:13], maxXP)
-	binary.LittleEndian.PutUint16(buf[13:15], level)
-	binary.LittleEndian.PutUint32(buf[15:19], score)
-	binary.LittleEndian.PutUint16(buf[19:21], health)
-	binary.LittleEndian.PutUint16(buf[21:23], maxHealth)
-	buf[23] = upgradePoints
+	binary.LittleEndian.PutUint32(buf[1:5], params.Tick)
+	binary.LittleEndian.PutUint32(buf[5:9], params.XP)
+	binary.LittleEndian.PutUint32(buf[9:13], params.MaxXP)
+	binary.LittleEndian.PutUint16(buf[13:15], params.Level)
+	binary.LittleEndian.PutUint32(buf[15:19], params.Score)
+	binary.LittleEndian.PutUint16(buf[19:21], params.Health)
+	binary.LittleEndian.PutUint16(buf[21:23], params.MaxHealth)
+	buf[23] = params.UpgradePoints
 	for i := 0; i < 25; i++ {
-		if i < len(upgradeLevels) {
-			buf[24+i] = upgradeLevels[i]
+		if i < len(params.UpgradeLevels) {
+			buf[24+i] = params.UpgradeLevels[i]
 		} else {
 			buf[24+i] = 0
 		}
 	}
-	binary.LittleEndian.PutUint16(buf[49:51], waveNumber)
+	binary.LittleEndian.PutUint16(buf[49:51], params.WaveNumber)
 	binary.LittleEndian.PutUint16(buf[51:53], uint16(count))
-	buf[53] = card1
-	buf[54] = card2
-	buf[55] = card3
+	buf[53] = params.Card1
+	buf[54] = params.Card2
+	buf[55] = params.Card3
 	for i := 0; i < 200; i++ {
-		if i < len(inventory) {
-			buf[56+i] = inventory[i]
+		if i < len(params.Inventory) {
+			buf[56+i] = params.Inventory[i]
 		} else {
 			buf[56+i] = 0
 		}

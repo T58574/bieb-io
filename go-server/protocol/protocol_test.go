@@ -130,7 +130,22 @@ func TestWorldState(t *testing.T) {
 
 	removedIDs := []uint16{5, 10}
 
-	buf := EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, make([]byte, 25), 1, 0, 0, 0, make([]byte, 200), entities, removedIDs)
+	buf := EncodeWorldState(WorldStateParams{
+		Tick:          10,
+		XP:            50,
+		MaxXP:         100,
+		Level:         5,
+		Score:         250,
+		Health:        80,
+		MaxHealth:     100,
+		UpgradePoints: 7,
+		UpgradeLevels: make([]byte, 25),
+		WaveNumber:    1,
+		Card1:         0,
+		Card2:         0,
+		Card3:         0,
+		Inventory:     make([]byte, 200),
+	}, entities, removedIDs)
 	if buf[0] != 2 {
 		t.Errorf("expected opcode 2")
 	}
@@ -184,7 +199,22 @@ func BenchmarkEncodeWorldState(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, upgradeLevels, 1, 0, 0, 0, inventory, entities, removedIDs)
+		EncodeWorldState(WorldStateParams{
+			Tick:          10,
+			XP:            50,
+			MaxXP:         100,
+			Level:         5,
+			Score:         250,
+			Health:        80,
+			MaxHealth:     100,
+			UpgradePoints: 7,
+			UpgradeLevels: upgradeLevels,
+			WaveNumber:    1,
+			Card1:         0,
+			Card2:         0,
+			Card3:         0,
+			Inventory:     inventory,
+		}, entities, removedIDs)
 	}
 }
 
@@ -233,7 +263,22 @@ func BenchmarkTableDrivenEncodeWorldState(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				EncodeWorldState(10, 50, 100, 5, 250, 80, 100, 7, upgradeLevels, 1, 0, 0, 0, inventory, entities, removedIDs)
+				EncodeWorldState(WorldStateParams{
+					Tick:          10,
+					XP:            50,
+					MaxXP:         100,
+					Level:         5,
+					Score:         250,
+					Health:        80,
+					MaxHealth:     100,
+					UpgradePoints: 7,
+					UpgradeLevels: upgradeLevels,
+					WaveNumber:    1,
+					Card1:         0,
+					Card2:         0,
+					Card3:         0,
+					Inventory:     inventory,
+				}, entities, removedIDs)
 			}
 		})
 	}
