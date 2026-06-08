@@ -56,6 +56,7 @@ export const state = {
   statLootQuantity: 0,
   statLootQuality: 0,
   statPickupItemRadius: 0,
+  statThorns: 0,
   gameOverScore: 0,
   gameOverWave: 0,
   playerUsername: initialUsername,

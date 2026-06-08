@@ -94,7 +94,7 @@ func (p *Player) GetInventoryArray() []uint8 {
 }
 
 func (p *Player) GetUpgradeLevels() []uint8 {
-	levels := make([]uint8, 24)
+	levels := make([]uint8, 25)
 	levels[1] = uint8(p.StatSpeed)
 	levels[2] = uint8(math.Round(p.Vampirism / 0.05))
 	levels[3] = uint8(p.StatMaxHP)
@@ -120,6 +120,8 @@ func (p *Player) GetUpgradeLevels() []uint8 {
 	levels[19] = uint8(p.StatSpread)
 	levels[20] = uint8(p.StatExpMod)
 	levels[21] = uint8(p.StatLootQuantity)
+	levels[23] = uint8(p.StatPickupItemRadius)
+	levels[24] = uint8(p.StatThorns)
 	return levels
 }
 

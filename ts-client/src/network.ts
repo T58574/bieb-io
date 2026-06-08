@@ -121,6 +121,7 @@ function handleServerMessage(event: MessageEvent) {
     state.statLootQuantity = msg.upgrades[21];
     state.statLootQuality = msg.upgrades[22];
     state.statPickupItemRadius = msg.upgrades[23];
+    state.statThorns = msg.upgrades[24];
     state.card1 = msg.card1;
     state.card2 = msg.card2;
     state.card3 = msg.card3;

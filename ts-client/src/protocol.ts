@@ -83,7 +83,7 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
       arenaHeight: view.getFloat32(7, true),
     };
   } else if (opcode === 2) {
-    if (view.byteLength < 257) return null;
+    if (view.byteLength < 258) return null;
     const tick = view.getUint32(1, true);
     const xp = view.getUint32(5, true);
     const maxXp = view.getUint32(9, true);
@@ -93,22 +93,22 @@ export function deserializeMessage(buffer: ArrayBuffer): GameMessage | null {
     const maxHealth = view.getUint16(21, true);
     const upgradePoints = view.getUint8(23);
     const upgrades: number[] = [];
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 25; i++) {
       upgrades.push(view.getUint8(24 + i));
     }
-    const waveNumber = view.getUint16(48, true);
-    const entitiesCount = view.getUint16(50, true);
-    const card1 = view.getUint8(52);
-    const card2 = view.getUint8(53);
-    const card3 = view.getUint8(54);
+    const waveNumber = view.getUint16(49, true);
+    const entitiesCount = view.getUint16(51, true);
+    const card1 = view.getUint8(53);
+    const card2 = view.getUint8(54);
+    const card3 = view.getUint8(55);
     const inventory: number[] = [];
     for (let i = 0; i < 200; i++) {
-      inventory.push(view.getUint8(55 + i));
+      inventory.push(view.getUint8(56 + i));
     }
-    const removedCount = view.getUint16(255, true);
+    const removedCount = view.getUint16(256, true);
 
     const entities: EntityState[] = [];
-    let offset = 257;
+    let offset = 258;
     for (let i = 0; i < entitiesCount; i++) {
       if (offset + 26 > view.byteLength) break;
       entities.push({
