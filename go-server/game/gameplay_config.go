@@ -291,8 +291,10 @@ func init() {
 	}
 }
 
+var ConfigReader func(name string) ([]byte, error) = os.ReadFile
+
 func loadJSONFile(path string, target interface{}) error {
-	data, err := os.ReadFile(path)
+	data, err := ConfigReader(path)
 	if err != nil {
 		return err
 	}

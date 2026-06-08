@@ -47,7 +47,8 @@ export function connectToServer() {
   state.statMinionPierce = 0;
   state.statMinionRegen = 0;
 
-  socket = new WebSocket("ws://" + window.location.hostname + ":8080/ws");
+  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  socket = new WebSocket(wsProtocol + "//" + window.location.host + "/ws");
   socket.binaryType = "arraybuffer";
 
   socket.onopen = () => {

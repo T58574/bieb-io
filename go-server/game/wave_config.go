@@ -3,7 +3,6 @@ package game
 import (
 	"encoding/json"
 	"log"
-	"os"
 )
 
 type WaveConfig struct {
@@ -29,7 +28,7 @@ func init() {
 }
 
 func LoadWaveConfig(path string) error {
-	data, err := os.ReadFile(path)
+	data, err := ConfigReader(path)
 	if err != nil {
 		return err
 	}

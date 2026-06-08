@@ -1,22 +1,29 @@
 package main
 
 import (
+	"embed"
+	"flag"
+	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
-	"runtime"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
+	webview "github.com/jchv/go-webview2"
 	"go-server/game"
 	"go-server/protocol"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
+
+//go:embed dist config
+var embeddedFiles embed.FS
 
 type Client struct {
 	id     uint16
@@ -217,6 +224,9 @@ func (s *GameServer) broadcastState(tick uint32) {
 }
 
 func main() {
+	runServer := flag.Bool("server", false, "")
+	flag.Parse()
+
 	log.SetOutput(io.MultiWriter(os.Stdout, &lumberjack.Logger{
 		Filename:   "logs/server.log",
 		MaxSize:    10,
@@ -224,6 +234,20 @@ func main() {
 		MaxAge:     28,
 		Compress:   true,
 	}))
+
+	game.ConfigReader = func(path string) ([]byte, error) {
+		data, err := os.ReadFile(path)
+		if err == nil {
+			return data, nil
+		}
+		cleaned := path
+		if strings.HasPrefix(cleaned, "../") {
+			cleaned = cleaned[3:]
+		} else if strings.HasPrefix(cleaned, "./") {
+			cleaned = cleaned[2:]
+		}
+		return embeddedFiles.ReadFile(cleaned)
+	}
 
 	configDir := "./config/"
 	if _, err := os.Stat(configDir); os.IsNotExist(err) {
@@ -233,51 +257,39 @@ func main() {
 	if err := game.LoadWorldConfig(configDir + "world.json"); err != nil {
 		log.Fatalf("Failed to load world config: %v", err)
 	}
-
 	if err := game.LoadItemsConfig(configDir + "items.json"); err != nil {
 		log.Fatalf("Failed to load items config: %v", err)
 	}
-
 	if err := game.LoadClassesConfig(configDir + "classes.json"); err != nil {
 		log.Fatalf("Failed to load classes config: %v", err)
 	}
-
 	if err := game.LoadUpgradesConfig(configDir + "upgrades.json"); err != nil {
 		log.Fatalf("Failed to load upgrades config: %v", err)
 	}
-
 	if err := game.LoadWaveConfig(configDir + "waves.json"); err != nil {
 		log.Fatalf("Failed to load wave config: %v", err)
 	}
-
 	if err := game.LoadLootConfig(configDir + "loot_tables.json"); err != nil {
 		log.Fatalf("Failed to load loot config: %v", err)
 	}
-
 	if err := game.LoadMobsConfig(configDir + "mobs.json"); err != nil {
 		log.Fatalf("Failed to load mobs config: %v", err)
 	}
-
 	if err := game.LoadBossesConfig(configDir + "bosses.json"); err != nil {
 		log.Fatalf("Failed to load bosses config: %v", err)
 	}
-
 	if err := game.LoadRarityConfig(configDir + "rarity.json"); err != nil {
 		log.Fatalf("Failed to load rarity config: %v", err)
 	}
-
 	if err := game.LoadMinionConfig(configDir + "minions.json"); err != nil {
 		log.Fatalf("Failed to load minion config: %v", err)
 	}
-
 	if err := game.LoadCombatConfig(configDir + "combat.json"); err != nil {
 		log.Fatalf("Failed to load combat config: %v", err)
 	}
-
 	if err := game.LoadPlayerConfig(configDir + "player.json"); err != nil {
 		log.Fatalf("Failed to load player config: %v", err)
 	}
-
 	if err := game.LoadSpawnConfig(configDir + "spawn.json"); err != nil {
 		log.Fatalf("Failed to load spawn config: %v", err)
 	}
@@ -286,31 +298,63 @@ func main() {
 	if _, err := os.Stat(clientDir); os.IsNotExist(err) {
 		clientDir = "../ts-client/dist"
 	}
+
+	var port int = 8080
+	var host string = "0.0.0.0"
+	var listener net.Listener
+	var err error
+
+	if *runServer {
+		listener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		host = "127.0.0.1"
+		listener, err = net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			log.Fatal(err)
+		}
+		port = listener.Addr().(*net.TCPAddr).Port
+	}
+	serverAddr := fmt.Sprintf("%s:%d", host, port)
+
 	server := NewGameServer()
 	go server.startLoop()
 	http.HandleFunc("/ws", server.handleConnection)
-	http.Handle("/", http.FileServer(http.Dir(clientDir)))
-	log.Println("Server running on 0.0.0.0:8080")
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		openBrowser("http://localhost:8080")
-	}()
-	if err := http.ListenAndServe("0.0.0.0:8080", nil); err != nil {
-		log.Fatal(err)
-	}
-}
 
-func openBrowser(targetURL string) {
-	var err error
-	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", targetURL).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", targetURL).Start()
-	case "darwin":
-		err = exec.Command("open", targetURL).Start()
+	var staticHandler http.Handler
+	if subFS, err := fs.Sub(embeddedFiles, "dist"); err == nil {
+		if _, errIndex := subFS.Open("index.html"); errIndex == nil {
+			staticHandler = http.FileServer(http.FS(subFS))
+		} else {
+			staticHandler = http.FileServer(http.Dir(clientDir))
+		}
+	} else {
+		staticHandler = http.FileServer(http.Dir(clientDir))
 	}
-	if err != nil {
-		log.Println(err)
+	http.Handle("/", staticHandler)
+
+	if *runServer {
+		log.Printf("Server running on %s", serverAddr)
+		if err := http.Serve(listener, nil); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		go func() {
+			if err := http.Serve(listener, nil); err != nil {
+				log.Fatal(err)
+			}
+		}()
+
+		w := webview.New(false)
+		if w == nil {
+			log.Fatal("Failed to start webview")
+		}
+		defer w.Destroy()
+		w.SetTitle("Necro-Geometry")
+		w.SetSize(1280, 720, webview.HintNone)
+		w.Navigate(fmt.Sprintf("http://127.0.0.1:%d", port))
+		w.Run()
 	}
 }

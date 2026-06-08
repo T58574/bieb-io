@@ -99,3 +99,8 @@ celerybeat-schedule
 # --- LOGS ---
 *.log
 logs/
+
+# --- APP CUSTOM ---
+go-server/dist/
+go-server/config/
+necro-geometry.exe

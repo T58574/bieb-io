@@ -3,7 +3,6 @@ package game
 import (
 	"encoding/json"
 	"log"
-	"os"
 	"sync"
 )
 
@@ -34,7 +33,7 @@ var (
 )
 
 func LoadUpgradesConfig(path string) error {
-	data, err := os.ReadFile(path)
+	data, err := ConfigReader(path)
 	if err != nil {
 		return err
 	}
