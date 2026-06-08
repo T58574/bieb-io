@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "prestart": "npx --yes kill-port 8080 5173 || true",
-    "start": "concurrently --kill-others \"npm run dev --prefix ts-client\" \"start-server.bat\"",
-    "server": "start-server.bat"
+    "start": "concurrently --kill-others \"npm run dev --prefix ts-client\" \"npm run server\"",
+    "server": "cd go-server && go run main.go"
   },
   "dependencies": {
     "concurrently": "^8.0.0"
