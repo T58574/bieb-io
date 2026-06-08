@@ -97,7 +97,7 @@ func (p *Player) GetInventoryArray() []uint8 {
 }
 
 func (p *Player) GetUpgradeLevels() []uint8 {
-	levels := make([]uint8, 25)
+	levels := make([]uint8, 29)
 	levels[1] = uint8(p.StatSpeed)
 	levels[2] = uint8(math.Round(p.Vampirism / 0.05))
 	levels[3] = uint8(p.StatMaxHP)
@@ -125,6 +125,18 @@ func (p *Player) GetUpgradeLevels() []uint8 {
 	levels[21] = uint8(p.StatLootQuantity)
 	levels[23] = uint8(p.StatPickupItemRadius)
 	levels[24] = uint8(p.StatThorns)
+	if (p.StateFlags & 4096) != 0 {
+		levels[25] = 1
+	}
+	if (p.StateFlags & 8192) != 0 {
+		levels[26] = 1
+	}
+	if (p.StateFlags & 16384) != 0 {
+		levels[27] = 1
+	}
+	if (p.StateFlags & 32768) != 0 {
+		levels[28] = 1
+	}
 	return levels
 }
 
@@ -390,6 +402,17 @@ func (w *GameWorld) updatePlayers(dt float64) {
 		}
 		if p.SkillDuration > 0 {
 			p.SkillDuration -= dt
+			if p.ClassID == 0 && (p.StateFlags&4096) != 0 && int(p.SkillDuration*60.0)%3 == 0 {
+				fID := w.GenerateID()
+				f := w.fieldPool.Get().(*ChronoField)
+				*f = ChronoField{}
+				f.ID = fID
+				f.OwnerID = p.ID
+				f.Pos = p.Pos
+				f.Radius = 60.0
+				f.Duration = 2.0
+				w.Fields[fID] = f
+			}
 			if p.SkillDuration <= 0 {
 				if p.ClassID == 0 {
 					p.StateFlags &^= 2
@@ -442,6 +465,17 @@ func (w *GameWorld) updatePlayers(dt float64) {
 						dir := mob.Pos.Sub(p.Pos).Normalize()
 						mob.Vel = mob.Vel.Add(dir.Mul(15.0))
 					}
+				}
+				if (p.StateFlags & 32768) != 0 {
+					fID := w.GenerateID()
+					f := w.fieldPool.Get().(*ChronoField)
+					*f = ChronoField{}
+					f.ID = fID
+					f.OwnerID = p.ID
+					f.Pos = p.Pos
+					f.Radius = 250.0
+					f.Duration = 4.0
+					w.Fields[fID] = f
 				}
 			}
 		}
@@ -548,6 +582,9 @@ func (w *GameWorld) updatePlayers(dt float64) {
 			bDamage = classCfg.BulletDamage * (1.0 + float64(p.StatMinionDmg)*upgCfg.GlobalMultipliers.MinionDamagePerLevel + float64(p.StatDamageMod)*pCfg.DamageModPerLevel)
 			bLifetime = classCfg.BulletLifetime
 			bPierce = classCfg.BulletPierce + int(p.StatPierceCount)
+			if p.ClassID == 1 && p.SkillDuration > 0 && (p.StateFlags&8192) != 0 {
+				bPierce += 5
+			}
 			bSubtype = classCfg.BulletSubtype
 
 			var totalFlatDmg, totalPercentDmg float64

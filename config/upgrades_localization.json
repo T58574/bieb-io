@@ -22,5 +22,9 @@
   "21": { "title": "КВАНТОВЫЙ АНАЛИЗАТОР", "color": "#6366f1", "desc": "Шанс дропа предметов +5%", "rarity": "Common", "abbrev": "Loot\nQty", "stateKey": "statLootQuantity" },
   "22": { "title": "СОВЕРШЕНСТВО", "color": "#d946ef", "desc": "Качество предметов +1%", "rarity": "Common", "abbrev": "Loot\nQual", "stateKey": "statLootQuality" },
   "23": { "title": "МАГНИТНОЕ ПОЛЕ", "color": "#eab308", "desc": "Увеличение радиуса сбора", "rarity": "Common", "abbrev": "Mag", "stateKey": "statPickupItemRadius" },
-  "24": { "title": "ШИПЫ", "color": "#ef4444", "desc": "Ответный урон при касании", "rarity": "Common", "abbrev": "Thorn", "stateKey": "statThorns" }
+  "24": { "title": "ШИПЫ", "color": "#ef4444", "desc": "Ответный урон при касании", "rarity": "Common", "abbrev": "Thorn", "stateKey": "statThorns" },
+  "25": { "title": "ФАЗОВЫЙ СДВИГ", "color": "#00f0ff", "desc": "Рывок оставляет след из замедляющих полей", "rarity": "Rare", "abbrev": "Phs\nShft", "stateKey": "statPhaseShift" },
+  "26": { "title": "ФОТОННЫЙ РЕАКТОР", "color": "#ef4444", "desc": "Снаряды форсажа пробивают на +5 целей", "rarity": "Rare", "abbrev": "Pht\nRctr", "stateKey": "statPhotonReactor" },
+  "27": { "title": "ГРАВИТАЦИОННЫЙ ЗАХВАТ", "color": "#fbbf24", "desc": "Купол затягивает врагов в свой центр", "rarity": "Rare", "abbrev": "Grv\nCapt", "stateKey": "statGravitationalCapture" },
+  "28": { "title": "РАДИАЦИОННЫЙ ВЗРЫВ", "color": "#22c55e", "desc": "Барьер спавнит поле кислотного урона", "rarity": "Rare", "abbrev": "Rad\nBlst", "stateKey": "statRadiationBlast" }
 }

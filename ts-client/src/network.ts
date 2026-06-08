@@ -123,6 +123,10 @@ function handleServerMessage(event: MessageEvent) {
     state.statLootQuality = msg.upgrades[22];
     state.statPickupItemRadius = msg.upgrades[23];
     state.statThorns = msg.upgrades[24];
+    state.statPhaseShift = msg.upgrades[25];
+    state.statPhotonReactor = msg.upgrades[26];
+    state.statGravitationalCapture = msg.upgrades[27];
+    state.statRadiationBlast = msg.upgrades[28];
     state.card1 = msg.card1;
     state.card2 = msg.card2;
     state.card3 = msg.card3;

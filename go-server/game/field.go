@@ -21,11 +21,22 @@ func (w *GameWorld) updateFields(dt float64) {
 			delete(w.Fields, id)
 			continue
 		}
+		owner, hasOwner := w.Players[f.OwnerID]
+		pullActive := hasOwner && (owner.StateFlags&16384) != 0
+		hazardActive := hasOwner && (owner.StateFlags&32768) != 0
+
 		for _, m := range w.Mobs {
 			distSq := m.Pos.Sub(f.Pos).LengthSq()
 			radSum := f.Radius + m.Radius
 			if distSq < radSum*radSum {
 				m.Vel = m.Vel.Mul(0.2)
+				if pullActive {
+					pullDir := f.Pos.Sub(m.Pos).Normalize()
+					m.Vel = m.Vel.Add(pullDir.Mul(1.5))
+				}
+				if hazardActive {
+					m.Health -= 100.0 * dt
+				}
 			}
 		}
 	}

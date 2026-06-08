@@ -58,7 +58,7 @@ type WorldStateParams struct {
 func EncodeWorldState(params WorldStateParams, entities []EntityState, removedIDs []uint16) []byte {
 	count := len(entities)
 	removedCount := len(removedIDs)
-	bufSize := 258 + count*26 + removedCount*2
+	bufSize := 262 + count*26 + removedCount*2
 	buf := make([]byte, bufSize)
 	buf[0] = 2
 	binary.LittleEndian.PutUint32(buf[1:5], params.Tick)
@@ -69,28 +69,28 @@ func EncodeWorldState(params WorldStateParams, entities []EntityState, removedID
 	binary.LittleEndian.PutUint16(buf[19:21], params.Health)
 	binary.LittleEndian.PutUint16(buf[21:23], params.MaxHealth)
 	buf[23] = params.UpgradePoints
-	for i := 0; i < 25; i++ {
+	for i := 0; i < 29; i++ {
 		if i < len(params.UpgradeLevels) {
 			buf[24+i] = params.UpgradeLevels[i]
 		} else {
 			buf[24+i] = 0
 		}
 	}
-	binary.LittleEndian.PutUint16(buf[49:51], params.WaveNumber)
-	binary.LittleEndian.PutUint16(buf[51:53], uint16(count))
-	buf[53] = params.Card1
-	buf[54] = params.Card2
-	buf[55] = params.Card3
+	binary.LittleEndian.PutUint16(buf[53:55], params.WaveNumber)
+	binary.LittleEndian.PutUint16(buf[55:57], uint16(count))
+	buf[57] = params.Card1
+	buf[58] = params.Card2
+	buf[59] = params.Card3
 	for i := 0; i < 200; i++ {
 		if i < len(params.Inventory) {
-			buf[56+i] = params.Inventory[i]
+			buf[60+i] = params.Inventory[i]
 		} else {
-			buf[56+i] = 0
+			buf[60+i] = 0
 		}
 	}
-	binary.LittleEndian.PutUint16(buf[256:258], uint16(removedCount))
+	binary.LittleEndian.PutUint16(buf[260:262], uint16(removedCount))
 
-	offset := 258
+	offset := 262
 	for i := 0; i < count; i++ {
 		ent := &entities[i]
 		binary.LittleEndian.PutUint16(buf[offset:offset+2], ent.ID)

@@ -23,7 +23,11 @@
     { "ID": 21, "MaxLevel": 1000, "Type": "StatLootQuantity", "Value": 0.01 },
     { "ID": 22, "MaxLevel": 1000, "Type": "StatLootQuality", "Value": 0.01 },
     { "ID": 23, "MaxLevel": 1000, "Type": "PickupItemRadius", "Value": 0.01 },
-    { "ID": 24, "MaxLevel": 1000, "Type": "StatThorns", "Value": 1.0 }
+    { "ID": 24, "MaxLevel": 1000, "Type": "StatThorns", "Value": 1.0 },
+    { "ID": 25, "MaxLevel": 1, "Type": "FlagUnlock", "Value": 4096.0 },
+    { "ID": 26, "MaxLevel": 1, "Type": "FlagUnlock", "Value": 8192.0 },
+    { "ID": 27, "MaxLevel": 1, "Type": "FlagUnlock", "Value": 16384.0 },
+    { "ID": 28, "MaxLevel": 1, "Type": "FlagUnlock", "Value": 32768.0 }
   ],
   "GlobalMultipliers": {
     "BaseMaxHP": 50.0,
