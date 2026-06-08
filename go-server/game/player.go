@@ -425,6 +425,9 @@ func (w *GameWorld) updatePlayers(dt float64) {
 			if count, ok := p.Inventory[23]; ok {
 				itemCDMod -= 0.10 * float64(count)
 			}
+			if count, ok := p.Inventory[27]; ok {
+				itemCDMod -= 0.15 * float64(count)
+			}
 			cdReduction := (1.0 + float64(p.StatCooldownMod)*pCfg.CooldownReductionPerLevel) * (1.0 + itemCDMod)
 			switch p.ClassID {
 			case 0:

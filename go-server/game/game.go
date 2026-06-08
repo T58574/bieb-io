@@ -264,7 +264,7 @@ func (w *GameWorld) appendMinionStates(states []protocol.EntityState) []protocol
 		states = append(states, protocol.EntityState{
 			ID:        minion.ID,
 			Type:      4,
-			Subtype:   0,
+			Subtype:   minion.Subtype,
 			X:         float32(minion.Pos.X),
 			Y:         float32(minion.Pos.Y),
 			Angle:     float32(minion.Angle),

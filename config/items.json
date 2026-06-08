@@ -207,5 +207,43 @@
       "FlatDamage": 8.0,
       "CritChance": 0.10
     }
+  },
+  {
+    "ID": 26,
+    "Rarity": 3,
+    "StatModifiers": {
+      "FlatDamage": 5.0,
+      "PercentHP": 0.1
+    }
+  },
+  {
+    "ID": 27,
+    "Rarity": 4,
+    "StatModifiers": {
+      "PercentSpeed": 0.1
+    }
+  },
+  {
+    "ID": 28,
+    "Rarity": 4,
+    "StatModifiers": {
+      "PercentDamage": 0.2,
+      "FlatDamage": 10.0
+    }
+  },
+  {
+    "ID": 29,
+    "Rarity": 4,
+    "StatModifiers": {
+      "Regen": 2.0
+    }
+  },
+  {
+    "ID": 30,
+    "Rarity": 4,
+    "StatModifiers": {
+      "BulletSpeed": 6.0,
+      "PercentSpeed": 0.15
+    }
   }
 ]

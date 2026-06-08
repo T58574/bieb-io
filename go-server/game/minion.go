@@ -21,6 +21,7 @@ type Minion struct {
 	OrbitIndex    int
 	Lifetime      float64
 	HasLifetime   bool
+	Subtype       uint8
 }
 
 func (w *GameWorld) updateMinions(dt float64) {
@@ -76,8 +77,15 @@ func (w *GameWorld) updateMinions(dt float64) {
 		m.MaxHealth = (mCfg.BaseHP + float64(owner.StatMinionHP)*mCfg.HPPerLevel) * (1.0 + itemMinionHP)
 		m.ShootCooldown -= dt
 		if m.ShootCooldown <= 0 {
-			m.ShootCooldown = mCfg.ShootCooldown
-			w.minionShoot(m, owner)
+			if m.Subtype == 1 {
+				m.ShootCooldown = 3.0
+				if owner.Health < owner.MaxHealth {
+					owner.Health = math.Min(owner.MaxHealth, owner.Health+5.0)
+				}
+			} else {
+				m.ShootCooldown = mCfg.ShootCooldown
+				w.minionShoot(m, owner)
+			}
 		}
 		if owner.StatMinionRegen > 0 && m.Health < m.MaxHealth {
 			regenRate := float64(owner.StatMinionRegen) * mCfg.RegenPerLevel
@@ -165,6 +173,36 @@ func (w *GameWorld) spawnMinion(ownerID uint16, pos physics.Vector2D) {
 		MaxHealth:  minionMaxHP,
 		Damage:     mCfg.BaseDamage + float64(owner.StatMinionDmg)*mCfg.DamagePerLevel,
 		OrbitIndex: len(owner.MinionIDs),
+		Subtype:    0,
+	}
+	w.Minions[mID] = minion
+	owner.MinionIDs = append(owner.MinionIDs, mID)
+}
+
+func (w *GameWorld) spawnSpecialDrone(ownerID uint16, pos physics.Vector2D, subtype uint8) {
+	owner, ok := w.Players[ownerID]
+	if !ok {
+		return
+	}
+	mCfg := GetMinionConfig()
+	if len(owner.MinionIDs) >= mCfg.MaxLimit {
+		oldID := owner.MinionIDs[0]
+		w.removeMinionFromPlayer(owner, oldID)
+		w.RemovedEntityIDs = append(w.RemovedEntityIDs, oldID)
+		delete(w.Minions, oldID)
+	}
+	mID := w.GenerateID()
+	minionMaxHP := mCfg.BaseHP + float64(owner.StatMinionHP)*mCfg.HPPerLevel
+	minion := &Minion{
+		ID:         mID,
+		OwnerID:    ownerID,
+		Pos:        pos,
+		Radius:     mCfg.Radius,
+		Health:     minionMaxHP,
+		MaxHealth:  minionMaxHP,
+		Damage:     0,
+		OrbitIndex: len(owner.MinionIDs),
+		Subtype:    subtype,
 	}
 	w.Minions[mID] = minion
 	owner.MinionIDs = append(owner.MinionIDs, mID)

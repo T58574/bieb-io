@@ -327,31 +327,62 @@ function drawBulletEntity(ctx: CanvasRenderingContext2D, ent: Entity) {
 
 function drawMinionEntity(ctx: CanvasRenderingContext2D, ent: Entity) {
   ctx.save();
-  ctx.fillStyle = "#1e0a2b";
-  ctx.strokeStyle = "#a855f7";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(0, 0, ent.radius * 0.7, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  const numTriangles = 3;
-  const orbitRadius = ent.radius * 1.4;
-  const orbitAngle = Date.now() / 400;
-  ctx.fillStyle = "#c084fc";
-  for (let j = 0; j < numTriangles; j++) {
-    const a = orbitAngle + (j * Math.PI * 2) / numTriangles;
-    const tx = Math.cos(a) * orbitRadius;
-    const ty = Math.sin(a) * orbitRadius;
-    ctx.save();
-    ctx.translate(tx, ty);
-    ctx.rotate(a + Math.PI / 2);
+  if (ent.subtype === 1) {
+    ctx.fillStyle = "#0a2b0a";
+    ctx.strokeStyle = "#22c55e";
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(0, -4);
-    ctx.lineTo(3.5, 3);
-    ctx.lineTo(-3.5, 3);
-    ctx.closePath();
+    ctx.arc(0, 0, ent.radius * 0.7, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
+    ctx.stroke();
+
+    ctx.strokeStyle = "#22c55e";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-3, 0);
+    ctx.lineTo(3, 0);
+    ctx.moveTo(0, -3);
+    ctx.lineTo(0, 3);
+    ctx.stroke();
+
+    const orbitRadius = ent.radius * 1.4;
+    const orbitAngle = Date.now() / 300;
+    ctx.fillStyle = "#22c55e";
+    for (let j = 0; j < 4; j++) {
+      const a = orbitAngle + (j * Math.PI * 2) / 4;
+      const tx = Math.cos(a) * orbitRadius;
+      const ty = Math.sin(a) * orbitRadius;
+      ctx.beginPath();
+      ctx.arc(tx, ty, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else {
+    ctx.fillStyle = "#1e0a2b";
+    ctx.strokeStyle = "#a855f7";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, ent.radius * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    const numTriangles = 3;
+    const orbitRadius = ent.radius * 1.4;
+    const orbitAngle = Date.now() / 400;
+    ctx.fillStyle = "#c084fc";
+    for (let j = 0; j < numTriangles; j++) {
+      const a = orbitAngle + (j * Math.PI * 2) / numTriangles;
+      const tx = Math.cos(a) * orbitRadius;
+      const ty = Math.sin(a) * orbitRadius;
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.rotate(a + Math.PI / 2);
+      ctx.beginPath();
+      ctx.moveTo(0, -4);
+      ctx.lineTo(3.5, 3);
+      ctx.lineTo(-3.5, 3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
   }
   ctx.restore();
   if (ent.health < ent.maxHealth) {

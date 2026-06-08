@@ -199,6 +199,41 @@
       "desc": "+8 Урон\n+10% Шанс Крита",
       "abbrev": "Nano\nAmp",
       "rarity": "Unique"
+    },
+    "26": {
+      "name": "КИСЛОТНЫЙ ПРОЦЕССОР",
+      "color": "#d946ef",
+      "desc": "+5 Урон\n+10% ХП",
+      "abbrev": "Acid\nProc",
+      "rarity": "Unique"
+    },
+    "27": {
+      "name": "ИСКАЖАЮЩИЙ КРИСТАЛЛ",
+      "color": "#f97316",
+      "desc": "+10% Скорость\n-15% Откат Умений",
+      "abbrev": "Warp\nCrys",
+      "rarity": "Legendary"
+    },
+    "28": {
+      "name": "ПЕРЕГРУЖЕННАЯ БАТАРЕЯ",
+      "color": "#f97316",
+      "desc": "+20% Урон\n+10 Урон",
+      "abbrev": "Ovrc\nBat",
+      "rarity": "Legendary"
+    },
+    "29": {
+      "name": "НАНО-ДРОН РЕМОНТА",
+      "color": "#f97316",
+      "desc": "+2 Регенерация\nПризывает ремонтного дрона",
+      "abbrev": "Nano\nHeal",
+      "rarity": "Legendary"
+    },
+    "30": {
+      "name": "АНТИГРАВИТАЦИОННОЕ ЯДРО",
+      "color": "#f97316",
+      "desc": "+6 СкорСнар\n+15% Скорость",
+      "abbrev": "Agrav\nCore",
+      "rarity": "Legendary"
     }
   },
   "classes": []

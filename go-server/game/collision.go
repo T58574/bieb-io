@@ -473,6 +473,19 @@ func (w *GameWorld) handlePlayerLootCollision(a, b HashItem) {
 		p.invDirty = true
 		w.RemovedEntityIDs = append(w.RemovedEntityIDs, b.ID)
 		delete(w.LootDrops, b.ID)
+
+		if ld.ItemID == 29 {
+			hasHealer := false
+			for _, mID := range p.MinionIDs {
+				if m, exists := w.Minions[mID]; exists && m.Subtype == 1 {
+					hasHealer = true
+					break
+				}
+			}
+			if !hasHealer {
+				w.spawnSpecialDrone(p.ID, p.Pos, 1)
+			}
+		}
 	}
 }
 
