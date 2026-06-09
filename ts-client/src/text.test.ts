@@ -39,6 +39,18 @@ describe('TextRenderer', () => {
       // 3840 / 1920 = 2, 2160 / 1080 = 2 -> min = 2
       expect(TextRenderer.getScale(3840, 2160)).toBe(2);
     });
+
+    it('should handle zero dimensions', () => {
+      expect(TextRenderer.getScale(0, 1080)).toBe(0);
+      expect(TextRenderer.getScale(1920, 0)).toBe(0);
+      expect(TextRenderer.getScale(0, 0)).toBe(0);
+    });
+
+    it('should handle negative dimensions by preserving the negative ratio', () => {
+      expect(TextRenderer.getScale(-1920, 1080)).toBe(-1);
+      expect(TextRenderer.getScale(1920, -1080)).toBe(-1);
+      expect(TextRenderer.getScale(-1920, -1080)).toBe(-1);
+    });
   });
 
   describe('draw', () => {
