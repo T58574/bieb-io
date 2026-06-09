@@ -72,6 +72,33 @@ func TestResolveCircleBox(t *testing.T) {
 	}
 }
 
+func TestVectorSetSub(t *testing.T) {
+	// Happy path
+	var v Vector2D
+	a := Vector2D{5, 10}
+	b := Vector2D{2, 3}
+	v.SetSub(a, b)
+	if v.X != 3 || v.Y != 7 {
+		t.Errorf("SetSub error: expected {3, 7}, got {%v, %v}", v.X, v.Y)
+	}
+
+	// Negative values
+	a = Vector2D{-1, -5}
+	b = Vector2D{2, -3}
+	v.SetSub(a, b)
+	if v.X != -3 || v.Y != -2 {
+		t.Errorf("SetSub negative error: expected {-3, -2}, got {%v, %v}", v.X, v.Y)
+	}
+
+	// Zero
+	a = Vector2D{4, 4}
+	b = Vector2D{4, 4}
+	v.SetSub(a, b)
+	if v.X != 0 || v.Y != 0 {
+		t.Errorf("SetSub zero error: expected {0, 0}, got {%v, %v}", v.X, v.Y)
+	}
+}
+
 func TestVectorNormalize(t *testing.T) {
 	// Happy path
 	v := Vector2D{3, 4}
