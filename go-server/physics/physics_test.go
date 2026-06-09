@@ -87,3 +87,36 @@ func TestVectorNormalize(t *testing.T) {
 		t.Errorf("expected {0, 0}, got {%f, %f}", normZero.X, normZero.Y)
 	}
 }
+
+func TestVectorDot(t *testing.T) {
+	// Positive vectors
+	v1 := Vector2D{1, 2}
+	v2 := Vector2D{3, 4}
+	dot := v1.Dot(v2)
+	if dot != 11.0 {
+		t.Errorf("expected 11.0, got %f", dot)
+	}
+
+	// Negative vectors
+	v3 := Vector2D{-1, -2}
+	v4 := Vector2D{3, -4}
+	dot = v3.Dot(v4)
+	if dot != 5.0 {
+		t.Errorf("expected 5.0, got %f", dot)
+	}
+
+	// Orthogonal vectors
+	v5 := Vector2D{1, 0}
+	v6 := Vector2D{0, 1}
+	dot = v5.Dot(v6)
+	if dot != 0 {
+		t.Errorf("expected 0, got %f", dot)
+	}
+
+	// Zero vector
+	v7 := Vector2D{0, 0}
+	dot = v1.Dot(v7)
+	if dot != 0 {
+		t.Errorf("expected 0, got %f", dot)
+	}
+}
