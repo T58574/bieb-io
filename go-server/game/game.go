@@ -153,7 +153,6 @@ func (w *GameWorld) GenerateID() uint16 {
 	return w.nextID
 }
 
-
 func (w *GameWorld) Tick(dt float64) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -181,7 +180,6 @@ func (w *GameWorld) Tick(dt float64) {
 	w.rebuildSpatialGrid()
 	w.resolveCollisionsOptimized()
 }
-
 
 func (w *GameWorld) ExportState() []protocol.EntityState {
 	w.mu.RLock()

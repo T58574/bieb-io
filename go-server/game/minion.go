@@ -93,7 +93,7 @@ func (w *GameWorld) updateMinions(dt float64) {
 				if owner.Health < owner.MaxHealth {
 					owner.Health = math.Min(owner.MaxHealth, owner.Health+5.0)
 				}
-		} else {
+			} else {
 				cdMul := 1.0 + float64(owner.StatCooldownMod)*GetPlayerConfig().CooldownReductionPerLevel
 				m.ShootCooldown = mCfg.ShootCooldown * cdMul
 				w.minionShoot(m, owner)

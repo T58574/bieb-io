@@ -105,4 +105,3 @@ func TestResetOnRejoin(t *testing.T) {
 		t.Errorf("expected WaveNumber to reset to 0, got %d", w.WaveNumber)
 	}
 }
-

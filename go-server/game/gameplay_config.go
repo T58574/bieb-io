@@ -9,59 +9,59 @@ import (
 )
 
 type MobTypeConfig struct {
-	Name            string  `json:"name"`
-	BaseHP          float64 `json:"baseHP"`
-	Radius          float64 `json:"radius"`
-	BaseDamage      float64 `json:"baseDamage"`
-	BaseXP          uint32  `json:"baseXP"`
-	Acceleration    float64 `json:"acceleration"`
-	BaseSpeed       float64 `json:"baseSpeed"`
-	Sides           int     `json:"sides"`
-	ShootCooldown   float64 `json:"shootCooldown"`
-	ShootRange      float64 `json:"shootRange"`
-	BulletSpeed     float64 `json:"bulletSpeed"`
-	BulletRadius    float64 `json:"bulletRadius"`
-	BulletDamage    float64 `json:"bulletDamage"`
-	BulletLifetime  float64 `json:"bulletLifetime"`
-	BulletPierce    int     `json:"bulletPierce"`
-	BulletSubtype   uint8   `json:"bulletSubtype"`
+	Name             string  `json:"name"`
+	BaseHP           float64 `json:"baseHP"`
+	Radius           float64 `json:"radius"`
+	BaseDamage       float64 `json:"baseDamage"`
+	BaseXP           uint32  `json:"baseXP"`
+	Acceleration     float64 `json:"acceleration"`
+	BaseSpeed        float64 `json:"baseSpeed"`
+	Sides            int     `json:"sides"`
+	ShootCooldown    float64 `json:"shootCooldown"`
+	ShootRange       float64 `json:"shootRange"`
+	BulletSpeed      float64 `json:"bulletSpeed"`
+	BulletRadius     float64 `json:"bulletRadius"`
+	BulletDamage     float64 `json:"bulletDamage"`
+	BulletLifetime   float64 `json:"bulletLifetime"`
+	BulletPierce     int     `json:"bulletPierce"`
+	BulletSubtype    uint8   `json:"bulletSubtype"`
 	PreferredMinDist float64 `json:"preferredMinDist"`
 	PreferredMaxDist float64 `json:"preferredMaxDist"`
-	RetreatAccel    float64 `json:"retreatAccel"`
-	RetreatSpeed    float64 `json:"retreatSpeed"`
-	IdleFriction    float64 `json:"idleFriction"`
+	RetreatAccel     float64 `json:"retreatAccel"`
+	RetreatSpeed     float64 `json:"retreatSpeed"`
+	IdleFriction     float64 `json:"idleFriction"`
 }
 
 type MobsConfig struct {
-	Types        map[string]MobTypeConfig `json:"types"`
-	SpawnDistMin float64                  `json:"spawnDistMin"`
-	SpawnDistMax float64                  `json:"spawnDistMax"`
-	BorderPadding float64                 `json:"borderPadding"`
+	Types         map[string]MobTypeConfig `json:"types"`
+	SpawnDistMin  float64                  `json:"spawnDistMin"`
+	SpawnDistMax  float64                  `json:"spawnDistMax"`
+	BorderPadding float64                  `json:"borderPadding"`
 }
 
 type BossTypeConfig struct {
-	Name                 string  `json:"name"`
-	BaseHP               float64 `json:"baseHP"`
-	Radius               float64 `json:"radius"`
-	BaseDamage           float64 `json:"baseDamage"`
-	BaseXP               float64 `json:"baseXP"`
-	Acceleration         float64 `json:"acceleration"`
-	BaseSpeed            float64 `json:"baseSpeed"`
-	ShootCooldown        float64 `json:"shootCooldown"`
-	ShootRange           float64 `json:"shootRange"`
-	BulletCount          int     `json:"bulletCount"`
-	BulletSpeed          float64 `json:"bulletSpeed"`
-	BulletRadius         float64 `json:"bulletRadius"`
+	Name                   string  `json:"name"`
+	BaseHP                 float64 `json:"baseHP"`
+	Radius                 float64 `json:"radius"`
+	BaseDamage             float64 `json:"baseDamage"`
+	BaseXP                 float64 `json:"baseXP"`
+	Acceleration           float64 `json:"acceleration"`
+	BaseSpeed              float64 `json:"baseSpeed"`
+	ShootCooldown          float64 `json:"shootCooldown"`
+	ShootRange             float64 `json:"shootRange"`
+	BulletCount            int     `json:"bulletCount"`
+	BulletSpeed            float64 `json:"bulletSpeed"`
+	BulletRadius           float64 `json:"bulletRadius"`
 	BulletDamageMultiplier float64 `json:"bulletDamageMultiplier"`
-	BulletLifetime       float64 `json:"bulletLifetime"`
-	BulletPierce         int     `json:"bulletPierce"`
-	BulletSubtype        uint8   `json:"bulletSubtype"`
-	ChargeCooldown       float64 `json:"chargeCooldown"`
-	ChargeSpeed          float64 `json:"chargeSpeed"`
-	ChargeDuration       float64 `json:"chargeDuration"`
-	IdleAcceleration     float64 `json:"idleAcceleration"`
-	IdleSpeed            float64 `json:"idleSpeed"`
-	KillAllPlayersOnDeath bool   `json:"killAllPlayersOnDeath"`
+	BulletLifetime         float64 `json:"bulletLifetime"`
+	BulletPierce           int     `json:"bulletPierce"`
+	BulletSubtype          uint8   `json:"bulletSubtype"`
+	ChargeCooldown         float64 `json:"chargeCooldown"`
+	ChargeSpeed            float64 `json:"chargeSpeed"`
+	ChargeDuration         float64 `json:"chargeDuration"`
+	IdleAcceleration       float64 `json:"idleAcceleration"`
+	IdleSpeed              float64 `json:"idleSpeed"`
+	KillAllPlayersOnDeath  bool    `json:"killAllPlayersOnDeath"`
 }
 
 type BossScheduleEntry struct {
@@ -78,9 +78,9 @@ type BossRecurringRule struct {
 
 type BossesConfig struct {
 	Types         map[string]BossTypeConfig `json:"types"`
-	SpawnDistance  float64                   `json:"spawnDistance"`
+	SpawnDistance float64                   `json:"spawnDistance"`
 	Schedule      []BossScheduleEntry       `json:"schedule"`
-	RecurringRule BossRecurringRule          `json:"recurringRule"`
+	RecurringRule BossRecurringRule         `json:"recurringRule"`
 }
 
 type RarityChance struct {
@@ -112,74 +112,74 @@ type RarityConfig struct {
 }
 
 type MinionConfig struct {
-	BaseHP           float64 `json:"baseHP"`
-	HPPerLevel       float64 `json:"hpPerLevel"`
-	BaseDamage       float64 `json:"baseDamage"`
-	DamagePerLevel   float64 `json:"damagePerLevel"`
-	Radius           float64 `json:"radius"`
-	OrbitOffset      float64 `json:"orbitOffset"`
+	BaseHP            float64 `json:"baseHP"`
+	HPPerLevel        float64 `json:"hpPerLevel"`
+	BaseDamage        float64 `json:"baseDamage"`
+	DamagePerLevel    float64 `json:"damagePerLevel"`
+	Radius            float64 `json:"radius"`
+	OrbitOffset       float64 `json:"orbitOffset"`
 	OrbitAngularSpeed float64 `json:"orbitAngularSpeed"`
-	FollowSpeed      float64 `json:"followSpeed"`
-	SpeedPerLevel    float64 `json:"speedPerLevel"`
-	ShootCooldown    float64 `json:"shootCooldown"`
-	ShootRange       float64 `json:"shootRange"`
-	BulletSpeed      float64 `json:"bulletSpeed"`
-	BulletRadius     float64 `json:"bulletRadius"`
-	BulletLifetime   float64 `json:"bulletLifetime"`
-	BulletSubtype    uint8   `json:"bulletSubtype"`
-	MaxLimit         int     `json:"maxLimit"`
-	RegenPerLevel    float64 `json:"regenPerLevel"`
-	DroneLifetime    float64 `json:"droneLifetime"`
-	DroneHasLifetime bool    `json:"droneHasLifetime"`
+	FollowSpeed       float64 `json:"followSpeed"`
+	SpeedPerLevel     float64 `json:"speedPerLevel"`
+	ShootCooldown     float64 `json:"shootCooldown"`
+	ShootRange        float64 `json:"shootRange"`
+	BulletSpeed       float64 `json:"bulletSpeed"`
+	BulletRadius      float64 `json:"bulletRadius"`
+	BulletLifetime    float64 `json:"bulletLifetime"`
+	BulletSubtype     uint8   `json:"bulletSubtype"`
+	MaxLimit          int     `json:"maxLimit"`
+	RegenPerLevel     float64 `json:"regenPerLevel"`
+	DroneLifetime     float64 `json:"droneLifetime"`
+	DroneHasLifetime  bool    `json:"droneHasLifetime"`
 }
 
 type CombatConfig struct {
-	BaseCritChance              float64 `json:"baseCritChance"`
-	BaseCritMultiplier          float64 `json:"baseCritMultiplier"`
-	CritChancePerLevel          float64 `json:"critChancePerLevel"`
-	CritDamagePerLevel          float64 `json:"critDamagePerLevel"`
-	CritChainRange              float64 `json:"critChainRange"`
-	CritChainDamage             float64 `json:"critChainDamage"`
-	CritChainLimit              int     `json:"critChainLimit"`
-	MaxDefianceReduction        float64 `json:"maxDefianceReduction"`
-	DefiancePerLevel            float64 `json:"defiancePerLevel"`
-	VampirismPerItem            float64 `json:"vampirismPerItem"`
-	BulletKnockback             float64 `json:"bulletKnockback"`
-	PlayerBulletKnockback       float64 `json:"playerBulletKnockback"`
-	MeleeDamageRadiusFactor     float64 `json:"meleeDamageRadiusFactor"`
-	MeleeContactDamageMultiplier float64 `json:"meleeContactDamageMultiplier"`
-	KineticDamageFactor         float64 `json:"kineticDamageFactor"`
-	ShieldOrbitRadius           float64 `json:"shieldOrbitRadius"`
-	ShieldBallRadius            float64 `json:"shieldBallRadius"`
-	LaserChainThreshold         uint8   `json:"laserChainThreshold"`
-	LaserChainRadius            float64 `json:"laserChainRadius"`
-	LaserChainDamage            float64 `json:"laserChainDamage"`
-	ExplosionRadius             float64 `json:"explosionRadius"`
-	ExplosionDamage             float64 `json:"explosionDamage"`
-	ArmorDmgReduction           float64 `json:"armorDmgReduction"`
+	BaseCritChance                float64 `json:"baseCritChance"`
+	BaseCritMultiplier            float64 `json:"baseCritMultiplier"`
+	CritChancePerLevel            float64 `json:"critChancePerLevel"`
+	CritDamagePerLevel            float64 `json:"critDamagePerLevel"`
+	CritChainRange                float64 `json:"critChainRange"`
+	CritChainDamage               float64 `json:"critChainDamage"`
+	CritChainLimit                int     `json:"critChainLimit"`
+	MaxDefianceReduction          float64 `json:"maxDefianceReduction"`
+	DefiancePerLevel              float64 `json:"defiancePerLevel"`
+	VampirismPerItem              float64 `json:"vampirismPerItem"`
+	BulletKnockback               float64 `json:"bulletKnockback"`
+	PlayerBulletKnockback         float64 `json:"playerBulletKnockback"`
+	MeleeDamageRadiusFactor       float64 `json:"meleeDamageRadiusFactor"`
+	MeleeContactDamageMultiplier  float64 `json:"meleeContactDamageMultiplier"`
+	KineticDamageFactor           float64 `json:"kineticDamageFactor"`
+	ShieldOrbitRadius             float64 `json:"shieldOrbitRadius"`
+	ShieldBallRadius              float64 `json:"shieldBallRadius"`
+	LaserChainThreshold           uint8   `json:"laserChainThreshold"`
+	LaserChainRadius              float64 `json:"laserChainRadius"`
+	LaserChainDamage              float64 `json:"laserChainDamage"`
+	ExplosionRadius               float64 `json:"explosionRadius"`
+	ExplosionDamage               float64 `json:"explosionDamage"`
+	ArmorDmgReduction             float64 `json:"armorDmgReduction"`
 	MinionContactDamageMultiplier float64 `json:"minionContactDamageMultiplier"`
-	XPGainMultiplier            float64 `json:"xpGainMultiplier"`
-	XPPerLevelMultiplier        float64 `json:"xpPerLevelMultiplier"`
-	LevelUpXPMultiplier         float64 `json:"levelUpXPMultiplier"`
-	LootQuantityPerLevel        float64 `json:"lootQuantityPerLevel"`
-	LootQualityPerLevel         float64 `json:"lootQualityPerLevel"`
+	XPGainMultiplier              float64 `json:"xpGainMultiplier"`
+	XPPerLevelMultiplier          float64 `json:"xpPerLevelMultiplier"`
+	LevelUpXPMultiplier           float64 `json:"levelUpXPMultiplier"`
+	LootQuantityPerLevel          float64 `json:"lootQuantityPerLevel"`
+	LootQualityPerLevel           float64 `json:"lootQualityPerLevel"`
 }
 
 type PlayerConfig struct {
-	Radius                float64 `json:"radius"`
-	StartHP               float64 `json:"startHP"`
-	StartMaxHP            float64 `json:"startMaxHP"`
-	StartMaxXP            uint32  `json:"startMaxXP"`
-	StartLevel            uint16  `json:"startLevel"`
-	MoveAcceleration      float64 `json:"moveAcceleration"`
-	Friction              float64 `json:"friction"`
-	AngleStep             float64 `json:"angleStep"`
-	AngleSpreadPerLevel   float64 `json:"angleSpreadPerLevel"`
-	SpeedPerLevel         float64 `json:"speedPerLevel"`
+	Radius                    float64 `json:"radius"`
+	StartHP                   float64 `json:"startHP"`
+	StartMaxHP                float64 `json:"startMaxHP"`
+	StartMaxXP                uint32  `json:"startMaxXP"`
+	StartLevel                uint16  `json:"startLevel"`
+	MoveAcceleration          float64 `json:"moveAcceleration"`
+	Friction                  float64 `json:"friction"`
+	AngleStep                 float64 `json:"angleStep"`
+	AngleSpreadPerLevel       float64 `json:"angleSpreadPerLevel"`
+	SpeedPerLevel             float64 `json:"speedPerLevel"`
 	CooldownReductionPerLevel float64 `json:"cooldownReductionPerLevel"`
-	DamageModPerLevel     float64 `json:"damageModPerLevel"`
-	InventorySize         int     `json:"inventorySize"`
-	InitialMinionOffset   float64 `json:"initialMinionOffset"`
+	DamageModPerLevel         float64 `json:"damageModPerLevel"`
+	InventorySize             int     `json:"inventorySize"`
+	InitialMinionOffset       float64 `json:"initialMinionOffset"`
 }
 
 type SpawnTableEntry struct {
@@ -223,64 +223,64 @@ type WorldConfig struct {
 }
 
 var (
-	currentMobsConfig    MobsConfig
-	currentBossesConfig  BossesConfig
-	currentRarityConfig  RarityConfig
-	currentMinionConfig  MinionConfig
-	currentCombatConfig  CombatConfig
-	currentPlayerConfig  PlayerConfig
-	currentSpawnConfig   SpawnConfig
-	currentWorldConfig   WorldConfig
-	gameConfigMu         sync.RWMutex
+	currentMobsConfig   MobsConfig
+	currentBossesConfig BossesConfig
+	currentRarityConfig RarityConfig
+	currentMinionConfig MinionConfig
+	currentCombatConfig CombatConfig
+	currentPlayerConfig PlayerConfig
+	currentSpawnConfig  SpawnConfig
+	currentWorldConfig  WorldConfig
+	gameConfigMu        sync.RWMutex
 )
 
 func init() {
 	currentCombatConfig = CombatConfig{
-		BaseCritChance:              0.20,
-		BaseCritMultiplier:          2.0,
-		CritChancePerLevel:          0.05,
-		CritDamagePerLevel:          0.05,
-		CritChainRange:              300.0,
-		CritChainDamage:             15.0,
-		CritChainLimit:              3,
-		MaxDefianceReduction:        0.5,
-		DefiancePerLevel:            0.05,
-		VampirismPerItem:            0.05,
-		BulletKnockback:             1.8,
-		PlayerBulletKnockback:       0.8,
-		MeleeDamageRadiusFactor:     0.25,
-		MeleeContactDamageMultiplier: 0.12,
-		KineticDamageFactor:         0.005,
-		ShieldOrbitRadius:           55.0,
-		ShieldBallRadius:            8.0,
-		LaserChainThreshold:         3,
-		LaserChainRadius:            120.0,
-		LaserChainDamage:            25.0,
-		ExplosionRadius:             140.0,
-		ExplosionDamage:             35.0,
-		ArmorDmgReduction:           0.7,
+		BaseCritChance:                0.20,
+		BaseCritMultiplier:            2.0,
+		CritChancePerLevel:            0.05,
+		CritDamagePerLevel:            0.05,
+		CritChainRange:                300.0,
+		CritChainDamage:               15.0,
+		CritChainLimit:                3,
+		MaxDefianceReduction:          0.5,
+		DefiancePerLevel:              0.05,
+		VampirismPerItem:              0.05,
+		BulletKnockback:               1.8,
+		PlayerBulletKnockback:         0.8,
+		MeleeDamageRadiusFactor:       0.25,
+		MeleeContactDamageMultiplier:  0.12,
+		KineticDamageFactor:           0.005,
+		ShieldOrbitRadius:             55.0,
+		ShieldBallRadius:              8.0,
+		LaserChainThreshold:           3,
+		LaserChainRadius:              120.0,
+		LaserChainDamage:              25.0,
+		ExplosionRadius:               140.0,
+		ExplosionDamage:               35.0,
+		ArmorDmgReduction:             0.7,
 		MinionContactDamageMultiplier: 0.4,
-		XPGainMultiplier:            0.75,
-		XPPerLevelMultiplier:        0.01,
-		LevelUpXPMultiplier:         1.3,
-		LootQuantityPerLevel:        0.05,
-		LootQualityPerLevel:         0.05,
+		XPGainMultiplier:              0.75,
+		XPPerLevelMultiplier:          0.01,
+		LevelUpXPMultiplier:           1.3,
+		LootQuantityPerLevel:          0.05,
+		LootQualityPerLevel:           0.05,
 	}
 	currentPlayerConfig = PlayerConfig{
-		Radius:              24,
-		StartHP:             100,
-		StartMaxHP:          100,
-		StartMaxXP:          60,
-		StartLevel:          1,
-		MoveAcceleration:    0.6,
-		Friction:            0.88,
-		AngleStep:           0.15,
-		AngleSpreadPerLevel: 0.05,
-		SpeedPerLevel:       0.01,
+		Radius:                    24,
+		StartHP:                   100,
+		StartMaxHP:                100,
+		StartMaxXP:                60,
+		StartLevel:                1,
+		MoveAcceleration:          0.6,
+		Friction:                  0.88,
+		AngleStep:                 0.15,
+		AngleSpreadPerLevel:       0.05,
+		SpeedPerLevel:             0.01,
 		CooldownReductionPerLevel: -0.01,
-		DamageModPerLevel:   0.05,
-		InventorySize:       200,
-		InitialMinionOffset: 40,
+		DamageModPerLevel:         0.05,
+		InventorySize:             200,
+		InitialMinionOffset:       40,
 	}
 	currentWorldConfig = WorldConfig{
 		ArenaWidth:      6000.0,
