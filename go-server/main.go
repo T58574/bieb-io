@@ -56,17 +56,20 @@ func checkOrigin(r *http.Request) bool {
 		return false
 	}
 
-	reqHostname := r.Host
-	if host, _, err := net.SplitHostPort(reqHostname); err == nil {
-		reqHostname = host
-	}
-	if u.Hostname() == reqHostname {
+	if u.Host == r.Host {
 		return true
 	}
 
 	allowed := os.Getenv("ALLOWED_ORIGIN")
-	if allowed != "" && origin == allowed {
+	if allowed == "*" {
 		return true
+	}
+	if allowed != "" {
+		for _, a := range strings.Split(allowed, ",") {
+			if strings.TrimSpace(a) == origin {
+				return true
+			}
+		}
 	}
 
 	return false
