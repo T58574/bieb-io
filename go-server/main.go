@@ -56,13 +56,24 @@ func checkOrigin(r *http.Request) bool {
 		return false
 	}
 
-	if strings.EqualFold(u.Host, r.Host) {
+	reqHostname := r.Host
+	if host, _, err := net.SplitHostPort(reqHostname); err == nil {
+		reqHostname = host
+	}
+	if u.Hostname() == reqHostname {
 		return true
 	}
 
 	allowed := os.Getenv("ALLOWED_ORIGIN")
-	if allowed != "" && origin == allowed {
+	if allowed == "*" {
 		return true
+	}
+	if allowed != "" {
+		for _, a := range strings.Split(allowed, ",") {
+			if strings.TrimSpace(a) == origin {
+				return true
+			}
+		}
 	}
 
 	return false
@@ -104,6 +115,8 @@ func (s *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 		s.world.RemovePlayer(id)
 		conn.Close()
 	}()
+
+	conn.SetReadLimit(2048)
 
 	for {
 		_, msg, err := conn.ReadMessage()

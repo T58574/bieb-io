@@ -2,7 +2,7 @@
   "types": {
     "10": {
       "name": "boss_sentinel",
-      "baseHP": 6000,
+      "baseHP": 3000,
       "radius": 48,
       "baseDamage": 180,
       "baseXP": 500,
@@ -20,7 +20,7 @@
     },
     "11": {
       "name": "boss_charger",
-      "baseHP": 9000,
+      "baseHP": 90000,
       "radius": 56,
       "baseDamage": 280,
       "baseXP": 800,

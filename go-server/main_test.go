@@ -53,10 +53,37 @@ func TestCheckOrigin(t *testing.T) {
 			want:   false,
 		},
 		{
-			name:   "matching domain without port",
-			origin: "http://mygame.com",
+			name:   "matching domain without port but mismatching on port",
+			origin: "http://mygame.com:8080",
 			host:   "mygame.com",
+			want:   false,
+		},
+		{
+			name:   "matching domain and matching port",
+			origin: "http://mygame.com:8080",
+			host:   "mygame.com:8080",
 			want:   true,
+		},
+		{
+			name:    "wildcard allowed",
+			origin:  "http://evil.com",
+			host:    "localhost:8080",
+			envHost: "*",
+			want:    true,
+		},
+		{
+			name:    "multiple allowed via env",
+			origin:  "http://example.com",
+			host:    "localhost:8080",
+			envHost: "http://other.com, http://example.com",
+			want:    true,
+		},
+		{
+			name:    "multiple allowed via env mismatch",
+			origin:  "http://evil.com",
+			host:    "localhost:8080",
+			envHost: "http://other.com, http://example.com",
+			want:    false,
 		},
 	}
 

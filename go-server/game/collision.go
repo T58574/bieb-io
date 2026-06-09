@@ -358,7 +358,7 @@ func (w *GameWorld) handleBulletMobCollision(a, b HashItem) {
 				}
 			}
 
-			if bullet.Subtype == 2 && w.rand.Float64() < critChance {
+			if w.rand.Float64() < critChance {
 				isCrit = true
 				dmg *= critMultiplier
 			}
@@ -378,7 +378,7 @@ func (w *GameWorld) handleBulletMobCollision(a, b HashItem) {
 				}
 			}
 			m.Vel = m.Vel.Add(bullet.Vel.Normalize().Mul(combatCfg.BulletKnockback))
-			if bullet.OwnerType == 0 {
+			if bullet.OwnerType == 0 || bullet.OwnerType == 2 {
 				p, okP := w.Players[bullet.OwnerID]
 				if okP && p.Alive {
 					vampPercent := p.Vampirism
