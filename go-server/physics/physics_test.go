@@ -87,3 +87,25 @@ func TestVectorNormalize(t *testing.T) {
 		t.Errorf("expected {0, 0}, got {%f, %f}", normZero.X, normZero.Y)
 	}
 }
+
+func TestVectorLengthSq(t *testing.T) {
+	tests := []struct {
+		name     string
+		v        Vector2D
+		expected float64
+	}{
+		{"positive coordinates", Vector2D{3, 4}, 25},
+		{"negative coordinates", Vector2D{-3, -4}, 25},
+		{"zero vector", Vector2D{0, 0}, 0},
+		{"fractional coordinates", Vector2D{1.5, 2.5}, 8.5},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.v.LengthSq()
+			if result != tt.expected {
+				t.Errorf("expected %f, got %f", tt.expected, result)
+			}
+		})
+	}
+}
