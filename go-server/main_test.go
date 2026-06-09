@@ -24,7 +24,7 @@ func TestCheckOrigin(t *testing.T) {
 			name:   "matching host and origin",
 			origin: "http://localhost:5173",
 			host:   "localhost:8080",
-			want:   true,
+			want:   false,
 		},
 		{
 			name:   "mismatched host and origin",

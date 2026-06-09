@@ -56,11 +56,7 @@ func checkOrigin(r *http.Request) bool {
 		return false
 	}
 
-	reqHostname := r.Host
-	if host, _, err := net.SplitHostPort(reqHostname); err == nil {
-		reqHostname = host
-	}
-	if u.Hostname() == reqHostname {
+	if strings.EqualFold(u.Host, r.Host) {
 		return true
 	}
 
