@@ -37,6 +37,34 @@ func TestVectorOps(t *testing.T) {
 	}
 }
 
+func TestVectorSetSub(t *testing.T) {
+	var v Vector2D
+
+	// Basic subtraction
+	a := Vector2D{5, 7}
+	b := Vector2D{2, 3}
+	v.SetSub(a, b)
+	if v.X != 3 || v.Y != 4 {
+		t.Errorf("SetSub basic error: expected {3, 4}, got {%v, %v}", v.X, v.Y)
+	}
+
+	// Negative numbers
+	a2 := Vector2D{-1, -5}
+	b2 := Vector2D{2, -3}
+	v.SetSub(a2, b2)
+	if v.X != -3 || v.Y != -2 {
+		t.Errorf("SetSub negative error: expected {-3, -2}, got {%v, %v}", v.X, v.Y)
+	}
+
+	// Zeroes
+	a3 := Vector2D{0, 0}
+	b3 := Vector2D{0, 0}
+	v.SetSub(a3, b3)
+	if v.X != 0 || v.Y != 0 {
+		t.Errorf("SetSub zeroes error: expected {0, 0}, got {%v, %v}", v.X, v.Y)
+	}
+}
+
 func TestResolveCircleCircle(t *testing.T) {
 	p1 := Vector2D{0, 0}
 	p2 := Vector2D{1.5, 0}
