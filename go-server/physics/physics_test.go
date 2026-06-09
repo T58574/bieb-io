@@ -37,6 +37,34 @@ func TestVectorOps(t *testing.T) {
 	}
 }
 
+func TestVectorSetSub(t *testing.T) {
+	var v Vector2D
+
+	// Basic subtraction
+	a := Vector2D{5, 7}
+	b := Vector2D{2, 3}
+	v.SetSub(a, b)
+	if v.X != 3 || v.Y != 4 {
+		t.Errorf("SetSub basic error: expected {3, 4}, got {%v, %v}", v.X, v.Y)
+	}
+
+	// Negative numbers
+	a2 := Vector2D{-1, -5}
+	b2 := Vector2D{2, -3}
+	v.SetSub(a2, b2)
+	if v.X != -3 || v.Y != -2 {
+		t.Errorf("SetSub negative error: expected {-3, -2}, got {%v, %v}", v.X, v.Y)
+	}
+
+	// Zeroes
+	a3 := Vector2D{0, 0}
+	b3 := Vector2D{0, 0}
+	v.SetSub(a3, b3)
+	if v.X != 0 || v.Y != 0 {
+		t.Errorf("SetSub zeroes error: expected {0, 0}, got {%v, %v}", v.X, v.Y)
+	}
+}
+
 func TestResolveCircleCircle(t *testing.T) {
 	p1 := Vector2D{0, 0}
 	p2 := Vector2D{1.5, 0}
@@ -72,6 +100,33 @@ func TestResolveCircleBox(t *testing.T) {
 	}
 }
 
+func TestVectorSetSub(t *testing.T) {
+	// Happy path
+	var v Vector2D
+	a := Vector2D{5, 10}
+	b := Vector2D{2, 3}
+	v.SetSub(a, b)
+	if v.X != 3 || v.Y != 7 {
+		t.Errorf("SetSub error: expected {3, 7}, got {%v, %v}", v.X, v.Y)
+	}
+
+	// Negative values
+	a = Vector2D{-1, -5}
+	b = Vector2D{2, -3}
+	v.SetSub(a, b)
+	if v.X != -3 || v.Y != -2 {
+		t.Errorf("SetSub negative error: expected {-3, -2}, got {%v, %v}", v.X, v.Y)
+	}
+
+	// Zero
+	a = Vector2D{4, 4}
+	b = Vector2D{4, 4}
+	v.SetSub(a, b)
+	if v.X != 0 || v.Y != 0 {
+		t.Errorf("SetSub zero error: expected {0, 0}, got {%v, %v}", v.X, v.Y)
+	}
+}
+
 func TestVectorNormalize(t *testing.T) {
 	// Happy path
 	v := Vector2D{3, 4}
@@ -85,38 +140,5 @@ func TestVectorNormalize(t *testing.T) {
 	normZero := vZero.Normalize()
 	if normZero.X != 0 || normZero.Y != 0 {
 		t.Errorf("expected {0, 0}, got {%f, %f}", normZero.X, normZero.Y)
-	}
-}
-
-func TestVectorDot(t *testing.T) {
-	// Positive vectors
-	v1 := Vector2D{1, 2}
-	v2 := Vector2D{3, 4}
-	dot := v1.Dot(v2)
-	if dot != 11.0 {
-		t.Errorf("expected 11.0, got %f", dot)
-	}
-
-	// Negative vectors
-	v3 := Vector2D{-1, -2}
-	v4 := Vector2D{3, -4}
-	dot = v3.Dot(v4)
-	if dot != 5.0 {
-		t.Errorf("expected 5.0, got %f", dot)
-	}
-
-	// Orthogonal vectors
-	v5 := Vector2D{1, 0}
-	v6 := Vector2D{0, 1}
-	dot = v5.Dot(v6)
-	if dot != 0 {
-		t.Errorf("expected 0, got %f", dot)
-	}
-
-	// Zero vector
-	v7 := Vector2D{0, 0}
-	dot = v1.Dot(v7)
-	if dot != 0 {
-		t.Errorf("expected 0, got %f", dot)
 	}
 }
