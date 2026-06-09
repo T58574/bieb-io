@@ -15,39 +15,39 @@ const (
 )
 
 type ItemStatModifiers struct {
-	FlatHP          float64
-	PercentHP       float64
-	FlatDamage      float64
-	PercentDamage   float64
-	PercentSpeed    float64
-	Vampirism       float64
-	BulletSpeed     float64
-	AddProjectiles  int
-	PierceCount     int
-	Regen           float64
-	Armor           float64
-	CritChance      float64
-	CritDamage      float64
-	MinionDamage    float64
-	MinionHP        float64
-	ExpMod          float64
-	PickupRadius    float64
-	Thorns          float64
-	CritDefiance    float64
-	LootQuantity    float64
-	LootQuality     float64
-	CooldownMod     float64
-	MinionSpeed     float64
-	MinionRegen     float64
-	MinionPierce    int
-	BlockChance     float64
-	DoubleDamage    float64
+	FlatHP         float64
+	PercentHP      float64
+	FlatDamage     float64
+	PercentDamage  float64
+	PercentSpeed   float64
+	Vampirism      float64
+	BulletSpeed    float64
+	AddProjectiles int
+	PierceCount    int
+	Regen          float64
+	Armor          float64
+	CritChance     float64
+	CritDamage     float64
+	MinionDamage   float64
+	MinionHP       float64
+	ExpMod         float64
+	PickupRadius   float64
+	Thorns         float64
+	CritDefiance   float64
+	LootQuantity   float64
+	LootQuality    float64
+	CooldownMod    float64
+	MinionSpeed    float64
+	MinionRegen    float64
+	MinionPierce   int
+	BlockChance    float64
+	DoubleDamage   float64
 }
 
 type ItemModifier struct {
-	ID                 uint16
-	Rarity             uint8
-	StatModifiers      ItemStatModifiers
+	ID                  uint16
+	Rarity              uint8
+	StatModifiers       ItemStatModifiers
 	OnKillEffectTrigger OnKillEffectTrigger
 }
 

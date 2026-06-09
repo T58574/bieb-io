@@ -9,63 +9,62 @@ import (
 )
 
 type Player struct {
-	ID               uint16
-	Username         string
-	Pos              physics.Vector2D
-	Vel              physics.Vector2D
-	Radius           float64
-	Health           float64
-	MaxHealth        float64
-	XP               uint32
-	MaxXP            uint32
-	Level            uint16
-	Score            uint32
-	MouseAngle       float64
-	Keys             uint8
-	UpgradeSelect    uint8
-	MinionIDs        []uint16
-	Alive            bool
-	UpgradePoints    uint8
-	StatRegen        uint16
-	StatMaxHP        uint16
-	StatSpeed        uint16
-	StatMinionDmg    uint16
-	StatMinionSpeed  uint16
-	StatMinionHP     uint16
-	StatMinionPierce uint16
-	StatMinionRegen  uint16
-	StatDamageMod    uint16
-	StatCooldownMod  uint16
-	StatCritChance   uint16
-	StatCritDamage   uint16
-	StatCritDefiance uint16
-	StatAddProjectiles uint16
-	StatPierceCount  uint16
-	StatSpread       uint16
-	StatExpMod       uint16
-	StatLootQuantity uint16
-	StatLootQuality  uint16
+	ID                   uint16
+	Username             string
+	Pos                  physics.Vector2D
+	Vel                  physics.Vector2D
+	Radius               float64
+	Health               float64
+	MaxHealth            float64
+	XP                   uint32
+	MaxXP                uint32
+	Level                uint16
+	Score                uint32
+	MouseAngle           float64
+	Keys                 uint8
+	UpgradeSelect        uint8
+	MinionIDs            []uint16
+	Alive                bool
+	UpgradePoints        uint8
+	StatRegen            uint16
+	StatMaxHP            uint16
+	StatSpeed            uint16
+	StatMinionDmg        uint16
+	StatMinionSpeed      uint16
+	StatMinionHP         uint16
+	StatMinionPierce     uint16
+	StatMinionRegen      uint16
+	StatDamageMod        uint16
+	StatCooldownMod      uint16
+	StatCritChance       uint16
+	StatCritDamage       uint16
+	StatCritDefiance     uint16
+	StatAddProjectiles   uint16
+	StatPierceCount      uint16
+	StatSpread           uint16
+	StatExpMod           uint16
+	StatLootQuantity     uint16
+	StatLootQuality      uint16
 	StatPickupItemRadius uint16
-	StatThorns       uint16
-	RegenAccum       float64
-	ClassID          uint8
-	Mass             float64
-	StateFlags       uint32
-	ChargeLevel      float64
-	ShootCooldown    float64
-	FlashTimer       float64
-	CardChoices      [3]uint8
-	Inventory        map[uint16]int
-	invCache         []uint8
-	invDirty         bool
-	Vampirism        float64
-	LaserHitsCount   map[uint16]uint8
-	SkillCooldown    float64
-	SkillDuration    float64
-	AegisCooldown    float64
-	AegisShieldTimer float64
+	StatThorns           uint16
+	RegenAccum           float64
+	ClassID              uint8
+	Mass                 float64
+	StateFlags           uint32
+	ChargeLevel          float64
+	ShootCooldown        float64
+	FlashTimer           float64
+	CardChoices          [3]uint8
+	Inventory            map[uint16]int
+	invCache             []uint8
+	invDirty             bool
+	Vampirism            float64
+	LaserHitsCount       map[uint16]uint8
+	SkillCooldown        float64
+	SkillDuration        float64
+	AegisCooldown        float64
+	AegisShieldTimer     float64
 }
-
 
 func (p *Player) GetInventoryArray() []uint8 {
 	if !p.invDirty && p.invCache != nil {
@@ -281,7 +280,7 @@ func (w *GameWorld) applyCardUpgrade(p *Player, choiceIndex uint8) {
 				shields++
 			}
 			p.StateFlags = (p.StateFlags & 0xFFFFFF0F) | (shields << 4)
-				case "StatDamageMod":
+		case "StatDamageMod":
 			if p.StatDamageMod < cardCfg.MaxLevel {
 				p.StatDamageMod++
 			}
