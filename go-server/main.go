@@ -109,6 +109,8 @@ func (s *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 		conn.Close()
 	}()
 
+	conn.SetReadLimit(2048)
+
 	for {
 		_, msg, err := conn.ReadMessage()
 		if err != nil {
